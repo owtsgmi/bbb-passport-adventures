@@ -1,12 +1,12 @@
 <!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BBB Passport Adventures</title>
+<title>BBB Unicorn Buck Adventures</title>
 <style>
 :root{--bg:#090816;--panel:#151229;--panel2:#1d1737;--ink:#fff9ff;--muted:#bcb0ca;--blue:#69d8ff;--gold:#ffd166;--green:#63e6a5;--red:#ff6b81;--pink:#ff78c8;--purple:#9d7bff;--line:#332a4c}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 15% 0%,#24164a 0,#100d23 28%,#090816 70%);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,sans-serif}body:before{content:"";position:fixed;inset:0;pointer-events:none;background-image:radial-gradient(circle,#ffffff22 1px,transparent 1px);background-size:34px 34px;opacity:.2}
 header{position:sticky;top:0;z-index:10;background:#100c24ee;backdrop-filter:blur(12px);border-bottom:1px solid #4a376c;padding:14px 4vw;box-shadow:0 8px 30px #0005}
 .headrow{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.brand h1{margin:0;font-size:28px;background:linear-gradient(90deg,#ffd166,#ff89d2,#9d7bff,#69d8ff);-webkit-background-clip:text;color:transparent}.brand .coinhunt{font-weight:900;letter-spacing:.06em;font-size:12px;color:#ffd166;margin-top:3px}.sub,.meta,.small{color:var(--muted)}
-.scorecard{display:grid;grid-template-columns:repeat(3,minmax(150px,1fr));gap:8px;min-width:500px}.score{background:linear-gradient(180deg,#1c1534,#120f24);border:1px solid #4a376c;border-radius:14px;padding:10px 11px;text-align:center;box-shadow:inset 0 0 18px #9d7bff0c}.score b{display:block;font-size:18px}.coin{border-color:#8b6d2a;background:linear-gradient(180deg,#382a12,#1a1423)}.coin b{color:#ffd166;text-shadow:0 0 14px #ffd16677}.rewardbox{background:linear-gradient(135deg,#2b1644,#191733 55%,#3b2b12);border:1px solid #7d5fb2;border-radius:18px;padding:16px 18px;margin:16px 0;box-shadow:0 0 28px #9d7bff22}.rewardbox h3{margin:0 0 7px;font-size:21px;color:#ffd166}.shophead{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.shopgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.shopitem{background:#120e24;border:1px solid #554272;border-radius:14px;padding:13px;position:relative;overflow:hidden}.shopitem .icon{font-size:28px}.shopitem h4{margin:5px 0 3px;font-size:15px}.shopitem p{margin:0 0 9px;color:var(--muted);font-size:12px;min-height:34px}.price{color:#ffd166;font-weight:900}.shopitem button{width:100%}.shopitem.locked{opacity:.55}.recent{margin-top:10px;padding-top:10px;border-top:1px solid #47385f}.recentline{font-size:12px;color:var(--muted);padding:3px 0}.compactdetails{background:#100d21;border:1px solid #332a4c;border-radius:14px;margin:14px 0}.compactdetails>summary{font-weight:800;font-size:16px}.compactdetails>.inside{padding:0 14px 14px}.filterdetails{margin-top:8px}.filterdetails summary{color:var(--muted);font-size:13px;padding:5px 0}.filterdetails[open] summary{color:#fff}.tiny{font-size:11px;color:var(--muted)}.coinhero{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:12px 0}.coinpot{flex:1;min-width:220px;background:#120e24;border:1px solid #5f4e91;border-radius:14px;padding:12px 14px}.coinpot strong{font-size:25px;color:#ffd166}.coinpot .nextreward{margin-top:5px;color:#f8c6ef}.coinvalue{display:inline-block;background:#3a2a10;border:1px solid #8b6d2a;color:#ffe49a;border-radius:999px;padding:3px 8px;font-weight:800;font-size:12px;margin-left:7px}.milestones{display:flex;gap:8px;flex-wrap:wrap}.milestone{border:1px solid #54486c;background:#120e24;border-radius:999px;padding:7px 10px;font-size:13px}.milestone.on{border-color:#ff8dd5;background:#30183a;box-shadow:0 0 12px #ff78c833}.sparkle{color:#ffd166}.score span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.scorecard{display:grid;grid-template-columns:repeat(3,minmax(150px,1fr));gap:8px;min-width:500px}.score{background:linear-gradient(180deg,#1c1534,#120f24);border:1px solid #4a376c;border-radius:14px;padding:10px 11px;text-align:center;box-shadow:inset 0 0 18px #9d7bff0c}.score b{display:block;font-size:18px}.coin{border-color:#8b6d2a;background:linear-gradient(180deg,#382a12,#1a1423)}.coin b{color:#ffd166;text-shadow:0 0 14px #ffd16677}.rewardbox{background:linear-gradient(135deg,#2b1644,#191733 55%,#3b2b12);border:1px solid #7d5fb2;border-radius:18px;padding:16px 18px;margin:16px 0;box-shadow:0 0 28px #9d7bff22}.rewardbox h3{margin:0 0 7px;font-size:21px;color:#ffd166}.bankhead{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap}.bankgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.bankcard{background:#120e24;border:1px solid #554272;border-radius:14px;padding:14px}.bankcard strong{display:block;font-size:27px;color:#ffd166}.bankcard span{font-size:12px;color:var(--muted)}.cashout{background:linear-gradient(135deg,#6d4bd8,#a743bd);border-color:#cf9cff;font-weight:800}.pendingcash{color:#f7c3e9}.recent{margin-top:10px;padding-top:10px;border-top:1px solid #47385f}.recentline{font-size:12px;color:var(--muted);padding:3px 0}.compactdetails{background:#100d21;border:1px solid #332a4c;border-radius:14px;margin:14px 0}.compactdetails>summary{font-weight:800;font-size:16px}.compactdetails>.inside{padding:0 14px 14px}.filterdetails{margin-top:8px}.filterdetails summary{color:var(--muted);font-size:13px;padding:5px 0}.filterdetails[open] summary{color:#fff}.tiny{font-size:11px;color:var(--muted)}.coinhero{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:12px 0}.coinpot{flex:1;min-width:220px;background:#120e24;border:1px solid #5f4e91;border-radius:14px;padding:12px 14px}.coinpot strong{font-size:25px;color:#ffd166}.coinpot .nextreward{margin-top:5px;color:#f8c6ef}.coinvalue{display:inline-block;background:#3a2a10;border:1px solid #8b6d2a;color:#ffe49a;border-radius:999px;padding:3px 8px;font-weight:800;font-size:12px;margin-left:7px}.milestones{display:flex;gap:8px;flex-wrap:wrap}.milestone{border:1px solid #54486c;background:#120e24;border-radius:999px;padding:7px 10px;font-size:13px}.milestone.on{border-color:#ff8dd5;background:#30183a;box-shadow:0 0 12px #ff78c833}.sparkle{color:#ffd166}.score span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 .controls,.actions,.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.controls{margin-top:10px}.filters{margin-top:8px}
 button,input,select{border:1px solid #4a376c;border-radius:10px;background:#17112d;color:var(--ink);padding:9px 11px}button{cursor:pointer;transition:.15s transform,.15s border-color}button:hover{transform:translateY(-1px);border-color:#9d7bff}.primary{background:linear-gradient(135deg,#7f55ff,#b84dd8);border-color:#c693ff;font-weight:800}
 main{max-width:1180px;margin:auto;padding:20px 4vw 60px}.section{margin:18px 0}.section h2{font-size:18px;margin:0 0 10px}.light{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:8px;vertical-align:0}.yellow{background:var(--gold);box-shadow:0 0 10px #ffd16688}.green{background:var(--green);box-shadow:0 0 8px #5fd39b55}.red{background:var(--red);box-shadow:0 0 8px #ef6b7355}
@@ -18,17 +18,17 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 .mission-table{width:100%;border-collapse:separate;border-spacing:0 6px}.mission-table th{text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:0 8px}.mission-table td{background:linear-gradient(90deg,#1b1632,#211941);padding:9px 8px;vertical-align:middle}.mission-table td:first-child{border-radius:9px 0 0 9px;width:44px;text-align:center;font-weight:800;color:var(--blue)}.mission-table td:last-child{border-radius:0 9px 9px 0}.mission-table .place{font-weight:700}.mission-table .where{color:var(--muted);font-size:12px;margin-top:2px}.mission-table .who{text-align:center;white-space:nowrap;width:75px}.mission-table .act{text-align:right;white-space:nowrap}.mission-table input[type=checkbox]{width:18px;height:18px;accent-color:var(--green)}
 .nextrow td{box-shadow:inset 0 0 0 1px #ffd16677}.nexttag{color:var(--gold);font-size:11px;font-weight:800;margin-left:6px}.sl{text-decoration:none;background:#12668f;color:white;padding:7px 9px;border-radius:8px;font-weight:700;display:inline-block}
 #toast{display:none;position:fixed;right:18px;bottom:18px;z-index:50;background:#10243a;border:1px solid var(--blue);border-radius:10px;padding:12px 15px;max-width:480px}
-@media(max-width:820px){.headrow{display:block}.scorecard{min-width:0;margin-top:10px;grid-template-columns:1fr}.shopgrid{grid-template-columns:1fr 1fr}.score b{font-size:15px}.mission-setup{grid-template-columns:1fr}.summary-right{display:none}.mission-table thead{display:none}.mission-table,.mission-table tbody,.mission-table tr,.mission-table td{display:block;width:100%}.mission-table tr{margin-bottom:8px;background:var(--panel2);border-radius:10px;padding:7px}.mission-table td{background:transparent;padding:4px 6px}.mission-table td:first-child,.mission-table td:last-child{border-radius:0}.mission-table .who,.mission-table .act{text-align:left;width:auto}.mission-table .who::before{font-size:12px;color:var(--muted);margin-right:6px}.mission-table .mine::before{content:"My passport:"}.mission-table .theirs::before{content:"Partner:"}}
-@media(max-width:520px){.shopgrid{grid-template-columns:1fr}.brand h1{font-size:23px}}
+@media(max-width:820px){.headrow{display:block}.scorecard{min-width:0;margin-top:10px;grid-template-columns:1fr}.bankgrid{grid-template-columns:1fr}.score b{font-size:15px}.mission-setup{grid-template-columns:1fr}.summary-right{display:none}.mission-table thead{display:none}.mission-table,.mission-table tbody,.mission-table tr,.mission-table td{display:block;width:100%}.mission-table tr{margin-bottom:8px;background:var(--panel2);border-radius:10px;padding:7px}.mission-table td{background:transparent;padding:4px 6px}.mission-table td:first-child,.mission-table td:last-child{border-radius:0}.mission-table .who,.mission-table .act{text-align:left;width:auto}.mission-table .who::before{font-size:12px;color:var(--muted);margin-right:6px}.mission-table .mine::before{content:"My passport:"}.mission-table .theirs::before{content:"Partner:"}}
+@media(max-width:520px){.bankgrid{grid-template-columns:1fr}.brand h1{font-size:23px}}
 </style></head>
 <body>
 <header>
 <div class="headrow">
-  <div class="brand"><h1>✨ BBB Star Coin Adventures 🦄</h1><div class="coinhunt">STAMP • EXPLORE • EARN • UNLOCK</div><div class="sub">Turn passport hunting into a shared Second Life treasure quest.</div></div>
+  <div class="brand"><h1>🦄 BBB Unicorn Buck Adventures</h1><div class="coinhunt">EXPLORE • COMPLETE TOGETHER • CASH OUT</div><div class="sub">Every completed adventure funds the next shopping spree.</div></div>
   <div class="scorecard" id="scorecard"></div>
 </div>
 <div class="controls">
-  <button class="primary" onclick="surpriseUs()">✨ Hunt for Star Coins</button>
+  <button class="primary" onclick="surpriseUs()">🦄 Pick a 1,000 Buck Mission</button>
   <span id="sync-status" class="small">☁ Connecting…</span>
 </div>
 <details class="filterdetails"><summary>🔎 Find a specific adventure</summary>
@@ -70,9 +70,13 @@ let partnerDone=new Set(JSON.parse(localStorage.getItem('bbb-done-partner')||'[]
 let meSpent=Number(localStorage.getItem('bbb-me-spent')||0);
 let partnerSpent=Number(localStorage.getItem('bbb-partner-spent')||0);
 let rewardLog=JSON.parse(localStorage.getItem('bbb-reward-log')||'[]');
+let unicornRedeemed=Number(localStorage.getItem('bbb-unicorn-redeemed')||0);
+let payoutLog=JSON.parse(localStorage.getItem('bbb-payout-log')||'[]');
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function saveAll(){localStorage.setItem('bbb-done-me',JSON.stringify([...meDone]));localStorage.setItem('bbb-done-partner',JSON.stringify([...partnerDone]));localStorage.setItem('bbb-started',JSON.stringify([...started]));localStorage.setItem('bbb-me-spent',meSpent);localStorage.setItem('bbb-partner-spent',partnerSpent);localStorage.setItem('bbb-reward-log',JSON.stringify(rewardLog));render()}
+function saveAll(){localStorage.setItem('bbb-done-me',JSON.stringify([...meDone]));localStorage.setItem('bbb-done-partner',JSON.stringify([...partnerDone]));localStorage.setItem('bbb-started',JSON.stringify([...started]));localStorage.setItem('bbb-me-spent',meSpent);localStorage.setItem('bbb-partner-spent',partnerSpent);localStorage.setItem('bbb-reward-log',JSON.stringify(rewardLog));
+  localStorage.setItem('bbb-unicorn-redeemed',unicornRedeemed);
+  localStorage.setItem('bbb-payout-log',JSON.stringify(payoutLog));localStorage.setItem('bbb-unicorn-redeemed',unicornRedeemed);localStorage.setItem('bbb-payout-log',JSON.stringify(payoutLog));render()}
 function toast(m){const n=$('#toast');n.textContent=m;n.style.display='block';setTimeout(()=>n.style.display='none',2400)}
 function copy(t,msg='Copied — paste into Firestorm'){navigator.clipboard.writeText(t).then(()=>toast(msg)).catch(()=>prompt('Copy this into Firestorm:',t))}
 function startedAdventure(a){return started.has(a.id)||a.stamps.some(s=>meDone.has(s.id)||partnerDone.has(s.id))}
@@ -92,52 +96,42 @@ function missionSetup(a){const i=sharedNextIndex(a),s=a.stamps[i];return `<div c
 function missionRows(a){
  const next=sharedNextIndex(a);
  let h=`<table class="mission-table"><thead><tr><th>#</th><th>Passport stop</th><th>Me</th><th>Partner</th><th></th></tr></thead><tbody>`;
- a.stamps.forEach((s,i)=>{const md=meDone.has(s.id),pd=partnerDone.has(s.id),nr=i===next&&!togetherComplete(a);h+=`<tr class="${nr?'nextrow':''}" id="trip-${a.id}-stop-${i+1}"><td>${i+1}</td><td><div class="place">${esc(s.name)} <span class="coinvalue">+10 ✨</span>${nr?'<span class="nexttag">NEXT</span>':''}</div><div class="where">${esc(s.region)} • ${s.x}, ${s.y}, ${s.z}${s.retire?' • retires '+esc(s.retire):''}</div></td><td class="who mine"><input type="checkbox" ${md?'checked':''} onchange="toggleFor('me',${s.id},${a.id})"></td><td class="who theirs"><input type="checkbox" ${pd?'checked':''} onchange="toggleFor('partner',${s.id},${a.id})"></td><td class="act"><button onclick='meetHere(adventures.find(x=>x.id===${a.id}),${i})'>💬 Meet</button> <button class="sl" onclick='copy(fsUrl(adventures.find(x=>x.id===${a.id}).stamps[${i}]),"Firestorm SLURL copied")'>🔥 Firestorm</button></td></tr>`});
+ a.stamps.forEach((s,i)=>{const md=meDone.has(s.id),pd=partnerDone.has(s.id),nr=i===next&&!togetherComplete(a);h+=`<tr class="${nr?'nextrow':''}" id="trip-${a.id}-stop-${i+1}"><td>${i+1}</td><td><div class="place">${esc(s.name)} <span class="coinvalue">🦄 team stamp</span>${nr?'<span class="nexttag">NEXT</span>':''}</div><div class="where">${esc(s.region)} • ${s.x}, ${s.y}, ${s.z}${s.retire?' • retires '+esc(s.retire):''}</div></td><td class="who mine"><input type="checkbox" ${md?'checked':''} onchange="toggleFor('me',${s.id},${a.id})"></td><td class="who theirs"><input type="checkbox" ${pd?'checked':''} onchange="toggleFor('partner',${s.id},${a.id})"></td><td class="act"><button onclick='meetHere(adventures.find(x=>x.id===${a.id}),${i})'>💬 Meet</button> <button class="sl" onclick='copy(fsUrl(adventures.find(x=>x.id===${a.id}).stamps[${i}]),"Firestorm SLURL copied")'>🔥 Firestorm</button></td></tr>`});
  return h+'</tbody></table>';
 }
 function pinnedHtml(a){
  const both=Math.min(progressFor(a,meDone),progressFor(a,partnerDone));
- return `<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>${esc(a.title)} <span class="badge">IN PROGRESS</span></h3><div class="meta">📍 ${esc(a.zone)} • ⏱ about ${a.minutes} min • ${a.stamps.length} passport stops <span class="coinvalue">✨ ${a.stamps.length*10+25} coins possible</span></div><div class="progress"><div class="bar" style="width:${Math.round((both/a.stamps.length)*100)}%"></div></div><div class="small">Both passports together: ${both}/${a.stamps.length}</div><div class="actions" style="margin-top:9px"><button onclick='shareTrip(adventures.find(x=>x.id===${a.id}))'>💬 Share mission</button></div></div></div>${missionSetup(a)}<div style="padding:0 17px 17px">${missionRows(a)}</div></div>`}
+ return `<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>${esc(a.title)} <span class="badge">IN PROGRESS</span></h3><div class="meta">📍 ${esc(a.zone)} • ⏱ about ${a.minutes} min • ${a.stamps.length} passport stops <span class="coinvalue">🦄 1,000 Buck bounty</span></div><div class="progress"><div class="bar" style="width:${Math.round((both/a.stamps.length)*100)}%"></div></div><div class="small">Both passports together: ${both}/${a.stamps.length}</div><div class="actions" style="margin-top:9px"><button onclick='shareTrip(adventures.find(x=>x.id===${a.id}))'>💬 Share mission</button></div></div></div>${missionSetup(a)}<div style="padding:0 17px 17px">${missionRows(a)}</div></div>`}
 function collapsedTrip(a,completed=false){
  const mine=progressFor(a,meDone),theirs=progressFor(a,partnerDone);
- return `<details class="trip ${completed?'completed-row':''}"><summary><div class="summary-main"><span class="light ${completed?'red':'green'}"></span><strong>${esc(a.title)}</strong> <span class="small">— ${esc(a.zone)}</span></div><div class="summary-right">✨ ${a.stamps.length*10+25} coins • ${a.stamps.length} stops • ~${a.minutes} min • Me ${mine}/${a.stamps.length} • Partner ${theirs}/${a.stamps.length}</div></summary><div class="tripbody">${missionSetup(a)}${missionRows(a)}<div class="actions" style="margin-top:10px"><button class="primary" onclick="startAdventure(${a.id})">${completed?'📌 Re-open adventure':'📌 Pin & start'}</button><button onclick='shareTrip(adventures.find(x=>x.id===${a.id}))'>💬 Share mission</button></div></div></details>`}
+ return `<details class="trip ${completed?'completed-row':''}"><summary><div class="summary-main"><span class="light ${completed?'red':'green'}"></span><strong>${esc(a.title)}</strong> <span class="small">— ${esc(a.zone)}</span></div><div class="summary-right">🦄 1,000 Bucks • ${a.stamps.length} stops • ~${a.minutes} min • Me ${mine}/${a.stamps.length} • Partner ${theirs}/${a.stamps.length}</div></summary><div class="tripbody">${missionSetup(a)}${missionRows(a)}<div class="actions" style="margin-top:10px"><button class="primary" onclick="startAdventure(${a.id})">${completed?'📌 Re-open adventure':'📌 Pin & start'}</button><button onclick='shareTrip(adventures.find(x=>x.id===${a.id}))'>💬 Share mission</button></div></div></details>`}
 function completedFor(set){return adventures.filter(a=>personComplete(a,set)).length}
-function coinsFor(set){
-  // 10 coins per stamp + 25 bonus for each adventure completed on that passport.
-  return set.size*10 + completedFor(set)*25;
-}
-const SHOP=[
- {id:'freebie',icon:'🎁',name:'Freebie Frenzy',cost:100,desc:'Pick a store/freebie hunt and go treasure shopping.'},
- {id:'animals',icon:'🐾',name:'Animal Adventure',cost:175,desc:'Choose an animal, horse, pet or wildlife outing.'},
- {id:'alien',icon:'👽',name:'Alien Detour',cost:250,desc:'A weird sci-fi, alien or cosmic exploration mission.'},
- {id:'unicorn',icon:'🦄',name:'Unicorn Quest',cost:300,desc:'Fantasy, unicorns, enchanted forests and magical places.'},
- {id:'shopping',icon:'🛍️',name:'Shopping Spree Token',cost:500,desc:'Redeem for a shopping reward; L$ amount decided in-world.'},
- {id:'treasure',icon:'💎',name:'Mystery Treasure Chest',cost:750,desc:'A surprise reward, destination or gift chosen by the other person.'}
-];
-function earnedCoins(set){return set.size*10+completedFor(set)*25}
-function coinsFor(set,who){return Math.max(0,earnedCoins(set)-(who==='me'?meSpent:partnerSpent))}
-function redeemReward(itemId){
- const who=$('#shop-person')?.value||'partner',item=SHOP.find(x=>x.id===itemId);
- const set=who==='me'?meDone:partnerDone,available=coinsFor(set,who);
- if(!item||available<item.cost)return toast('Not enough Star Coins yet ✨');
- if(!confirm(`Redeem ${item.name} for ${item.cost} Star Coins?`))return;
- if(who==='me')meSpent+=item.cost;else partnerSpent+=item.cost;
- rewardLog.unshift({who,item:item.name,cost:item.cost,at:new Date().toISOString()});
- rewardLog=rewardLog.slice(0,20);
+function jointCompletedCount(){return adventures.filter(togetherComplete).length}
+function partnerAheadCount(){return adventures.filter(a=>personComplete(a,partnerDone)&&!personComplete(a,meDone)).length}
+function unicornEarned(){return jointCompletedCount()*1000}
+function unicornBalance(){return Math.max(0,unicornEarned()-unicornRedeemed)}
+function lindenValue(bucks){return Math.floor(bucks/10)}
+function cashOut(){
+ if(unicornBalance()<1000)return toast('Complete another adventure together first 🦄');
+ if(!confirm('Redeem 1,000 Unicorn Bucks for 100 L$?'))return;
+ unicornRedeemed+=1000;
+ payoutLog.unshift({bucks:1000,linden:100,at:new Date().toISOString()});
+ payoutLog=payoutLog.slice(0,30);
  saveAll();
- toast('Reward unlocked! '+item.icon+' '+item.name);
+ toast('🦄 1,000 Unicorn Bucks redeemed for 100 L$ — payout pending');
 }
 function rewardHtml(){
- const me=coinsFor(meDone,'me'),partner=coinsFor(partnerDone,'partner');
- const who=document.getElementById('shop-person')?.value||'partner';
- const balance=who==='me'?me:partner;
- const cards=SHOP.map(item=>`<div class="shopitem ${balance<item.cost?'locked':''}"><div class="icon">${item.icon}</div><h4>${item.name}</h4><p>${item.desc}</p><div class="price">✨ ${item.cost}</div><button ${balance<item.cost?'disabled':''} onclick="redeemReward('${item.id}')">${balance>=item.cost?'Redeem':'Keep hunting'}</button></div>`).join('');
- const recent=rewardLog.slice(0,5).map(r=>`<div class="recentline">${r.who==='partner'?'❤️ Partner':'🧭 Me'} redeemed <b>${esc(r.item)}</b> for ✨ ${r.cost}</div>`).join('')||'<div class="recentline">No rewards redeemed yet.</div>';
- return `<div class="shophead"><div><h3>🛍️ Star Coin Reward Shop</h3><div class="small">Earn coins in-world. Spend them here on fun together.</div></div>
- <div><label class="small">Shopping for </label><select id="shop-person" onchange="render()"><option value="partner" ${who==='partner'?'selected':''}>❤️ Partner — ✨ ${partner}</option><option value="me" ${who==='me'?'selected':''}>🧭 Me — ✨ ${me}</option></select></div></div>
- <div class="shopgrid">${cards}</div>
- <details class="recent"><summary>🎟️ Recent redemptions</summary>${recent}</details>
- <div class="tiny" style="margin-top:9px">Star Coins are game points only. Shopping/L$ rewards are fulfilled manually in Second Life.</div>`;
+ const earned=unicornEarned(),balance=unicornBalance(),pending=partnerAheadCount()*1000;
+ const recent=payoutLog.slice(0,5).map(r=>`<div class="recentline">🦄 Redeemed <b>${r.bucks.toLocaleString()} Bucks</b> → <b>${r.linden} L$</b></div>`).join('')||'<div class="recentline">No cash-outs yet.</div>';
+ return `<div class="bankhead"><div><h3>🦄 Unicorn Bank</h3><div class="small"><b>1 completed adventure together = 1,000 Unicorn Bucks = 100 L$</b></div></div><button class="cashout" onclick="cashOut()" ${balance<1000?'disabled':''}>💸 Redeem 1,000 → 100 L$</button></div>
+ <div class="bankgrid">
+   <div class="bankcard"><span>Available to redeem</span><strong>🦄 ${balance.toLocaleString()}</strong><span>≈ ${lindenValue(balance)} L$</span></div>
+   <div class="bankcard"><span>Earned together</span><strong>${jointCompletedCount()}</strong><span>adventures · ${earned.toLocaleString()} total Bucks</span></div>
+   <div class="bankcard"><span>Partner has waiting for you</span><strong class="pendingcash">${partnerAheadCount()}</strong><span>adventures · 🦄 ${pending.toLocaleString()} pending</span></div>
+ </div>
+ <div class="small" style="margin-top:10px">Her solo work can build a pending bounty, but it only becomes spendable after <b>both passports</b> finish that adventure.</div>
+ <details class="recent"><summary>💸 Cash-out history</summary>${recent}</details>
+ <div class="tiny" style="margin-top:8px">Campaign max: 69,000 Unicorn Bucks = 6,900 L$. Payout is recorded here but paid manually by you in Second Life.</div>`;
 }
 function render(){
  const q=$('#q').value.toLowerCase(),z=$('#zone').value;
@@ -151,7 +145,7 @@ function render(){
  const completed=adventures.filter(a=>togetherComplete(a)&&matches(a)).sort((a,b)=>a.zone.localeCompare(b.zone)||a.title.localeCompare(b.title));
  $('#completed').innerHTML=completed.map(a=>collapsedTrip(a,true)).join('')||'<div class="pinempty">No completed adventures yet.</div>';
  const completedAdventures=adventures.filter(togetherComplete).length;
- $('#scorecard').innerHTML=`<div class="score"><b>${completedAdventures}/${adventures.length}</b><span>Adventures complete</span></div><div class="score coin"><b>✨ ${coinsFor(meDone,'me')}</b><span>Me · ${meDone.size}/${allStampIds.length} stamps</span></div><div class="score coin"><b>✨ ${coinsFor(partnerDone,'partner')}</b><span>Partner · ${partnerDone.size}/${allStampIds.length} stamps</span></div>`;$('#rewards').innerHTML=rewardHtml();$('#pending-count').textContent='('+pending.length+')';$('#completed-count').textContent='('+completed.length+')';
+ $('#scorecard').innerHTML=`<div class="score"><b>${jointCompletedCount()}/${adventures.length}</b><span>Completed together</span></div><div class="score coin"><b>🦄 ${unicornBalance().toLocaleString()}</b><span>Unicorn Bucks · ≈ ${lindenValue(unicornBalance())} L$</span></div><div class="score coin"><b>⏳ ${partnerAheadCount()}</b><span>Waiting for me · 🦄 ${(partnerAheadCount()*1000).toLocaleString()}</span></div>`;$('#rewards').innerHTML=rewardHtml();$('#pending-count').textContent='('+pending.length+')';$('#completed-count').textContent='('+completed.length+')';
 }
 function init(){
  [...new Set(adventures.map(a=>a.zone))].sort().forEach(z=>$('#zone').insertAdjacentHTML('beforeend',`<option>${esc(z)}</option>`));
@@ -193,6 +187,8 @@ async function writeCloud(){
       me_spent:meSpent,
       partner_spent:partnerSpent,
       reward_log:rewardLog,
+      unicorn_redeemed:unicornRedeemed,
+      payout_log:payoutLog,
       updated_at:new Date().toISOString()
     };
     const r=await fetch(SUPA_URL+'/rest/v1/bbb_board_state?id=eq.1',{
@@ -215,6 +211,8 @@ function adoptCloud(row){
   meSpent=Number(row.me_spent||0);
   partnerSpent=Number(row.partner_spent||0);
   rewardLog=Array.isArray(row.reward_log)?row.reward_log:[];
+  unicornRedeemed=Number(row.unicorn_redeemed||0);
+  payoutLog=Array.isArray(row.payout_log)?row.payout_log:[];
   localStorage.setItem('bbb-me-spent',meSpent);
   localStorage.setItem('bbb-partner-spent',partnerSpent);
   localStorage.setItem('bbb-reward-log',JSON.stringify(rewardLog));
@@ -237,6 +235,8 @@ async function firstCloudSync(){
     meSpent=Number(row.me_spent||meSpent||0);
     partnerSpent=Number(row.partner_spent||partnerSpent||0);
     rewardLog=Array.isArray(row.reward_log)&&row.reward_log.length?row.reward_log:rewardLog;
+    unicornRedeemed=Number(row.unicorn_redeemed||unicornRedeemed||0);
+    payoutLog=Array.isArray(row.payout_log)&&row.payout_log.length?row.payout_log:payoutLog;
     render();
     await writeCloud();
     syncStatus('Synced');
