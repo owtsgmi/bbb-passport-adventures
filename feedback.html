@@ -7,7 +7,7 @@
 header{position:sticky;top:0;z-index:10;background:#100c24ee;backdrop-filter:blur(12px);border-bottom:1px solid #4a376c;padding:14px 4vw}.top{max-width:1000px;margin:auto;display:flex;gap:16px;align-items:center}.brand h1{margin:0;font-size:27px;background:linear-gradient(90deg,#ffe39a,#ff9bd7,#b99cff);-webkit-background-clip:text;color:transparent}.brand div{color:var(--muted);font-size:13px}
 button,input,select,textarea{border:1px solid #4b3b61;border-radius:12px;background:#171121;color:var(--ink);padding:10px 12px;font:inherit}button{cursor:pointer}.navwrap{position:relative}.navmenu{display:none;position:absolute;left:0;top:44px;min-width:220px;background:#171121;border:1px solid #5c4775;border-radius:14px;padding:8px;box-shadow:0 16px 36px #0008}.navwrap.open .navmenu{display:block}.navmenu a{display:block;color:var(--ink);text-decoration:none;padding:10px 12px;border-radius:10px}.navmenu a:hover{background:#2a1e3d}.navmenu .here{color:var(--gold)}
 main{max-width:1000px;margin:auto;padding:26px 4vw 60px}.hero{background:linear-gradient(135deg,#25163a,#171121);border:1px solid #6d548d;border-radius:22px;padding:22px}.hero h2{margin:0 0 6px}.hero p{color:var(--muted);line-height:1.5;margin:0}
-.grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:16px;margin-top:16px}.card{background:#151020;border:1px solid var(--line);border-radius:18px;padding:18px}.card h3{margin:0 0 12px;color:#ffe08a}.field{margin:12px 0}.field label{display:block;font-weight:800;margin-bottom:5px}.field input,.field select,.field textarea{width:100%}.field textarea{min-height:150px;resize:vertical}.primary{background:linear-gradient(135deg,#8b63e8,#c45ca8);border-color:#d7a4e8;font-weight:800}.small{font-size:12px;color:var(--muted)}#form-status{min-height:18px;margin-top:8px}.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.feedback{border-top:1px solid #342943;padding:13px 0}.feedback:first-of-type{border-top:0}.feedbackhead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.feedbackhead b{font-size:14px}.tag{font-size:10px;border:1px solid #655079;border-radius:999px;padding:3px 7px;color:#d9cde5}.message{margin-top:7px;color:#ddd2e5;white-space:pre-wrap;line-height:1.45}.meta{font-size:11px;color:var(--muted);margin-top:5px}.empty{color:var(--muted);padding:14px 0}
+.grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:16px;margin-top:16px}.card{background:#151020;border:1px solid var(--line);border-radius:18px;padding:18px}.card h3{margin:0 0 12px;color:#ffe08a}.field{margin:12px 0}.field label{display:block;font-weight:800;margin-bottom:5px}.field input,.field select,.field textarea{width:100%}.field textarea{min-height:150px;resize:vertical}.primary{background:linear-gradient(135deg,#8b63e8,#c45ca8);border-color:#d7a4e8;font-weight:800}.small{font-size:12px;color:var(--muted)}#form-status{min-height:18px;margin-top:8px}.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.curatorbar{margin-top:14px;padding:12px;border:1px solid #5f4c76;border-radius:14px;background:#171224}.curatorrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.curatorrow input{min-width:240px;flex:1}.adminbadge{display:inline-block;font-size:10px;border:1px solid #8b6bd0;border-radius:999px;padding:3px 7px;color:#d9c9ff;margin-left:6px}.adminactions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.adminactions button{padding:6px 8px;font-size:11px}.danger{border-color:#8d4250;color:#ffb6c1}.resolved{opacity:.72}.hiddenrow{opacity:.5}.feedback{border-top:1px solid #342943;padding:13px 0}.feedback:first-of-type{border-top:0}.feedbackhead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.feedbackhead b{font-size:14px}.tag{font-size:10px;border:1px solid #655079;border-radius:999px;padding:3px 7px;color:#d9cde5}.message{margin-top:7px;color:#ddd2e5;white-space:pre-wrap;line-height:1.45}.meta{font-size:11px;color:var(--muted);margin-top:5px}.empty{color:var(--muted);padding:14px 0}
 @media(max-width:780px){.grid{grid-template-columns:1fr}.brand h1{font-size:22px}.top{align-items:flex-start}}
 </style></head>
 <body>
@@ -29,7 +29,8 @@ main{max-width:1000px;margin:auto;padding:26px 4vw 60px}.hero{background:linear-
 </section>
 <section class="card">
 <h3>Recent feedback</h3>
-<div class="filters"><select id="filter"><option value="">All types</option><option value="suggestion">Suggestions</option><option value="bug">Bugs</option><option value="comment">Comments</option></select><button id="refresh" type="button">Refresh</button></div>
+<div class="filters"><select id="filter"><option value="">All types</option><option value="suggestion">Suggestions</option><option value="bug">Bugs</option><option value="comment">Comments</option></select><button id="refresh" type="button">Refresh</button><button id="curator-toggle" type="button">🔐 Curator</button></div>
+<div class="curatorbar" id="curator-panel" style="display:none"><div class="curatorrow"><input id="curator-code" type="password" autocomplete="off" placeholder="Private Curator Code"><button id="curator-unlock" type="button">Unlock</button><button id="curator-lock" type="button" style="display:none">Lock</button></div><div class="small" id="curator-status">Only the site owner should have this code.</div></div>
 <div id="feedback-list"><div class="empty">Loading…</div></div>
 </section>
 </div>
@@ -40,16 +41,65 @@ const SUPA_URL='https://tzxlrglgwzinefutledx.supabase.co';
 const SUPA_KEY='sb_publishable_s54v4rmFk_BjHoweE7mliA_w64vK6WR';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-async function loadFeedback(){
+let adminMode=false;
+let adminCode=sessionStorage.getItem('bbb-feedback-curator')||'';
+
+async function rpc(name,body){
+  const r=await fetch(SUPA_URL+'/rest/v1/rpc/'+name,{method:'POST',headers:{apikey:SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.json();
+}
+async function verifyAdmin(code){
+  const out=await rpc('feedback_admin_check',{p_code:code});
+  return out===true;
+}
+function setAdmin(on){
+  adminMode=!!on;
+  $('#curator-lock').style.display=adminMode?'inline-block':'none';
+  $('#curator-unlock').style.display=adminMode?'none':'inline-block';
+  $('#curator-code').disabled=adminMode;
+  $('#curator-status').textContent=adminMode?'Curator mode unlocked on this tab.':'Only the site owner should have this code.';
+}
+function renderRows(rows){
   const kind=$('#filter').value;
-  let url=SUPA_URL+'/rest/v1/app_feedback?select=id,display_name,kind,message,page,created_at&order=created_at.desc&limit=100';
-  if(kind)url+='&kind=eq.'+encodeURIComponent(kind);
+  if(kind)rows=rows.filter(x=>x.kind===kind);
+  $('#feedback-list').innerHTML=rows.length?rows.map(x=>{
+    const cls='feedback '+(x.status==='resolved'?'resolved ':'')+(x.status==='hidden'?'hiddenrow':'');
+    const status=x.status&&x.status!=='open'?'<span class="adminbadge">'+esc(x.status)+'</span>':'';
+    const admin=adminMode?'<div class="adminactions"><button data-edit="'+x.id+'">Edit</button><button data-status="'+x.id+'" data-to="'+(x.status==='resolved'?'open':'resolved')+'">'+(x.status==='resolved'?'Reopen':'Resolve')+'</button><button data-status="'+x.id+'" data-to="'+(x.status==='hidden'?'open':'hidden')+'">'+(x.status==='hidden'?'Unhide':'Hide')+'</button><button class="danger" data-delete="'+x.id+'">Delete</button></div>':'';
+    return '<div class="'+cls+'"><div class="feedbackhead"><div><b>'+esc(x.display_name)+'</b> <span class="tag">'+esc(x.kind)+'</span>'+status+'</div><span class="small">'+new Date(x.created_at).toLocaleString()+'</span></div><div class="message" data-message-id="'+x.id+'">'+esc(x.message)+'</div>'+(x.page?'<div class="meta">Area: '+esc(x.page)+'</div>':'')+admin+'</div>';
+  }).join(''):'<div class="empty">No feedback yet.</div>';
+
+  if(adminMode){
+    document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=async()=>{
+      const id=Number(b.dataset.edit), current=document.querySelector('[data-message-id="'+id+'"]')?.textContent||'';
+      const msg=prompt('Edit feedback message:',current); if(msg===null)return;
+      try{await rpc('curate_feedback',{p_code:adminCode,p_id:id,p_action:'edit',p_message:msg,p_status:null});loadFeedback()}catch(e){alert('Edit failed')}
+    });
+    document.querySelectorAll('[data-status]').forEach(b=>b.onclick=async()=>{
+      try{await rpc('curate_feedback',{p_code:adminCode,p_id:Number(b.dataset.status),p_action:'status',p_message:null,p_status:b.dataset.to});loadFeedback()}catch(e){alert('Update failed')}
+    });
+    document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=async()=>{
+      if(!confirm('Permanently delete this feedback?'))return;
+      try{await rpc('curate_feedback',{p_code:adminCode,p_id:Number(b.dataset.delete),p_action:'delete',p_message:null,p_status:null});loadFeedback()}catch(e){alert('Delete failed')}
+    });
+  }
+}
+async function loadFeedback(){
   try{
-    const r=await fetch(url,{headers:{apikey:SUPA_KEY}});
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    const rows=await r.json();
-    $('#feedback-list').innerHTML=rows.length?rows.map(x=>'<div class="feedback"><div class="feedbackhead"><div><b>'+esc(x.display_name)+'</b> <span class="tag">'+esc(x.kind)+'</span></div><span class="small">'+new Date(x.created_at).toLocaleString()+'</span></div><div class="message">'+esc(x.message)+'</div>'+(x.page?'<div class="meta">Area: '+esc(x.page)+'</div>':'')+'</div>').join(''):'<div class="empty">No feedback yet.</div>';
-  }catch(e){$('#feedback-list').innerHTML='<div class="empty">Could not load feedback right now.</div>'}
+    let rows;
+    if(adminMode){
+      rows=await rpc('feedback_admin_list',{p_code:adminCode});
+    }else{
+      const r=await fetch(SUPA_URL+'/rest/v1/app_feedback?select=id,display_name,kind,message,page,status,created_at,updated_at&order=created_at.desc&limit=100',{headers:{apikey:SUPA_KEY}});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      rows=await r.json();
+    }
+    renderRows(rows);
+  }catch(e){
+    if(adminMode){adminMode=false;sessionStorage.removeItem('bbb-feedback-curator');setAdmin(false)}
+    $('#feedback-list').innerHTML='<div class="empty">Could not load feedback right now.</div>';
+  }
 }
 $('#feedback-form').addEventListener('submit',async e=>{
   e.preventDefault();
@@ -59,15 +109,23 @@ $('#feedback-form').addEventListener('submit',async e=>{
   try{
     const r=await fetch(SUPA_URL+'/rest/v1/app_feedback',{method:'POST',headers:{apikey:SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(body)});
     if(!r.ok)throw new Error('HTTP '+r.status);
-    $('#message').value='';$('#page').value='';
-    $('#form-status').textContent='Thanks — feedback posted.';
-    loadFeedback();
+    $('#message').value='';$('#page').value='';$('#form-status').textContent='Thanks — feedback posted.';loadFeedback();
   }catch(e){$('#form-status').textContent='Could not post right now. Please try again.'}
 });
 $('#filter').addEventListener('change',loadFeedback);
 $('#refresh').addEventListener('click',loadFeedback);
+$('#curator-toggle').addEventListener('click',()=>{$('#curator-panel').style.display=$('#curator-panel').style.display==='none'?'block':'none'});
+$('#curator-unlock').addEventListener('click',async()=>{
+  const code=$('#curator-code').value.trim();if(!code){$('#curator-status').textContent='Enter the Curator Code.';return}
+  $('#curator-status').textContent='Checking…';
+  try{
+    if(await verifyAdmin(code)){adminCode=code;sessionStorage.setItem('bbb-feedback-curator',code);setAdmin(true);loadFeedback()}
+    else $('#curator-status').textContent='That code is not valid.';
+  }catch(e){$('#curator-status').textContent='Could not verify right now.'}
+});
+$('#curator-lock').addEventListener('click',()=>{adminMode=false;adminCode='';sessionStorage.removeItem('bbb-feedback-curator');$('#curator-code').value='';setAdmin(false);loadFeedback()});
 document.addEventListener('click',e=>{const n=$('#nav');if(n&&!n.contains(e.target))n.classList.remove('open')});
-loadFeedback();
+(async()=>{if(adminCode){try{if(await verifyAdmin(adminCode)){setAdmin(true)}else{adminCode='';sessionStorage.removeItem('bbb-feedback-curator')}}catch(e){}}loadFeedback()})();
 })();
 </script>
 </body></html>
