@@ -71,3 +71,14 @@ This file is the persistent source of truth for future edits to this project.
 - Stop catalog supports text search, area filtering, collected/needed filtering, Firestorm destination copy, and a selected-stop detail view.
 - Selecting a stop shows **10 nearby suggestions**. Nearby ranking is conservative: same-region coordinate distance first; then same broader area; it must not claim full grid-distance accuracy without reliable global region coordinates.
 - Current catalog indexes the 381 campaign stops. The user's pre-campaign Bryggen stamp is counted in the whole-passport counter but is not yet a row in the campaign stop dataset.
+
+
+## BBB live catalog refresh
+- The BBB Passport Stops page refreshes its public BBB catalog data **every time the page opens**.
+- Client calls the Supabase Edge Function `bbb-stamp-assets` with `cache: no-store` and a cache-busting query parameter.
+- Edge Function fetches the public BBB stamp catalog fresh, parses map SLURLs/coordinates and available images, and returns structured live data with `fetched_at`.
+- Existing built-in campaign stops are matched by exact region/coordinates first, then normalized name. Matching live data can refresh URLs/images.
+- Newly discovered BBB stops are added to the stop catalog as **BBB Live** entries without altering the 127 three-stop adventure/reward dataset.
+- Last successful public BBB catalog response is cached locally only as a fallback if BBB is temporarily unavailable.
+- UI shows whether the page was refreshed live, is using cached BBB data, or has fallen back to the built-in catalog.
+- Do not claim the adventure dataset itself automatically restructures when BBB changes; live BBB additions belong to the searchable stop catalog unless intentionally reconciled into adventures later.
