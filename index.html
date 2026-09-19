@@ -45,7 +45,7 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 
 <section class="section">
   <h2><span class="light green"></span>Pending Adventures</h2>
-  <div class="small" style="margin-bottom:9px">Click an adventure to open its mission sheet.</div>
+  <div class="small" style="margin-bottom:9px">Click an adventure to open its mission sheet. “Copy to Firestorm” puts a viewer SLURL on your clipboard; paste it into Firestorm chat or the location bar.</div>
   <div id="pending"></div>
 </section>
 
@@ -70,7 +70,7 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function saveAll(){localStorage.setItem('bbb-done-me',JSON.stringify([...meDone]));localStorage.setItem('bbb-done-partner',JSON.stringify([...partnerDone]));localStorage.setItem('bbb-started',JSON.stringify([...started]));render()}
 function toast(m){const n=$('#toast');n.textContent=m;n.style.display='block';setTimeout(()=>n.style.display='none',2400)}
-function copy(t){navigator.clipboard.writeText(t).then(()=>toast('Copied — paste into SL chat')).catch(()=>prompt('Copy this into SL chat:',t))}
+function copy(t,msg='Copied — paste into Firestorm'){navigator.clipboard.writeText(t).then(()=>toast(msg)).catch(()=>prompt('Copy this into Firestorm:',t))}
 function startedAdventure(a){return started.has(a.id)||a.stamps.some(s=>meDone.has(s.id)||partnerDone.has(s.id))}
 function personComplete(a,set){return a.stamps.every(s=>set.has(s.id))}
 function togetherComplete(a){return personComplete(a,meDone)&&personComplete(a,partnerDone)}
@@ -80,9 +80,10 @@ function startAdventure(id){started.add(id);lastAdventure=id;localStorage.setIte
 function toggleFor(person,id,advId){const set=person==='me'?meDone:partnerDone;set.has(id)?set.delete(id):set.add(id);started.add(advId);lastAdventure=advId;localStorage.setItem('bbb-last-adventure',advId);saveAll()}
 function surpriseUs(){const pool=adventures.filter(a=>!startedAdventure(a)&&!togetherComplete(a));if(!pool.length)return toast('No untouched adventures left.');const a=pool[Math.floor(Math.random()*pool.length)];startAdventure(a.id);toast('Pinned: '+a.title)}
 function jumpPinned(){document.getElementById('pinned')?.scrollIntoView({behavior:'smooth',block:'start'})}
-function meetHere(a,i){const s=a.stamps[i];copy(`Meet me at ${s.name} — Stop ${i+1} of ${a.stamps.length} on ${a.title}. Region: ${s.region} (${s.x}, ${s.y}, ${s.z}). ${SITE_URL}#trip-${a.id}-stop-${i+1}`)}
+function fsUrl(s){return 'secondlife://'+encodeURIComponent(s.region).replace(/%20/g,'%20')+'/'+s.x+'/'+s.y+'/'+s.z}
+function meetHere(a,i){const s=a.stamps[i];copy(`Meet me at ${s.name} — Stop ${i+1} of ${a.stamps.length} on ${a.title}. Paste/click in Firestorm: ${fsUrl(s)}`,'Meetup copied for Firestorm')}
 function shareTrip(a){const i=sharedNextIndex(a),s=a.stamps[i];copy(`Let's do ${a.title}. About ${a.minutes} minutes, best by ${a.mode}. Set your beacon to ${s.name} in ${s.region} (${s.x}, ${s.y}, ${s.z}). ${SITE_URL}#trip-${a.id}`)}
-function copyBeacon(a){const i=sharedNextIndex(a),s=a.stamps[i];copy(`Set beacon to ${s.name} — ${s.region} (${s.x}, ${s.y}, ${s.z}). This is Stop ${i+1} on ${a.title}.`)}
+function copyBeacon(a){const i=sharedNextIndex(a),s=a.stamps[i];copy(fsUrl(s),'Firestorm SLURL copied — paste into chat or the location bar')}
 function missionSetup(a){const i=sharedNextIndex(a),s=a.stamps[i];return `<div class="mission-setup"><div class="setupbox"><b>Best transportation</b>${esc(a.mode)}</div><div class="setupbox"><b>Set beacon here</b><span class="beacon">${esc(s.name)}</span><div class="small">${esc(s.region)} • ${s.x}, ${s.y}, ${s.z}</div></div><div class="actions"><button onclick='copyBeacon(adventures.find(x=>x.id===${a.id}))'>📍 Copy beacon</button><a class="sl" href="${esc(s.url)}">Open beacon</a></div></div>`}
 function missionRows(a){
  const next=sharedNextIndex(a);
