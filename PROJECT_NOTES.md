@@ -104,28 +104,47 @@ This file is the persistent source of truth for future edits to this project.
   - current limitations/boundaries
 
 
-## Feedback curation security
-- Public users may submit and read visible feedback, but cannot directly update/delete rows.
-- Owner curation is protected by a separate **Curator Code** that is intentionally different from the shared Secret Club Code.
-- Only a salted SHA-256 hash of the Curator Code is stored in the non-public `app_feedback_admin` table.
-- The raw Curator Code is never committed to GitHub or stored in Supabase.
-- Curator mode is unlocked through security-definer RPCs:
-  - `feedback_admin_check`
-  - `feedback_admin_list`
-  - `curate_feedback`
-- Curator can edit message text, mark resolved/open, hide/unhide, or permanently delete entries.
-- Hidden feedback is excluded from normal public reads but remains visible in curator mode.
-- The browser remembers curator unlock only in `sessionStorage` for the current tab/session.
-- Do not use the shared two-player Secret Club Code as the feedback Curator Code.
-
 
 ## Owner-only feedback curation
 - Public users can submit and read visible feedback, but cannot update or delete it directly.
 - Public insert is column-limited to display name, type, message, and page/area. New public submissions are forced to status `open`, not pinned, and not hidden.
 - Owner moderation uses the `feedback-admin` Supabase Edge Function.
 - Owner actions available: edit, change status (`open/planned/fixed/closed`), pin/unpin, hide/unhide, and permanent delete.
-- The feedback page exposes an **Owner tools** panel. The Owner Code is stored only in browser `sessionStorage` after unlock and clears when that browser session ends or the user presses Lock.
-- The Owner Code is **separate from the Secret Club Code** used by the two-player game.
-- Only a SHA-256 hash of the Owner Code is stored in `public.feedback_admin_config`; the plaintext Owner Code must never be committed to GitHub, displayed publicly, or placed in client JavaScript.
+- The feedback page exposes an **Owner tools** panel. The Owner Passphrase is stored only in browser `sessionStorage` after unlock and clears when that browser session ends or the user presses Lock.
+- The Owner Passphrase is **separate from the Secret Club Code** used by the two-player game.
+- Only a SHA-256 hash of the Owner Passphrase is stored in `public.feedback_admin_config`; the plaintext passphrase must never be committed to GitHub or placed in client JavaScript. The current memorable 3-word dotted passphrase is intentionally low-friction because this is low-stakes.
 - `public.feedback_admin_config` has RLS enabled and no anon/authenticated grants. Backend admin access uses Supabase server credentials inside the Edge Function.
-- If the Owner Code is ever exposed, rotate it by replacing the stored hash and giving the owner a new code.
+- If the Owner Passphrase is ever exposed, rotate it by replacing the stored hash and giving the owner a new code.
+
+
+## Public multi-user roadmap
+- Goal: evolve from the current private two-player prototype into a low-friction public multi-user app without losing the simple adventure experience.
+- Phase 1 — Identity:
+  - Add Supabase Auth using magic link / email OTP rather than traditional passwords.
+  - Add a `profiles` table keyed by `auth.users.id` with display name and optional SL name.
+- Phase 2 — Clubs/groups:
+  - Add `clubs` and `club_members` tables.
+  - A user can create or join multiple clubs.
+  - Invite via short join code or invite link; do not use the current Secret Club Code as long-term identity/auth.
+  - Roles: owner/admin/member.
+- Phase 3 — Scope game state:
+  - Replace the single global `bbb_board_state` row with club-scoped state.
+  - Adventure starts, current run, completion history, reward rules, payout history, and settings belong to a club.
+- Phase 4 — Per-user passport progress:
+  - Add normalized `user_stamp_progress` keyed by user + stamp.
+  - Each user's StaFi URL remains private to that user; only derived progress is shared with clubs as needed.
+  - Never expose raw StaFi reference URLs to other members.
+- Phase 5 — Authorization:
+  - Use RLS for all user/club tables.
+  - Users can access only their own profile/private settings and clubs where they are members.
+  - Club owner/admin capabilities should be explicit permissions, not possession of a shared secret.
+- Phase 6 — Realtime:
+  - Subscribe to club-scoped state so stamp/adventure changes appear immediately on other members' devices.
+- Phase 7 — Generalize rewards:
+  - Replace AA/KK-specific reward ownership with configurable club rules: earner(s), sponsor(s), reward amount, required participants, and payout model.
+- Phase 8 — Migration:
+  - Convert the current AA/KK installation into the first club and preserve existing completed adventures, current run, Unicorn Bucks, and payout history.
+- Phase 9 — Public hardening:
+  - Add rate limits/abuse controls to feedback, invitations, and other write endpoints.
+  - Replace temporary feedback Owner Passphrase with authenticated owner/admin roles when public launch happens.
+  - Keep the BBB public catalog global/read-only while private gameplay remains user/club scoped.
