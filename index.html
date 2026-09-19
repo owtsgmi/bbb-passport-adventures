@@ -1,7 +1,110 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BBB Passport Adventures</title><style>
-:root{--bg:#07111f;--panel:#0d1b2a;--card:#10243a;--ink:#e9f2ff;--muted:#9fb3c8;--accent:#51c8ff;--gold:#ffd166;--ok:#63d297}*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#07111f,#0a1626);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,sans-serif}header{position:sticky;top:0;z-index:5;background:#07111fee;backdrop-filter:blur(10px);border-bottom:1px solid #20354c;padding:16px 4vw}h1{margin:0;font-size:25px}.sub,.meta,.small,.hint{color:var(--muted)}.controls,.missionbar,.stats,.actions{display:flex;gap:8px;flex-wrap:wrap}.controls{margin-top:10px}input,select,button{background:#0e2238;color:var(--ink);border:1px solid #294661;border-radius:9px;padding:9px 11px}button{cursor:pointer}.primary{background:#1378a8;border-color:#3abaf0;font-weight:700}main{max-width:1180px;margin:auto;padding:20px 4vw 60px}.mission,.note{border-radius:14px;padding:13px 15px;margin-bottom:16px}.mission{background:linear-gradient(135deg,#102b45,#14213d);border:1px solid #3b6b8f}.note{background:#0c2032;border-left:3px solid var(--accent)}.mission strong,.code,.urgent{color:var(--gold);font-weight:800}.hint{font-size:13px;margin-top:6px}.missionbar{margin-top:10px}.stats{margin-bottom:16px}.pill{background:#0d1b2a;border:1px solid #20354c;border-radius:999px;padding:7px 11px}.adv{background:var(--panel);border:1px solid #20354c;border-radius:14px;margin:0 0 15px;overflow:hidden}.activeadv{box-shadow:0 0 0 2px #51c8ff55}.advhead{padding:15px 17px;display:flex;justify-content:space-between;gap:12px}.adv h2{font-size:18px;margin:0 0 5px}.route{padding:0 17px 17px;display:grid;gap:8px}.stop{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;background:var(--card);padding:10px;border-radius:10px}.nextstop{box-shadow:0 0 0 2px #ffd16677}.num{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#173653;color:var(--accent);font-weight:700}.name{font-weight:700}.detail{font-size:13px;color:var(--muted);margin-top:3px}.sl{display:inline-block;text-decoration:none;background:#12628a;color:white;padding:8px 10px;border-radius:8px;font-weight:700}.done{accent-color:var(--ok);width:19px;height:19px}.complete{opacity:.56}.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.compact .detail{display:none}.compact .stop{padding:7px 9px}#toast{display:none;position:fixed;right:18px;bottom:18px;z-index:20;background:#10243a;border:1px solid #51c8ff;border-radius:10px;padding:12px 15px;max-width:460px}@media(max-width:700px){.stop{grid-template-columns:30px 1fr}.actions{grid-column:2}.advhead{display:block}}
-</style></head><body><header><h1>🛂 BBB Passport Adventures</h1><div class="sub">Your shared Second Life expedition board — pick a run, rendezvous in-world, collect stamps together.</div><div class="controls"><select id="explorer"><option value="me">🧭 Me</option><option value="partner">❤️ Partner</option></select><button class="primary" onclick="randomAdventure()">🎲 Pick tonight's adventure</button><button onclick="copyActiveBrief()">💬 Copy team brief</button><button onclick="toggleCompact()">🗺 Compact</button><input id="q" placeholder="Search stamp, region, category…"><select id="zone"><option value="">All areas</option></select><select id="status"><option value="all">All adventures</option><option value="todo">Not finished</option><option value="done">Finished</option></select></div></header><div id="toast"></div><main><div class="mission"><strong>🚀 Expedition mode</strong>: every trip has a code such as <span class="code">A04</span>, and every stop a code such as <span class="code">A04-S3</span>. Paste those into SL IM/local chat: “Meet me at A04-S3 — I’m at the dock.”<div class="hint">The 💬 buttons copy ready-to-paste messages containing the stop code, region, coordinates, and this board URL.</div><div class="missionbar"><button class="primary" onclick="randomAdventure()">🎲 Surprise us</button><button onclick="jumpToActive()">📍 Active trip</button><button onclick="clearActive()">Clear trip</button></div></div><div class="note"><b>Best way to play:</b> teleport only to the starting area, rez the suggested craft, then travel between stops. Use <b>Me / Partner</b> for separate passport checklists. Each browser stores its own progress, which is useful because your passports are separate. Coordinate in SL with the short trip/stop codes instead of long location names.</div><div class="stats" id="stats"></div><div id="app"></div><p class="small">Public board: <span class="code">owtsgmi.github.io/bbb-passport-adventures</span></p></main><script src="data1.js"></script><script src="data2.js"></script><script src="data3.js"></script><script src="data4.js"></script><script src="data5.js"></script><script src="data6.js"></script><script src="data7.js"></script><script>
-const RAW=window.RAW;
-const adventures=RAW.map(a=>({id:a[0],title:a[1],zone:a[2],mode:a[3],minutes:a[4],stamps:a[5].map(s=>({id:s[0],name:s[1],url:s[2],region:s[3],x:s[4],y:s[5],z:s[6],retire:s[7]}))}));
-const SITE_URL='https://owtsgmi.github.io/bbb-passport-adventures/';let explorer=localStorage.getItem('bbb-explorer')||'me',activeAdventure=Number(localStorage.getItem('bbb-active-adventure')||0),compact=localStorage.getItem('bbb-compact')==='1';const key=()=>`bbb-passport-50970-done-${explorer}`;let done=new Set(JSON.parse(localStorage.getItem(key())||'[]').map(Number));const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),ac=a=>`A${String(a.id).padStart(2,'0')}`,sc=(a,i)=>`${ac(a)}-S${i+1}`;function toast(m){let n=$('#toast');n.textContent=m;n.style.display='block';setTimeout(()=>n.style.display='none',2500)}function copy(t){navigator.clipboard.writeText(t).then(()=>toast('Copied for SL chat: '+t)).catch(()=>prompt('Copy into SL chat:',t))}function save(){localStorage.setItem(key(),JSON.stringify([...done]));render()}function sw(){explorer=$('#explorer').value;localStorage.setItem('bbb-explorer',explorer);done=new Set(JSON.parse(localStorage.getItem(key())||'[]').map(Number));render()}function toggle(id){done.has(id)?done.delete(id):done.add(id);save()}function setActive(id){activeAdventure=id;localStorage.setItem('bbb-active-adventure',id);render();setTimeout(jumpToActive,20)}function clearActive(){activeAdventure=0;localStorage.removeItem('bbb-active-adventure');render()}function jumpToActive(){if(!activeAdventure)return toast('Pick an adventure first.');let e=document.getElementById('adv-'+activeAdventure);e?e.scrollIntoView({behavior:'smooth',block:'start'}):toast('Active trip is hidden by filters.')}function randomAdventure(){let p=adventures.filter(a=>!a.stamps.every(s=>done.has(s.id))),a=p[Math.floor(Math.random()*p.length)]||adventures[0];$('#q').value='';$('#zone').value='';$('#status').value='all';setActive(a.id);toast(`Tonight: ${ac(a)} — ${a.title}`)}function copyActiveBrief(){let a=adventures.find(x=>x.id===activeAdventure);if(!a)return toast('Pick an adventure first.');let i=a.stamps.findIndex(s=>!done.has(s.id));if(i<0)i=0;let s=a.stamps[i];copy(`BBB trip ${ac(a)}: ${a.title} | ~${a.minutes}m | ${a.mode} | ${a.stamps.length} stops. Meet/start ${sc(a,i)} ${s.region} ${s.x},${s.y},${s.z}. Board: ${SITE_URL}`)}function copyTrip(id){let a=adventures.find(x=>x.id===id);copy(`BBB ${ac(a)} — ${a.title} | ${a.stamps.length} stops | ~${a.minutes}m | ${a.mode}. Board: ${SITE_URL}#${ac(a)}`)}function copyStop(id,i){let a=adventures.find(x=>x.id===id),s=a.stamps[i];copy(`${sc(a,i)} — ${s.name} | ${s.region} ${s.x},${s.y},${s.z} | ${SITE_URL}#${sc(a,i)}`)}function toggleCompact(){compact=!compact;localStorage.setItem('bbb-compact',compact?'1':'0');document.body.classList.toggle('compact',compact)}function resetProgress(){if(confirm(`Clear ${explorer==='me'?'my':'partner'} progress on this browser?`)){done.clear();save()}}function render(){let q=$('#q').value.toLowerCase(),z=$('#zone').value,st=$('#status').value,shown=0,h='';for(let a of adventures){let complete=a.stamps.every(s=>done.has(s.id));if(z&&a.zone!==z||st==='done'&&!complete||st==='todo'&&complete)continue;if(q&&![a.title,a.zone,a.mode,...a.stamps.flatMap(s=>[s.name,s.region])].join(' ').toLowerCase().includes(q))continue;shown++;let ni=a.stamps.findIndex(s=>!done.has(s.id)),active=a.id===activeAdventure;h+=`<section id="adv-${a.id}" class="adv ${complete?'complete':''} ${active?'activeadv':''}"><div class="advhead"><div><h2><span class="code">${ac(a)}</span> · ${esc(a.title)}</h2><div class="meta">📍 ${esc(a.zone)} • ⏱ ~${a.minutes} min • 🚤 ${esc(a.mode)} • ${a.stamps.length} stamps</div><div class="missionbar"><button class="${active?'primary':''}" onclick="setActive(${a.id})">${active?'🚩 Active trip':'▶ Make active'}</button><button onclick="copyTrip(${a.id})">💬 Copy trip</button>${ni>=0?`<button onclick="copyStop(${a.id},${ni})">🤝 Next meetup</button>`:''}</div></div><div>${complete?'✅ COMPLETE':''}</div></div><div class="route">`;a.stamps.forEach((s,i)=>{let next=active&&i===ni;h+=`<div class="stop ${next?'nextstop':''}"><div class="num">${i+1}</div><div><div class="name"><span class="code">${sc(a,i)}</span> · ${esc(s.name)} ${next?'<span class="urgent">← NEXT</span>':''}</div><div class="detail">${esc(s.region)} • ${s.x}, ${s.y}, ${s.z}${s.retire?` • <span class="urgent">retires ${esc(s.retire)}</span>`:''}</div></div><div class="actions"><button onclick="copyStop(${a.id},${i})">💬</button><a class="sl" href="${esc(s.url)}">OPEN SLURL</a><input class="done" type="checkbox" ${done.has(s.id)?'checked':''} onchange="toggle(${s.id})"></div></div>`});h+='</div></section>'}$('#app').innerHTML=h||'<div class="note">No matching adventures.</div>';let total=new Set(adventures.flatMap(a=>a.stamps.map(s=>s.id))).size;$('#stats').innerHTML=`<span class="pill">${total} stamps loaded</span><span class="pill">${adventures.length} adventures</span><span class="pill">${explorer==='me'?'🧭 Me':'❤️ Partner'}: ${done.size} collected</span><span class="pill">${shown} shown</span><button onclick="resetProgress()">Reset ${explorer==='me'?'my':'partner'} progress</button>`}function init(){document.body.classList.toggle('compact',compact);$('#explorer').value=explorer;$('#explorer').addEventListener('change',sw);[...new Set(adventures.map(a=>a.zone))].sort().forEach(z=>$('#zone').insertAdjacentHTML('beforeend',`<option>${esc(z)}</option>`));['q','zone','status'].forEach(id=>$('#'+id).addEventListener(id==='q'?'input':'change',render));let m=location.hash.replace('#','').match(/^A(\d+)(?:-S(\d+))?$/i);if(m)activeAdventure=Number(m[1]);render();if(m)setTimeout(jumpToActive,100)}init();
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BBB Passport Adventures</title>
+<style>
+:root{--bg:#08121e;--panel:#0e1d2c;--panel2:#13283d;--ink:#eef6ff;--muted:#9fb4c8;--blue:#4fc3f7;--gold:#ffd166;--green:#5fd39b;--line:#243c54}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#07111c,#0b1827);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+header{position:sticky;top:0;z-index:10;background:#08121ef2;backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:14px 4vw}
+h1{margin:0;font-size:25px}.sub,.meta,.small{color:var(--muted)}
+.top,.filters,.actions,.stats,.tabs{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.top{margin-top:10px}.filters{margin-top:10px}
+button,input,select{border:1px solid #2b4964;border-radius:10px;background:#102439;color:var(--ink);padding:9px 11px}button{cursor:pointer}.primary{background:#137aa8;border-color:#4fc3f7;font-weight:700}.good{background:#145c45;border-color:#49b989}
+main{max-width:1120px;margin:auto;padding:20px 4vw 60px}.hero{background:linear-gradient(135deg,#102a43,#16243d);border:1px solid #3a6587;border-radius:16px;padding:16px;margin-bottom:18px}
+.hero h2{margin:0 0 5px;font-size:20px}.tabs{margin:14px 0}.tab{font-weight:700}.tab.active{background:#1d6387;border-color:#56c7f6}
+.stats{margin-bottom:16px}.pill{border:1px solid var(--line);background:#0e1d2c;border-radius:999px;padding:7px 11px}
+.section-title{margin:22px 0 10px;font-size:19px}.adv{background:var(--panel);border:1px solid var(--line);border-radius:14px;margin-bottom:14px;overflow:hidden}.adv.started{border-color:#79632e}.adv.complete{opacity:.66}
+.advhead{display:flex;justify-content:space-between;gap:14px;padding:15px 17px}.adv h3{margin:0 0 5px;font-size:18px}.badge{display:inline-block;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:800;margin-left:7px}.started-badge{background:#4b3e15;color:#ffe18b}.done-badge{background:#184b3a;color:#8ff0bd}
+.route{padding:0 17px 17px;display:grid;gap:8px}.stop{display:grid;grid-template-columns:32px 1fr auto;gap:10px;align-items:center;background:var(--panel2);border-radius:10px;padding:10px}.num{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#1a3a56;color:var(--blue);font-weight:800}.name{font-weight:700}.detail{color:var(--muted);font-size:13px;margin-top:3px}.sl{text-decoration:none;background:#12668f;color:white;padding:8px 10px;border-radius:8px;font-weight:700}
+.progress{height:7px;background:#172c3f;border-radius:999px;overflow:hidden;margin-top:8px;max-width:420px}.bar{height:100%;background:#50c89c}.next{box-shadow:0 0 0 2px #ffd16666}.urgent{color:var(--gold);font-weight:800}
+#toast{display:none;position:fixed;right:18px;bottom:18px;z-index:50;background:#10243a;border:1px solid var(--blue);border-radius:10px;padding:12px 15px;max-width:480px}
+.empty{padding:25px;text-align:center;color:var(--muted)}@media(max-width:700px){.advhead{display:block}.stop{grid-template-columns:30px 1fr}.actions{grid-column:2}.filters input{width:100%}}
+</style></head>
+<body>
+<header>
+<h1>🛂 BBB Passport Adventures</h1>
+<div class="sub">Pick a region, travel it together, and keep both passports in sync.</div>
+<div class="top">
+<select id="explorer"><option value="me">🧭 My passport</option><option value="partner">❤️ Partner's passport</option></select>
+<button class="primary" onclick="surpriseUs()">🎲 Surprise us</button>
+<button onclick="jumpContinue()">▶ Continue last adventure</button>
+</div>
+<div class="filters">
+<input id="q" placeholder="Search place or region…">
+<select id="zone"><option value="">All areas</option></select>
+</div>
+</header>
+<div id="toast"></div>
+<main>
+<div class="hero">
+<h2>Tonight's plan</h2>
+<div>Started adventures automatically stay at the top. Completed adventures are kept out of the random picker, so you don't get repeats.</div>
+<div class="small" style="margin-top:6px">For SL chat, use the <b>Meet here</b> button. It copies a normal message like “Meet me at Rodel Island — Stop 3 of 6 on Nautilus Run 1.”</div>
+</div>
+
+<div class="tabs">
+<button id="tab-continue" class="tab active" onclick="setTab('continue')">▶ Continue</button>
+<button id="tab-new" class="tab" onclick="setTab('new')">🧭 New adventures</button>
+<button id="tab-done" class="tab" onclick="setTab('done')">✅ Completed</button>
+</div>
+
+<div class="stats" id="stats"></div>
+<div id="app"></div>
+<p class="small">Shared board: owtsgmi.github.io/bbb-passport-adventures</p>
+</main>
+
+<script src="data1.js"></script><script src="data2.js"></script><script src="data3.js"></script><script src="data4.js"></script><script src="data5.js"></script><script src="data6.js"></script><script src="data7.js"></script>
+<script>
+const SITE_URL='https://owtsgmi.github.io/bbb-passport-adventures/';
+const adventures=(window.RAW||[]).map(a=>({id:a[0],title:a[1],zone:a[2],mode:a[3],minutes:a[4],stamps:a[5].map(s=>({id:s[0],name:s[1],url:s[2],region:s[3],x:s[4],y:s[5],z:s[6],retire:s[7]}))}));
+let explorer=localStorage.getItem('bbb-explorer')||'me';
+let tab=localStorage.getItem('bbb-tab')||'continue';
+let started=new Set(JSON.parse(localStorage.getItem('bbb-started')||'[]').map(Number));
+let lastAdventure=Number(localStorage.getItem('bbb-last-adventure')||0);
+const doneKey=p=>`bbb-done-${p}`;
+let meDone=new Set(JSON.parse(localStorage.getItem(doneKey('me'))||'[]').map(Number));
+let partnerDone=new Set(JSON.parse(localStorage.getItem(doneKey('partner'))||'[]').map(Number));
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function currentDone(){return explorer==='me'?meDone:partnerDone}
+function saveAll(){localStorage.setItem(doneKey('me'),JSON.stringify([...meDone]));localStorage.setItem(doneKey('partner'),JSON.stringify([...partnerDone]));localStorage.setItem('bbb-started',JSON.stringify([...started]));render()}
+function toast(m){const n=$('#toast');n.textContent=m;n.style.display='block';setTimeout(()=>n.style.display='none',2400)}
+function copy(t){navigator.clipboard.writeText(t).then(()=>toast('Copied — paste into SL chat')).catch(()=>prompt('Copy this into SL chat:',t))}
+function startedAdventure(a){return started.has(a.id)||a.stamps.some(s=>meDone.has(s.id)||partnerDone.has(s.id))}
+function personComplete(a,set){return a.stamps.every(s=>set.has(s.id))}
+function togetherComplete(a){return personComplete(a,meDone)&&personComplete(a,partnerDone)}
+function progressFor(a,set){return a.stamps.filter(s=>set.has(s.id)).length}
+function startAdventure(id){started.add(id);lastAdventure=id;localStorage.setItem('bbb-last-adventure',id);saveAll();setTab('continue');setTimeout(()=>document.getElementById('adv-'+id)?.scrollIntoView({behavior:'smooth',block:'start'}),50)}
+function toggleStamp(id,advId){const d=currentDone();d.has(id)?d.delete(id):d.add(id);started.add(advId);lastAdventure=advId;localStorage.setItem('bbb-last-adventure',advId);saveAll()}
+function setTab(t){tab=t;localStorage.setItem('bbb-tab',t);['continue','new','done'].forEach(x=>$('#tab-'+x).classList.toggle('active',x===t));render()}
+function sw(){explorer=$('#explorer').value;localStorage.setItem('bbb-explorer',explorer);render()}
+function surpriseUs(){const pool=adventures.filter(a=>!togetherComplete(a)&&!startedAdventure(a));if(!pool.length)return toast('You have started or completed every adventure!');const a=pool[Math.floor(Math.random()*pool.length)];startAdventure(a.id);toast('Tonight: '+a.title)}
+function jumpContinue(){const active=adventures.find(a=>a.id===lastAdventure&&!togetherComplete(a))||adventures.find(a=>startedAdventure(a)&&!togetherComplete(a));if(!active)return toast('Nothing in progress yet — choose a new adventure.');setTab('continue');setTimeout(()=>document.getElementById('adv-'+active.id)?.scrollIntoView({behavior:'smooth',block:'start'}),60)}
+function meetHere(a,i){const s=a.stamps[i];copy(`Meet me at ${s.name} — Stop ${i+1} of ${a.stamps.length} on ${a.title}. Region: ${s.region} (${s.x}, ${s.y}, ${s.z}). ${SITE_URL}#trip-${a.id}-stop-${i+1}`)}
+function shareTrip(a){copy(`Let's do ${a.title}: about ${a.minutes} minutes, ${a.stamps.length} stops, best by ${a.mode}. ${SITE_URL}#trip-${a.id}`)}
+function render(){
+ const q=$('#q').value.toLowerCase(),z=$('#zone').value,d=currentDone();
+ let list=adventures.filter(a=>(!z||a.zone===z)&&(!q||[a.title,a.zone,a.mode,...a.stamps.flatMap(s=>[s.name,s.region])].join(' ').toLowerCase().includes(q)));
+ if(tab==='continue') list=list.filter(a=>startedAdventure(a)&&!togetherComplete(a));
+ if(tab==='new') list=list.filter(a=>!startedAdventure(a)&&!togetherComplete(a));
+ if(tab==='done') list=list.filter(a=>togetherComplete(a));
+ list.sort((a,b)=>{if(tab==='continue'){const la=a.id===lastAdventure?1:0,lb=b.id===lastAdventure?1:0;if(la!==lb)return lb-la;return b.stamps.some(s=>d.has(s.id))-a.stamps.some(s=>d.has(s.id))}return a.zone.localeCompare(b.zone)||a.title.localeCompare(b.title)});
+ let h='';
+ for(const a of list){
+   const isStarted=startedAdventure(a),isDone=togetherComplete(a),mine=progressFor(a,d),both=Math.min(progressFor(a,meDone),progressFor(a,partnerDone));
+   let next=a.stamps.findIndex(s=>!d.has(s.id));if(next<0)next=0;
+   h+=`<section id="adv-${a.id}" class="adv ${isStarted?'started':''} ${isDone?'complete':''}"><div class="advhead"><div><h3>${esc(a.title)} ${isStarted&&!isDone?'<span class="badge started-badge">IN PROGRESS</span>':''}${isDone?'<span class="badge done-badge">COMPLETED TOGETHER</span>':''}</h3><div class="meta">📍 ${esc(a.zone)} • ⏱ about ${a.minutes} min • ${esc(a.mode)} • ${a.stamps.length} stops</div><div class="progress"><div class="bar" style="width:${Math.round((mine/a.stamps.length)*100)}%"></div></div><div class="small">${explorer==='me'?'My':'Partner'} passport: ${mine}/${a.stamps.length} • Both passports complete at ${both}/${a.stamps.length}</div><div class="actions" style="margin-top:9px"><button class="primary" onclick="startAdventure(${a.id})">${isStarted?'▶ Continue':'▶ Start adventure'}</button><button onclick='shareTrip(adventures.find(x=>x.id===${a.id}))'>💬 Share plan</button></div></div></div><div class="route">`;
+   a.stamps.forEach((s,i)=>{const checked=d.has(s.id),isNext=isStarted&&!checked&&i===next;h+=`<div id="trip-${a.id}-stop-${i+1}" class="stop ${isNext?'next':''}"><div class="num">${i+1}</div><div><div class="name">${esc(s.name)} ${isNext?'<span class="urgent">← NEXT</span>':''}</div><div class="detail">${esc(s.region)} • ${s.x}, ${s.y}, ${s.z}${s.retire?' • retires '+esc(s.retire):''}</div></div><div class="actions"><button onclick='meetHere(adventures.find(x=>x.id===${a.id}),${i})'>💬 Meet here</button><a class="sl" href="${esc(s.url)}">Open in SL</a><label><input type="checkbox" ${checked?'checked':''} onchange="toggleStamp(${s.id},${a.id})"> Done</label></div></div>`});
+   h+='</div></section>';
+ }
+ $('#app').innerHTML=h||'<div class="empty">Nothing here yet.</div>';
+ const startedCount=adventures.filter(a=>startedAdventure(a)&&!togetherComplete(a)).length,doneCount=adventures.filter(togetherComplete).length;
+ $('#stats').innerHTML=`<span class="pill">▶ ${startedCount} in progress</span><span class="pill">✅ ${doneCount} completed together</span><span class="pill">🧭 ${adventures.length-doneCount-startedCount} new</span>`;
+}
+function init(){
+ $('#explorer').value=explorer;$('#explorer').addEventListener('change',sw);
+ [...new Set(adventures.map(a=>a.zone))].sort().forEach(z=>$('#zone').insertAdjacentHTML('beforeend',`<option>${esc(z)}</option>`));
+ ['q','zone'].forEach(id=>$('#'+id).addEventListener(id==='q'?'input':'change',render));
+ setTab(tab);
+ const m=location.hash.match(/trip-(\d+)(?:-stop-(\d+))?/);if(m){lastAdventure=Number(m[1]);setTab('continue');setTimeout(()=>document.getElementById(m[2]?`trip-${m[1]}-stop-${m[2]}`:`adv-${m[1]}`)?.scrollIntoView({behavior:'smooth',block:'center'}),100)}
+}
+init();
 </script></body></html>
