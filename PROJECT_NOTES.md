@@ -102,3 +102,18 @@ This file is the persistent source of truth for future edits to this project.
   - distinction between live public BBB catalog and private StaFi progress
   - public feedback system
   - current limitations/boundaries
+
+
+## Feedback curation security
+- Public users may submit and read visible feedback, but cannot directly update/delete rows.
+- Owner curation is protected by a separate **Curator Code** that is intentionally different from the shared Secret Club Code.
+- Only a salted SHA-256 hash of the Curator Code is stored in the non-public `app_feedback_admin` table.
+- The raw Curator Code is never committed to GitHub or stored in Supabase.
+- Curator mode is unlocked through security-definer RPCs:
+  - `feedback_admin_check`
+  - `feedback_admin_list`
+  - `curate_feedback`
+- Curator can edit message text, mark resolved/open, hide/unhide, or permanently delete entries.
+- Hidden feedback is excluded from normal public reads but remains visible in curator mode.
+- The browser remembers curator unlock only in `sessionStorage` for the current tab/session.
+- Do not use the shared two-player Secret Club Code as the feedback Curator Code.
