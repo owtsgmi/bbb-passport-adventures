@@ -109,18 +109,34 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
     <section class="archcard">
       <h3>Feedback system</h3>
       <p>The <a href="feedback.html">Comments & Bugs</a> page stores public feedback in Supabase. There is no user account list yet, so people choose any display name they want.</p>
-      <p>Anyone can submit feedback, but only the site owner has the separate <b>Curator Code</b> used to edit, resolve, hide, reopen, or permanently delete entries. The Curator Code is not stored in the public site source; only a one-way hash is stored server-side.</p>
-      <p>Users should never post Secret Club Codes, Curator Codes, or private StaFi links there.</p>
+      <p>Anyone can submit feedback, but only the site owner has the separate <b>Owner Passphrase</b> used to edit, resolve, hide, reopen, or permanently delete entries. The Owner Passphrase is not stored in the public site source; only a one-way hash is stored server-side.</p>
+      <p>Users should never post Secret Club Codes, Owner Passphrases, or private StaFi links there.</p>
+    </section>
+    <section class="archcard">
+      <h3>Future public multi-user roadmap</h3>
+      <p>The public version should keep the low-friction feel while replacing shared browser state with real user identity and group-scoped data.</p>
+      <ol>
+        <li><b>Add lightweight Supabase Auth:</b> magic-link or one-time-code sign-in, with a profile/display name. No need for traditional passwords.</li>
+        <li><b>Create Clubs:</b> one user creates a club/pair/group and invites others with a simple invite link or short join code. A user can belong to more than one club.</li>
+        <li><b>Make all game state club-scoped:</b> current run, adventure history, reward rules, payouts, and settings belong to a club rather than one global row.</li>
+        <li><b>Make stamp progress user-scoped:</b> each member gets their own passport progress records. StaFi links remain private to that user; the club only needs the resulting stamp state.</li>
+        <li><b>Use RLS everywhere:</b> Supabase policies should allow users to see/change only their own profile data and clubs they actually belong to. Club owners/admins get explicit moderation permissions.</li>
+        <li><b>Add live collaboration:</b> subscribe to club state changes so adventure progress updates instantly across members' devices.</li>
+        <li><b>Generalize rewards:</b> move KK/AA-specific ownership into configurable club rules: who earns, who sponsors, reward amount, and whether everyone or selected members must complete a run.</li>
+        <li><b>Migrate this prototype:</b> preserve the existing AA/KK history by converting it into the first club, keeping completed adventures and payout records intact.</li>
+        <li><b>Harden public features:</b> rate-limit feedback/invites, add basic abuse controls, and eventually replace the temporary Owner Passphrase with authenticated owner/admin roles.</li>
+      </ol>
+      <p class="small">The shared public BBB catalog should stay global/read-only; private passport progress and club gameplay should stay isolated per user and club.</p>
     </section>
     <section class="archcard">
       <h3>Current boundaries</h3>
       <ul>
         <li>No Linden dollar transfer is performed by the app; payouts are tracking only.</li>
         <li>The public BBB mirror and the private StaFi progress system are separate.</li>
-        <li>Feedback submission is public, but curation is owner-only through a separate private Curator Code.</li>
+        <li>Feedback submission is public, but curation is owner-only through a separate private Owner Passphrase.</li>
         <li>Nearby-stop ranking is best-effort until complete grid-wide coordinates are available.</li>
         <li>The personal two-player reward model can be generalized later without changing the basic adventure engine.</li>
-        <li>Owner-only moderation is code-based rather than account-based: anyone who possesses the private Owner Code would have curator rights, so that code must remain private.</li>
+        <li>Owner-only moderation is code-based rather than account-based: anyone who possesses the private Owner Passphrase would have curator rights, so that code must remain private.</li>
       </ul>
     </section>
   </div>
