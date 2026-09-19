@@ -107,11 +107,10 @@ function pinnedHtml(a){
  return `<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>${esc(a.title)} <span class="badge">🦄 1,000 Bucks</span></h3><div class="meta">${esc(a.zone)} · about ${a.minutes} min · ${a.stamps.length} stops</div><div class="progress"><div class="bar" style="width:${Math.round((together/a.stamps.length)*100)}%"></div></div><div class="small">Together ${together}/${a.stamps.length} · You ${mine}/${a.stamps.length} · Her ${hers}/${a.stamps.length}</div></div></div>${missionSetup(a)}<div style="padding:0 17px 17px">${missionRows(a)}</div></div>`;
 }
 function collapsedTrip(a,completed=false){
- const mine=progressFor(a,meDone),hers=progressFor(a,partnerDone);
  return `<details class="trip ${completed?'completed-row':''}"><summary><div class="summary-main"><span class="light ${completed?'red':'green'}"></span><strong>${esc(a.title)}</strong> <span class="small">· ${a.stamps.length} stops · ~${a.minutes} min</span></div><div class="summary-right">🦄 1,000 Bucks</div></summary><div class="tripbody">${missionSetup(a)}${missionRows(a)}<div class="actions" style="margin-top:10px">${completed?'':`<button class="primary" onclick="startAdventure(${a.id})">Make this our adventure</button>`}</div></div></details>`;
 }
 function completedFor(set){return adventures.filter(a=>personComplete(a,set)).length}
-function jointCompletedCount(){return adventures.filter(togetherComplete).length}
+function jointOur Finished AdventuresCount(){return adventures.filter(togetherComplete).length}
 function partnerAheadCount(){return adventures.filter(a=>personComplete(a,partnerDone)&&!personComplete(a,meDone)).length}
 function unicornEarned(){return jointCompletedCount()*1000}
 function unicornBalance(){return Math.max(0,unicornEarned()-unicornRedeemed)}
