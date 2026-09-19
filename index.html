@@ -83,6 +83,11 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 const SITE_URL='https://owtsgmi.github.io/bbb-passport-adventures/';
 const adventures=(window.RAW||[]).map(a=>({id:a[0],title:a[1],zone:a[2],mode:a[3],minutes:a[4],stamps:a[5].map(s=>({id:s[0],name:s[1],url:s[2],region:s[3],x:s[4],y:s[5],z:s[6],retire:s[7]}))}));
 const allStampIds=[...new Set(adventures.flatMap(a=>a.stamps.map(s=>s.id)))];
+const TOTAL_PASSPORT_STAMPS=allStampIds.length+1; // 381 campaign stamps + 1 already collected before the campaign list
+function knownPreCampaignStamps(view){
+ const u=view==='partner'?partnerStaFiUrl:meStaFiUrl;
+ return /[?&]Ref=50970(?:&|$)/i.test(u||'')?1:0;
+}
 let started=new Set(JSON.parse(localStorage.getItem('bbb-started')||'[]').map(Number));
 let lastAdventure=Number(localStorage.getItem('bbb-last-adventure')||0);
 let meDone=new Set(JSON.parse(localStorage.getItem('bbb-done-me')||'[]').map(Number));
@@ -296,8 +301,10 @@ function render(){
  const completed=adventures.filter(a=>togetherComplete(a)&&matches(a)).sort((a,b)=>a.zone.localeCompare(b.zone)||a.title.localeCompare(b.title));
  $('#completed').innerHTML=completed.map(a=>collapsedTrip(a,true)).join('')||'<div class="pinempty">No completed adventures yet.</div>';
  const completedAdventures=adventures.filter(togetherComplete).length;
- const passportDone=currentView==='partner'?partnerDone.size:meDone.size;
- $('#scorecard').innerHTML=`<div class="score coin"><b>🦄 ${unicornBalance().toLocaleString()}</b><span>${rewardOwnerName()}'s Bucks · ${lindenValue(unicornBalance())} L$</span></div><div class="score"><b>${passportDone}/${allStampIds.length}</b><span>${currentView==='partner'?tabPartnerName:tabMeName} campaign stamps</span></div>`;
+ const campaignDone=currentView==='partner'?partnerDone.size:meDone.size;
+ const passportDone=Math.min(TOTAL_PASSPORT_STAMPS,campaignDone+knownPreCampaignStamps(currentView));
+ const toGo=Math.max(0,TOTAL_PASSPORT_STAMPS-passportDone);
+ $('#scorecard').innerHTML=`<div class="score coin"><b>🦄 ${unicornBalance().toLocaleString()}</b><span>${rewardOwnerName()}'s Bucks · ${lindenValue(unicornBalance())} L$</span></div><div class="score"><b>${passportDone}/${TOTAL_PASSPORT_STAMPS}</b><span>${currentView==='partner'?tabPartnerName:tabMeName} stamps · ${toGo} to go</span></div>`;
  const tp=document.getElementById('tab-partner'), tm=document.getElementById('tab-me');
  if(tp){tp.textContent='❤️ '+tabPartnerName;tp.classList.toggle('active',currentView==='partner')}
  if(tm){tm.textContent='🧭 '+tabMeName;tm.classList.toggle('active',currentView==='me')}
