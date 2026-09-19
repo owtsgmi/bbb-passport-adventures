@@ -9,14 +9,16 @@ header{position:sticky;top:0;z-index:10;background:#08121ef2;backdrop-filter:blu
 .scorecard{display:grid;grid-template-columns:repeat(3,minmax(110px,1fr));gap:8px;min-width:390px}.score{background:#102439;border:1px solid #2c4963;border-radius:12px;padding:9px 11px;text-align:center}.score b{display:block;font-size:18px}.score span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 .controls,.actions,.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.controls{margin-top:10px}.filters{margin-top:8px}
 button,input,select{border:1px solid #2b4964;border-radius:10px;background:#102439;color:var(--ink);padding:9px 11px}button{cursor:pointer}.primary{background:#137aa8;border-color:#4fc3f7;font-weight:700}
-main{max-width:1120px;margin:auto;padding:20px 4vw 60px}.section{margin:18px 0}.section h2{font-size:18px;margin:0 0 10px}.light{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:8px;vertical-align:0}.yellow{background:var(--gold);box-shadow:0 0 10px #ffd16688}.green{background:var(--green);box-shadow:0 0 8px #5fd39b55}.red{background:var(--red);box-shadow:0 0 8px #ef6b7355}
+main{max-width:1180px;margin:auto;padding:20px 4vw 60px}.section{margin:18px 0}.section h2{font-size:18px;margin:0 0 10px}.light{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:8px;vertical-align:0}.yellow{background:var(--gold);box-shadow:0 0 10px #ffd16688}.green{background:var(--green);box-shadow:0 0 8px #5fd39b55}.red{background:var(--red);box-shadow:0 0 8px #ef6b7355}
 .pinned{background:linear-gradient(135deg,#18281e,#1b2637);border:1px solid #7c6730;border-radius:16px;overflow:hidden;margin-bottom:20px}.pinned .advhead{padding:17px 18px}.pinempty{padding:18px;color:var(--muted);background:var(--panel);border:1px dashed #34516a;border-radius:14px}
 .advhead{display:flex;justify-content:space-between;gap:12px}.advhead h3{margin:0 0 5px;font-size:19px}.badge{font-size:12px;font-weight:800;background:#4a3d16;color:#ffe18a;padding:4px 8px;border-radius:999px;margin-left:7px}
-.route{padding:0 17px 17px;display:grid;gap:8px}.stop{display:grid;grid-template-columns:32px 1fr auto;gap:10px;align-items:center;background:var(--panel2);border-radius:10px;padding:10px}.num{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#1a3a56;color:var(--blue);font-weight:800}.name{font-weight:700}.detail{color:var(--muted);font-size:13px;margin-top:3px}.sl{text-decoration:none;background:#12668f;color:white;padding:8px 10px;border-radius:8px;font-weight:700}.next{box-shadow:0 0 0 2px #ffd16666}.urgent{color:var(--gold);font-weight:800}
 .progress{height:7px;background:#172c3f;border-radius:999px;overflow:hidden;margin-top:8px;max-width:430px}.bar{height:100%;background:#50c89c}
+.mission-setup{display:grid;grid-template-columns:1fr 1.5fr auto;gap:10px;align-items:center;background:#0d2134;border:1px solid #34516a;border-radius:11px;padding:11px 12px;margin:0 17px 12px}.setupbox b{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:3px}.beacon{color:var(--gold);font-weight:800}
 details.trip{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden}details.trip[open]{border-color:#365873}summary{list-style:none;cursor:pointer;padding:11px 14px;display:flex;justify-content:space-between;gap:12px;align-items:center}summary::-webkit-details-marker{display:none}.summary-main{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.summary-main strong{font-size:15px}.summary-right{color:var(--muted);font-size:13px;white-space:nowrap}.tripbody{border-top:1px solid var(--line);padding:12px 14px 14px}.completed-row{opacity:.67}
+.mission-table{width:100%;border-collapse:separate;border-spacing:0 6px}.mission-table th{text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:0 8px}.mission-table td{background:var(--panel2);padding:9px 8px;vertical-align:middle}.mission-table td:first-child{border-radius:9px 0 0 9px;width:44px;text-align:center;font-weight:800;color:var(--blue)}.mission-table td:last-child{border-radius:0 9px 9px 0}.mission-table .place{font-weight:700}.mission-table .where{color:var(--muted);font-size:12px;margin-top:2px}.mission-table .who{text-align:center;white-space:nowrap;width:75px}.mission-table .act{text-align:right;white-space:nowrap}.mission-table input[type=checkbox]{width:18px;height:18px;accent-color:var(--green)}
+.nextrow td{box-shadow:inset 0 0 0 1px #ffd16677}.nexttag{color:var(--gold);font-size:11px;font-weight:800;margin-left:6px}.sl{text-decoration:none;background:#12668f;color:white;padding:7px 9px;border-radius:8px;font-weight:700;display:inline-block}
 #toast{display:none;position:fixed;right:18px;bottom:18px;z-index:50;background:#10243a;border:1px solid var(--blue);border-radius:10px;padding:12px 15px;max-width:480px}
-@media(max-width:780px){.headrow{display:block}.scorecard{min-width:0;margin-top:10px;grid-template-columns:repeat(3,1fr)}.score b{font-size:15px}.advhead{display:block}.stop{grid-template-columns:30px 1fr}.actions{grid-column:2}.summary-right{display:none}}
+@media(max-width:820px){.headrow{display:block}.scorecard{min-width:0;margin-top:10px;grid-template-columns:repeat(3,1fr)}.score b{font-size:15px}.mission-setup{grid-template-columns:1fr}.summary-right{display:none}.mission-table thead{display:none}.mission-table,.mission-table tbody,.mission-table tr,.mission-table td{display:block;width:100%}.mission-table tr{margin-bottom:8px;background:var(--panel2);border-radius:10px;padding:7px}.mission-table td{background:transparent;padding:4px 6px}.mission-table td:first-child,.mission-table td:last-child{border-radius:0}.mission-table .who,.mission-table .act{text-align:left;width:auto}.mission-table .who::before{font-size:12px;color:var(--muted);margin-right:6px}.mission-table .mine::before{content:"My passport:"}.mission-table .theirs::before{content:"Partner:"}}
 </style></head>
 <body>
 <header>
@@ -25,7 +27,6 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
   <div class="scorecard" id="scorecard"></div>
 </div>
 <div class="controls">
-  <select id="explorer"><option value="me">🧭 My passport</option><option value="partner">❤️ Partner's passport</option></select>
   <button class="primary" onclick="surpriseUs()">🎲 Pick an adventure</button>
   <button onclick="jumpPinned()">📌 Pinned adventure</button>
 </div>
@@ -34,8 +35,8 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
   <select id="zone"><option value="">All areas</option></select>
 </div>
 </header>
-
 <div id="toast"></div>
+
 <main>
 <section class="section">
   <h2><span class="light yellow"></span>Pinned Adventure</h2>
@@ -44,7 +45,7 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 
 <section class="section">
   <h2><span class="light green"></span>Pending Adventures</h2>
-  <div class="small" style="margin-bottom:9px">Click any adventure to expand it.</div>
+  <div class="small" style="margin-bottom:9px">Click an adventure to open its mission sheet.</div>
   <div id="pending"></div>
 </section>
 
@@ -61,47 +62,47 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 const SITE_URL='https://owtsgmi.github.io/bbb-passport-adventures/';
 const adventures=(window.RAW||[]).map(a=>({id:a[0],title:a[1],zone:a[2],mode:a[3],minutes:a[4],stamps:a[5].map(s=>({id:s[0],name:s[1],url:s[2],region:s[3],x:s[4],y:s[5],z:s[6],retire:s[7]}))}));
 const allStampIds=[...new Set(adventures.flatMap(a=>a.stamps.map(s=>s.id)))];
-let explorer=localStorage.getItem('bbb-explorer')||'me';
 let started=new Set(JSON.parse(localStorage.getItem('bbb-started')||'[]').map(Number));
 let lastAdventure=Number(localStorage.getItem('bbb-last-adventure')||0);
-const doneKey=p=>`bbb-done-${p}`;
-let meDone=new Set(JSON.parse(localStorage.getItem(doneKey('me'))||'[]').map(Number));
-let partnerDone=new Set(JSON.parse(localStorage.getItem(doneKey('partner'))||'[]').map(Number));
+let meDone=new Set(JSON.parse(localStorage.getItem('bbb-done-me')||'[]').map(Number));
+let partnerDone=new Set(JSON.parse(localStorage.getItem('bbb-done-partner')||'[]').map(Number));
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function currentDone(){return explorer==='me'?meDone:partnerDone}
-function saveAll(){localStorage.setItem(doneKey('me'),JSON.stringify([...meDone]));localStorage.setItem(doneKey('partner'),JSON.stringify([...partnerDone]));localStorage.setItem('bbb-started',JSON.stringify([...started]));render()}
+function saveAll(){localStorage.setItem('bbb-done-me',JSON.stringify([...meDone]));localStorage.setItem('bbb-done-partner',JSON.stringify([...partnerDone]));localStorage.setItem('bbb-started',JSON.stringify([...started]));render()}
 function toast(m){const n=$('#toast');n.textContent=m;n.style.display='block';setTimeout(()=>n.style.display='none',2400)}
 function copy(t){navigator.clipboard.writeText(t).then(()=>toast('Copied — paste into SL chat')).catch(()=>prompt('Copy this into SL chat:',t))}
 function startedAdventure(a){return started.has(a.id)||a.stamps.some(s=>meDone.has(s.id)||partnerDone.has(s.id))}
 function personComplete(a,set){return a.stamps.every(s=>set.has(s.id))}
 function togetherComplete(a){return personComplete(a,meDone)&&personComplete(a,partnerDone)}
 function progressFor(a,set){return a.stamps.filter(s=>set.has(s.id)).length}
+function sharedNextIndex(a){let i=a.stamps.findIndex(s=>!(meDone.has(s.id)&&partnerDone.has(s.id)));return i<0?0:i}
 function startAdventure(id){started.add(id);lastAdventure=id;localStorage.setItem('bbb-last-adventure',id);saveAll();setTimeout(jumpPinned,40)}
-function toggleStamp(id,advId){const d=currentDone();d.has(id)?d.delete(id):d.add(id);started.add(advId);lastAdventure=advId;localStorage.setItem('bbb-last-adventure',advId);saveAll()}
-function sw(){explorer=$('#explorer').value;localStorage.setItem('bbb-explorer',explorer);render()}
+function toggleFor(person,id,advId){const set=person==='me'?meDone:partnerDone;set.has(id)?set.delete(id):set.add(id);started.add(advId);lastAdventure=advId;localStorage.setItem('bbb-last-adventure',advId);saveAll()}
 function surpriseUs(){const pool=adventures.filter(a=>!startedAdventure(a)&&!togetherComplete(a));if(!pool.length)return toast('No untouched adventures left.');const a=pool[Math.floor(Math.random()*pool.length)];startAdventure(a.id);toast('Pinned: '+a.title)}
 function jumpPinned(){document.getElementById('pinned')?.scrollIntoView({behavior:'smooth',block:'start'})}
 function meetHere(a,i){const s=a.stamps[i];copy(`Meet me at ${s.name} — Stop ${i+1} of ${a.stamps.length} on ${a.title}. Region: ${s.region} (${s.x}, ${s.y}, ${s.z}). ${SITE_URL}#trip-${a.id}-stop-${i+1}`)}
-function shareTrip(a){copy(`Let's do ${a.title}: about ${a.minutes} minutes, ${a.stamps.length} stops, best by ${a.mode}. ${SITE_URL}#trip-${a.id}`)}
-function routeHtml(a){
- const d=currentDone(),mine=progressFor(a,d),both=Math.min(progressFor(a,meDone),progressFor(a,partnerDone));
- let next=a.stamps.findIndex(s=>!d.has(s.id)); if(next<0) next=0;
- let h=`<div class="advhead"><div><h3>${esc(a.title)} <span class="badge">IN PROGRESS</span></h3><div class="meta">📍 ${esc(a.zone)} • ⏱ about ${a.minutes} min • ${esc(a.mode)} • ${a.stamps.length} stops</div><div class="progress"><div class="bar" style="width:${Math.round((mine/a.stamps.length)*100)}%"></div></div><div class="small">${explorer==='me'?'My':'Partner'} passport: ${mine}/${a.stamps.length} • Both passports at ${both}/${a.stamps.length}</div><div class="actions" style="margin-top:9px"><button onclick='shareTrip(adventures.find(x=>x.id===${a.id}))'>💬 Share plan</button></div></div></div><div class="route">`;
- a.stamps.forEach((s,i)=>{const checked=d.has(s.id),isNext=!checked&&i===next;h+=`<div id="trip-${a.id}-stop-${i+1}" class="stop ${isNext?'next':''}"><div class="num">${i+1}</div><div><div class="name">${esc(s.name)} ${isNext?'<span class="urgent">← NEXT</span>':''}</div><div class="detail">${esc(s.region)} • ${s.x}, ${s.y}, ${s.z}${s.retire?' • retires '+esc(s.retire):''}</div></div><div class="actions"><button onclick='meetHere(adventures.find(x=>x.id===${a.id}),${i})'>💬 Meet here</button><a class="sl" href="${esc(s.url)}">Open in SL</a><label><input type="checkbox" ${checked?'checked':''} onchange="toggleStamp(${s.id},${a.id})"> Done</label></div></div>`});
- return h+'</div>';
+function shareTrip(a){const i=sharedNextIndex(a),s=a.stamps[i];copy(`Let's do ${a.title}. About ${a.minutes} minutes, best by ${a.mode}. Set your beacon to ${s.name} in ${s.region} (${s.x}, ${s.y}, ${s.z}). ${SITE_URL}#trip-${a.id}`)}
+function copyBeacon(a){const i=sharedNextIndex(a),s=a.stamps[i];copy(`Set beacon to ${s.name} — ${s.region} (${s.x}, ${s.y}, ${s.z}). This is Stop ${i+1} on ${a.title}.`)}
+function missionSetup(a){const i=sharedNextIndex(a),s=a.stamps[i];return `<div class="mission-setup"><div class="setupbox"><b>Best transportation</b>${esc(a.mode)}</div><div class="setupbox"><b>Set beacon here</b><span class="beacon">${esc(s.name)}</span><div class="small">${esc(s.region)} • ${s.x}, ${s.y}, ${s.z}</div></div><div class="actions"><button onclick='copyBeacon(adventures.find(x=>x.id===${a.id}))'>📍 Copy beacon</button><a class="sl" href="${esc(s.url)}">Open beacon</a></div></div>`}
+function missionRows(a){
+ const next=sharedNextIndex(a);
+ let h=`<table class="mission-table"><thead><tr><th>#</th><th>Passport stop</th><th>Me</th><th>Partner</th><th></th></tr></thead><tbody>`;
+ a.stamps.forEach((s,i)=>{const md=meDone.has(s.id),pd=partnerDone.has(s.id),nr=i===next&&!togetherComplete(a);h+=`<tr class="${nr?'nextrow':''}" id="trip-${a.id}-stop-${i+1}"><td>${i+1}</td><td><div class="place">${esc(s.name)}${nr?'<span class="nexttag">NEXT</span>':''}</div><div class="where">${esc(s.region)} • ${s.x}, ${s.y}, ${s.z}${s.retire?' • retires '+esc(s.retire):''}</div></td><td class="who mine"><input type="checkbox" ${md?'checked':''} onchange="toggleFor('me',${s.id},${a.id})"></td><td class="who theirs"><input type="checkbox" ${pd?'checked':''} onchange="toggleFor('partner',${s.id},${a.id})"></td><td class="act"><button onclick='meetHere(adventures.find(x=>x.id===${a.id}),${i})'>💬 Meet</button> <a class="sl" href="${esc(s.url)}">Open in SL</a></td></tr>`});
+ return h+'</tbody></table>';
 }
+function pinnedHtml(a){
+ const both=Math.min(progressFor(a,meDone),progressFor(a,partnerDone));
+ return `<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>${esc(a.title)} <span class="badge">IN PROGRESS</span></h3><div class="meta">📍 ${esc(a.zone)} • ⏱ about ${a.minutes} min • ${a.stamps.length} passport stops</div><div class="progress"><div class="bar" style="width:${Math.round((both/a.stamps.length)*100)}%"></div></div><div class="small">Both passports together: ${both}/${a.stamps.length}</div><div class="actions" style="margin-top:9px"><button onclick='shareTrip(adventures.find(x=>x.id===${a.id}))'>💬 Share mission</button></div></div></div>${missionSetup(a)}<div style="padding:0 17px 17px">${missionRows(a)}</div></div>`}
 function collapsedTrip(a,completed=false){
- const mine=progressFor(a,currentDone());
- return `<details class="trip ${completed?'completed-row':''}"><summary><div class="summary-main"><span class="light ${completed?'red':'green'}"></span><strong>${esc(a.title)}</strong> <span class="small">— ${esc(a.zone)}</span></div><div class="summary-right">${a.stamps.length} stops • ~${a.minutes} min • ${mine}/${a.stamps.length}</div></summary><div class="tripbody"><div class="meta">Best by ${esc(a.mode)}.</div><div class="actions" style="margin-top:9px"><button class="primary" onclick="startAdventure(${a.id})">${completed?'Re-open adventure':'📌 Pin & start'}</button><button onclick='shareTrip(adventures.find(x=>x.id===${a.id}))'>💬 Share plan</button></div></div></details>`;
-}
+ const mine=progressFor(a,meDone),theirs=progressFor(a,partnerDone);
+ return `<details class="trip ${completed?'completed-row':''}"><summary><div class="summary-main"><span class="light ${completed?'red':'green'}"></span><strong>${esc(a.title)}</strong> <span class="small">— ${esc(a.zone)}</span></div><div class="summary-right">${a.stamps.length} stops • ~${a.minutes} min • Me ${mine}/${a.stamps.length} • Partner ${theirs}/${a.stamps.length}</div></summary><div class="tripbody">${missionSetup(a)}${missionRows(a)}<div class="actions" style="margin-top:10px"><button class="primary" onclick="startAdventure(${a.id})">${completed?'📌 Re-open adventure':'📌 Pin & start'}</button><button onclick='shareTrip(adventures.find(x=>x.id===${a.id}))'>💬 Share mission</button></div></div></details>`}
 function render(){
  const q=$('#q').value.toLowerCase(),z=$('#zone').value;
  const matches=a=>(!z||a.zone===z)&&(!q||[a.title,a.zone,a.mode,...a.stamps.flatMap(s=>[s.name,s.region])].join(' ').toLowerCase().includes(q));
  let pinned=adventures.find(a=>a.id===lastAdventure&&!togetherComplete(a));
  if(!pinned) pinned=adventures.find(a=>startedAdventure(a)&&!togetherComplete(a));
- if(pinned && lastAdventure!==pinned.id){lastAdventure=pinned.id;localStorage.setItem('bbb-last-adventure',pinned.id)}
- $('#pinned').innerHTML=pinned?'<div class="pinned" id="pinned-card">'+routeHtml(pinned)+'</div>':'<div class="pinempty">No adventure in progress. Pick one below or hit <b>Pick an adventure</b>.</div>';
+ if(pinned&&lastAdventure!==pinned.id){lastAdventure=pinned.id;localStorage.setItem('bbb-last-adventure',pinned.id)}
+ $('#pinned').innerHTML=pinned?pinnedHtml(pinned):'<div class="pinempty">No adventure in progress. Pick one below or hit <b>Pick an adventure</b>.</div>';
  const pending=adventures.filter(a=>!togetherComplete(a)&&(!pinned||a.id!==pinned.id)&&matches(a)).sort((a,b)=>a.zone.localeCompare(b.zone)||a.title.localeCompare(b.title));
  $('#pending').innerHTML=pending.map(a=>collapsedTrip(a,false)).join('')||'<div class="pinempty">No pending adventures match this filter.</div>';
  const completed=adventures.filter(a=>togetherComplete(a)&&matches(a)).sort((a,b)=>a.zone.localeCompare(b.zone)||a.title.localeCompare(b.title));
@@ -110,10 +111,9 @@ function render(){
  $('#scorecard').innerHTML=`<div class="score"><b>${completedAdventures}/${adventures.length}</b><span>Adventures</span></div><div class="score"><b>${meDone.size}/${allStampIds.length}</b><span>My passport</span></div><div class="score"><b>${partnerDone.size}/${allStampIds.length}</b><span>Partner passport</span></div>`;
 }
 function init(){
- $('#explorer').value=explorer;$('#explorer').addEventListener('change',sw);
  [...new Set(adventures.map(a=>a.zone))].sort().forEach(z=>$('#zone').insertAdjacentHTML('beforeend',`<option>${esc(z)}</option>`));
  ['q','zone'].forEach(id=>$('#'+id).addEventListener(id==='q'?'input':'change',render));
- const m=location.hash.match(/trip-(\d+)(?:-stop-(\d+))?/); if(m){lastAdventure=Number(m[1]);started.add(lastAdventure);localStorage.setItem('bbb-last-adventure',lastAdventure);localStorage.setItem('bbb-started',JSON.stringify([...started]))}
+ const m=location.hash.match(/trip-(\d+)(?:-stop-(\d+))?/);if(m){lastAdventure=Number(m[1]);started.add(lastAdventure);localStorage.setItem('bbb-last-adventure',lastAdventure);localStorage.setItem('bbb-started',JSON.stringify([...started]))}
  render();
  if(m)setTimeout(()=>document.getElementById(m[2]?`trip-${m[1]}-stop-${m[2]}`:'pinned-card')?.scrollIntoView({behavior:'smooth',block:'center'}),120);
 }
