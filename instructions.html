@@ -33,6 +33,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
 <p>Tap <b>✨ Pick an Adventure</b>. Each adventure has exactly <b>3 passport stops</b>.</p>
 <p>The current run stays pinned at the top so you can jump back to it easily while you're moving around Second Life.</p>
 <p>Use <b>Copy destination</b> or the individual Firestorm copy buttons to get each location.</p>
+<p>A zoomable Second Life map appears at the bottom of the current run and marks all three stops. Use <b>Fit</b> to frame the run or <b>World</b> to zoom out across the broader Second Life grid.</p>
 </section>
 
 <section class="card">
@@ -42,14 +43,14 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
 </section>
 
 <section class="card">
-<h3>4. Unicorn Bucks</h3>
-<p>Each jointly completed three-stop adventure earns <b>KK 500 Unicorn Bucks</b>, worth <b>51 L$</b>.</p>
-<p>AA is the sponsor/payer. KK is the reward recipient. Switching tabs does not change who owns the Bucks.</p>
+<h3>4. Unicorn Bucks + mystery L$</h3>
+<p>Each jointly completed three-stop adventure earns <b>KK 500 Unicorn Bucks</b> and reveals a random <b>20–100 L$</b> reward.</p>
+<p>The L$ amount is deliberately hidden while the run is in progress. It is generated once and revealed only after both passports finish all three stops. AA is the sponsor/payer; KK remains the reward recipient.</p>
 </section>
 
 <section class="card">
 <h3>5. Cashing out</h3>
-<p>When enough Bucks are available, KK can redeem them. The site records the payout as due until AA marks it paid.</p>
+<p>When 500 Bucks are available, KK can redeem the corresponding revealed mystery reward. The site records that exact L$ amount as due until AA marks it paid.</p>
 <p>The site does not transfer Linden dollars itself; it only tracks the promise and payment status.</p>
 </section>
 
@@ -90,7 +91,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
     <section class="archcard">
       <h3>Shared state & rewards</h3>
       <p>Supabase stores the shared current adventure, each player's campaign progress, reward redemption history, and payout state.</p>
-      <p>An adventure completes only when both players have all three stamps. The present personal setup awards KK 500 Unicorn Bucks / 51 L$ per jointly completed adventure, with AA as sponsor.</p>
+      <p>An adventure completes only when both players have all three stamps. The present personal setup awards KK 500 Unicorn Bucks plus a hidden random 20–100 L$ reward per jointly completed adventure, with AA as sponsor. The L$ value is persisted only after completion so the reveal survives syncing between devices.</p>
     </section>
     <section class="archcard">
       <h3>Private settings</h3>
@@ -101,6 +102,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
       <h3>BBB catalog mirror</h3>
       <p>The BBB Stops page checks the public BBB catalog whenever that page opens. A Supabase Edge Function fetches and parses the BBB source, returning current stop locations and available images.</p>
       <p>Matching stops refresh their public location/image information. Newly discovered stops can appear as <b>BBB Live</b> catalog entries without changing the 127 existing adventures.</p>
+      <p>Both the stop page and the current-adventure page use a shared Second Life grid-map component. It loads Linden Lab map tiles at multiple zoom levels, supports drag/zoom, and can move from local region detail to a broad world view.</p>
     </section>
     <section class="archcard">
       <h3>StaFi passport progress</h3>
