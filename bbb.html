@@ -19,13 +19,14 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
 <div class="toolbar"><input id="search" placeholder="Search stops, regions, areas…"><select id="browse"><option value="">All 20 browse groups</option></select><select id="zone"><option value="">All areas</option></select><select id="status"><option value="">All statuses</option><option value="needed">Needed</option><option value="got">Collected</option></select><button class="randomBtn" id="random-five">🎲 5 Nearby</button></div><div id="random-set"></div>
 <div class="layout"><section class="panel"><div class="panelhead"><h3>Passport stops</h3><span class="pill" id="result-count"></span></div><div class="results" id="results"></div></section><aside class="panel detail" id="detail"><div class="empty">Choose a passport stop to see its location, copy a Firestorm destination, and discover 6 nearby stops.</div></aside></div>
 <section class="mappanel" id="map-panel">
-  <div class="maphead"><div><h3>🗺 Selected Stop Map</h3><div class="small" id="map-caption">Choose any stop above to load its Second Life map.</div></div><div class="mapcontrols"><button id="map-zoom-out" style="display:none">−</button><button id="map-zoom-in" style="display:none">+</button><button id="map-reset" style="display:none">Reset</button><button id="map-open" style="display:none">Open full map</button></div></div>
-  <div id="map-empty" class="mapempty">No stop selected yet.</div><div id="map-viewport" class="mapviewport" style="display:none"><div id="map-stage" class="mapstage"><img id="map-tile" class="maptile" alt="Second Life region map"><div id="map-marker" class="mapmarker" aria-label="Selected stop"></div></div></div>
+  <div class="maphead"><div><h3>🗺 Selected Stop Map</h3><div class="small" id="map-caption">Choose any stop above. You can zoom from region detail all the way out to a broad Second Life world view.</div></div><button id="map-open" style="display:none">Open SLURL map</button></div>
+  <div id="map-empty" class="mapempty">No stop selected yet.</div>
+  <div id="bbb-map" style="display:none"></div>
 </section>
 <div class="tip"><b>Nearby logic:</b> same-region stops are ranked first by coordinate distance. After that, stops in the same broader area are preferred. This is intentionally conservative until we have reliable grid-wide map coordinates for every region.</div>
 </main>
 
-<script src="data1.js"></script><script src="data2.js"></script><script src="data3.js"></script><script src="data4.js"></script><script src="data5.js"></script><script src="data6.js"></script><script src="data7.js"></script>
+<script src="data1.js"></script><script src="data2.js"></script><script src="data3.js"></script><script src="data4.js"></script><script src="data5.js"></script><script src="data6.js"></script><script src="data7.js"></script><script src="slmap.js"></script>
 <script>
 (function(){
   function qs(s){return document.querySelector(s)}
@@ -33,7 +34,6 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
   function fsUrl(s){return 'secondlife://'+encodeURIComponent(s.region)+'/'+s.x+'/'+s.y+'/'+s.z}
   var ASSET_API='https://tzxlrglgwzinefutledx.supabase.co/functions/v1/bbb-stamp-assets';
   var stampImages=new Map();
-  var mapZoom=1,mapPanX=0,mapPanY=0,mapDrag=null;
   function normName(s){return String(s||'').toLowerCase().replace(/\b(be|na|ca|st|sl|he|sa|ga|zi)\b/g,' ').replace(/[^a-z0-9]+/g,' ').trim()}
   function proxyImage(u){return ASSET_API+'?mode=image&src='+encodeURIComponent(u)}
   function copyText(t){
@@ -111,22 +111,16 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
     document.querySelectorAll('[data-row]').forEach(function(r){r.addEventListener('click',function(){showStop(Number(r.dataset.row))})});
     document.querySelectorAll('[data-copy]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();var s=byId.get(Number(b.dataset.copy));if(s)copyText(fsUrl(s))})});
   }
+  var stopMap=null;
   function showMap(s){
     var webUrl=s.url||('https://maps.secondlife.com/secondlife/'+encodeURIComponent(s.region)+'/'+s.x+'/'+s.y+'/'+s.z);
-    qs('#map-caption').textContent=s.name+' · '+s.region+' · '+s.x+', '+s.y+', '+s.z;
-    qs('#map-open').style.display=qs('#map-zoom-in').style.display=qs('#map-zoom-out').style.display=qs('#map-reset').style.display='inline-block';
+    qs('#map-caption').textContent=s.name+' · '+s.region+' · '+s.x+', '+s.y+', '+s.z+' · use World to zoom out across SL';
+    qs('#map-open').style.display='inline-block';
     qs('#map-open').onclick=function(){window.open(webUrl,'_blank','noopener')};
-    qs('#map-empty').style.display='none';qs('#map-viewport').style.display='block';
-    qs('#map-tile').removeAttribute('src');
-    resetMap();
-    lookupRegion(s.region,function(pos){
-      if(!pos){qs('#map-caption').textContent+=' · map tile unavailable';return}
-      var gx=Math.floor(Number(pos.x)),gy=Math.floor(Number(pos.y));
-      qs('#map-tile').src='https://map.secondlife.com/map-1-'+gx+'-'+gy+'-objects.jpg';
-      var px=Math.max(0,Math.min(256,Number(s.x)))*2;
-      var py=(256-Math.max(0,Math.min(256,Number(s.y))))*2;
-      var mark=qs('#map-marker');mark.style.left=px+'px';mark.style.top=py+'px';
-    });
+    qs('#map-empty').style.display='none';
+    qs('#bbb-map').style.display='block';
+    if(!stopMap)stopMap=new SLGridMap(qs('#bbb-map'),{title:'Second Life grid · selected stop'});
+    stopMap.setLocations([{name:s.name,region:s.region,x:s.x,y:s.y,z:s.z,label:'●'}],{fit:false,level:3});
   }
   function showStop(id){
     var s=byId.get(Number(id));if(!s)return;
@@ -237,34 +231,6 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
     var u=stampImages.get(s.id);
     return u?'<img class="thumb" src="'+esc(proxyImage(u))+'" alt="">':'<div class="thumb placeholder">📍</div>';
   }
-  function applyMapTransform(){
-    var st=qs('#map-stage');if(!st)return;
-    st.style.transform='translate(calc(-50% + '+mapPanX+'px),calc(-50% + '+mapPanY+'px)) scale('+mapZoom+')';
-  }
-  function lookupRegion(region,cb){
-    var varName='slRegionPos_result_'+Math.random().toString(36).slice(2);
-    window[varName]=null;
-    var script=document.createElement('script');
-    script.src='https://cap.secondlife.com/cap/0/d661249b-2b5a-4436-966a-3d3b8d7a574f?var='+encodeURIComponent(varName)+'&sim_name='+encodeURIComponent(region);
-    script.onload=function(){
-      var r=window[varName];try{delete window[varName]}catch(e){}
-      script.remove();
-      cb(r&& !r.error?r:null);
-    };
-    script.onerror=function(){script.remove();cb(null)};
-    document.head.appendChild(script);
-  }
-  function resetMap(){mapZoom=1;mapPanX=0;mapPanY=0;applyMapTransform()}
-  function wireMap(){
-    var vp=qs('#map-viewport'),stage=qs('#map-stage');
-    qs('#map-zoom-in').onclick=function(){mapZoom=Math.min(4,mapZoom*1.35);applyMapTransform()};
-    qs('#map-zoom-out').onclick=function(){mapZoom=Math.max(.65,mapZoom/1.35);applyMapTransform()};
-    qs('#map-reset').onclick=resetMap;
-    vp.addEventListener('wheel',function(e){e.preventDefault();mapZoom=Math.max(.65,Math.min(4,mapZoom*(e.deltaY<0?1.12:.89)));applyMapTransform()},{passive:false});
-    stage.addEventListener('pointerdown',function(e){mapDrag={x:e.clientX-mapPanX,y:e.clientY-mapPanY};stage.classList.add('dragging');stage.setPointerCapture(e.pointerId)});
-    stage.addEventListener('pointermove',function(e){if(!mapDrag)return;mapPanX=e.clientX-mapDrag.x;mapPanY=e.clientY-mapDrag.y;applyMapTransform()});
-    stage.addEventListener('pointerup',function(){mapDrag=null;stage.classList.remove('dragging')});
-  }
 
   rebuildDropdowns();
 
@@ -274,7 +240,7 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
   qs('#status').addEventListener('change',renderList);
   qs('#random-five').addEventListener('click',randomFive);
   document.addEventListener('click',function(e){var n=document.getElementById('nav');if(n&&!n.contains(e.target))n.classList.remove('open')});
-  wireMap();renderList();syncLiveBBB();
+  renderList();syncLiveBBB();
   var m=location.hash.match(/stop-(\d+)/);if(m)showStop(Number(m[1]));
 })();
 </script></body></html>
