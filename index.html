@@ -53,7 +53,7 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
     </div>
     <div class="actions" style="margin-top:12px"><label class="small"><input id="set-remember-key" type="checkbox" checked> Remember Secret Club Code on this device</label></div>
     <div class="actions" style="margin-top:16px"><button class="primary" onclick="saveSettings()">💾 Save & Sync</button><button onclick="unlockPrivateSettings()">🔓 Load from Cloud</button><button onclick="copyFamilyKey()">🔑 Copy Secret Club Code</button><button onclick="testCurrentStaFi()">🔗 Open selected StaFi page</button></div>
-    <div class="settingsnote">Your tab names and BBB StaFi links are encrypted in your browser before they are sent to Supabase. The Secret Club Code is never stored in the database. If you leave it blank, one is created automatically. Use the same Secret Club Code on both devices.</div>
+    <div class="settingsnote">Your tab names and BBB StaFi links are encrypted in your browser before they are sent to Supabase. The Secret Club Code is never stored in the database. If you leave it blank, one is created automatically. Use the same Secret Club Code on both devices. Saving the StaFi link syncs the private setting; automatic stamp importing is a separate connection.</div>
   </div>
 </section>
 
@@ -297,13 +297,13 @@ function render(){
  $('#completed').innerHTML=completed.map(a=>collapsedTrip(a,true)).join('')||'<div class="pinempty">No completed adventures yet.</div>';
  const completedAdventures=adventures.filter(togetherComplete).length;
  const passportDone=currentView==='partner'?partnerDone.size:meDone.size;
- $('#scorecard').innerHTML=`<div class="score coin"><b>🦄 ${unicornBalance().toLocaleString()}</b><span>${rewardOwnerName()}'s Bucks · ${lindenValue(unicornBalance())} L$</span></div><div class="score"><b>${passportDone}/${allStampIds.length}</b><span>${currentView==='partner'?tabPartnerName:tabMeName} stamps</span></div>`;
+ $('#scorecard').innerHTML=`<div class="score coin"><b>🦄 ${unicornBalance().toLocaleString()}</b><span>${rewardOwnerName()}'s Bucks · ${lindenValue(unicornBalance())} L$</span></div><div class="score"><b>${passportDone}/${allStampIds.length}</b><span>${currentView==='partner'?tabPartnerName:tabMeName} campaign stamps</span></div>`;
  const tp=document.getElementById('tab-partner'), tm=document.getElementById('tab-me');
  if(tp){tp.textContent='❤️ '+tabPartnerName;tp.classList.toggle('active',currentView==='partner')}
  if(tm){tm.textContent='🧭 '+tabMeName;tm.classList.toggle('active',currentView==='me')}
  const linked=(partnerStaFiUrl?1:0)+(meStaFiUrl?1:0);
  const st=document.getElementById('bbb-link-status');
- if(st)st.textContent='• BBB StaFi links: '+linked+'/2'+(familyKey?' · 🔐 synced':' · 🔒 not synced');
+ if(st)st.textContent='• BBB StaFi links: '+linked+'/2'+(familyKey?' · 🔐 saved':' · 🔒 not saved')+' · stamp import pending';
  $('#rewards').innerHTML=rewardHtml();$('#pending-count').textContent='('+pending.length+')';$('#completed-count').textContent='('+completed.length+')';
 }
 function init(){
