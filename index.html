@@ -49,11 +49,11 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
       <div class="settingsfield"><label>❤️ First BBB StaFi progress page</label><input id="set-partner-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
       <div class="settingsfield"><label>🧭 Second BBB StaFi progress page</label><input id="set-me-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
       <div class="settingsfield"><label>Open on</label><select id="set-default-view"><option value="partner">First tab</option><option value="me">Second tab</option></select></div>
-      <div class="settingsfield"><label>🔐 Family Key</label><input id="set-family-key" type="password" autocomplete="new-password" placeholder="Use the same key on both devices"></div>
+      <div class="settingsfield"><label>🔐 Secret Club Code</label><input id="set-family-key" type="password" autocomplete="new-password" placeholder="Use the same key on both devices"></div>
     </div>
-    <div class="actions" style="margin-top:12px"><label class="small"><input id="set-remember-key" type="checkbox" checked> Remember Family Key on this device</label></div>
-    <div class="actions" style="margin-top:16px"><button class="primary" onclick="saveSettings()">💾 Save & Sync</button><button onclick="unlockPrivateSettings()">🔓 Load from Cloud</button><button onclick="copyFamilyKey()">🔑 Copy Family Key</button><button onclick="testCurrentStaFi()">🔗 Open selected StaFi page</button></div>
-    <div class="settingsnote">Your tab names and BBB StaFi links are encrypted in your browser before they are sent to Supabase. The Family Key is never stored in the database. If you leave it blank, one is created automatically. Use the same Family Key on both devices.</div>
+    <div class="actions" style="margin-top:12px"><label class="small"><input id="set-remember-key" type="checkbox" checked> Remember Secret Club Code on this device</label></div>
+    <div class="actions" style="margin-top:16px"><button class="primary" onclick="saveSettings()">💾 Save & Sync</button><button onclick="unlockPrivateSettings()">🔓 Load from Cloud</button><button onclick="copyFamilyKey()">🔑 Copy Secret Club Code</button><button onclick="testCurrentStaFi()">🔗 Open selected StaFi page</button></div>
+    <div class="settingsnote">Your tab names and BBB StaFi links are encrypted in your browser before they are sent to Supabase. The Secret Club Code is never stored in the database. If you leave it blank, one is created automatically. Use the same Secret Club Code on both devices.</div>
   </div>
 </section>
 
@@ -122,8 +122,8 @@ function makeFamilyKey(){
 }
 function copyFamilyKey(){
  const k=$('#set-family-key')?.value||familyKey;
- if(!k)return toast('Save settings first to create a Family Key.');
- copy(k,'Family Key copied');
+ if(!k)return toast('Save settings first to create a Secret Club Code.');
+ copy(k,'Secret Club Code copied');
 }
 async function saveSettings(){
  tabPartnerName=$('#set-partner-name').value.trim()||'K View';
@@ -194,8 +194,8 @@ function applyPrivateSettings(p){
 }
 async function unlockPrivateSettings(){
  familyKey=$('#set-family-key')?.value||familyKey;
- if(familyKey.length<8){toast('Enter your Family Key first.');return}
- try{const row=await readPrivateSettings();if(!row?.ciphertext){toast('No encrypted cloud settings saved yet.');return}const p=await decryptPrivatePayload(row,familyKey);applyPrivateSettings(p);privateSettingsUpdated=row.updated_at||'';if($('#set-remember-key')?.checked)localStorage.setItem('bbb-family-key',familyKey);else sessionStorage.setItem('bbb-family-key',familyKey);loadSettingsForm();render();toast('Private settings unlocked 🔓')}catch(e){toast('Could not unlock — check the Family Key')}
+ if(familyKey.length<8){toast('Enter your Secret Club Code first.');return}
+ try{const row=await readPrivateSettings();if(!row?.ciphertext){toast('No encrypted cloud settings saved yet.');return}const p=await decryptPrivatePayload(row,familyKey);applyPrivateSettings(p);privateSettingsUpdated=row.updated_at||'';if($('#set-remember-key')?.checked)localStorage.setItem('bbb-family-key',familyKey);else sessionStorage.setItem('bbb-family-key',familyKey);loadSettingsForm();render();toast('Private settings unlocked 🔓')}catch(e){toast('Could not unlock — check the Secret Club Code')}
 }
 async function autoLoadPrivateSettings(){
  if(!familyKey)return;
