@@ -29,7 +29,11 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 </div>
 <div class="controls">
   <button class="primary" onclick="surpriseUs()">✨ Pick the Next Adventure</button>
-  <span id="sync-status" class="small">☁ Connecting…</span><span class="small">• BBB stamp sync: awaiting StaFi link</span>
+  <span id="sync-status" class="small">☁ Connecting…</span><span class="small">• My BBB link connected · Her link pending</span>
+</div>
+<div class="viewtabs">
+  <button id="tab-partner" class="viewtab" onclick="setView('partner')">❤️ Her View</button>
+  <button id="tab-me" class="viewtab" onclick="setView('me')">🧭 My View</button>
 </div>
 <details class="filterdetails"><summary>Search & options</summary>
   <div class="filters"><input id="q" placeholder="Find an adventure…"><select id="zone"><option value="">All areas</option></select></div>
@@ -120,7 +124,7 @@ function collapsedTrip(a,completed=false){
  return `<details class="trip ${completed?'completed-row':''}"><summary><div class="summary-main"><span class="light ${completed?'red':'green'}"></span><strong>${esc(a.title)}</strong> <span class="small">· ${a.stamps.length} stops · ~${a.minutes} min</span></div><div class="summary-right">🦄 1,000 Bucks</div></summary><div class="tripbody">${missionSetup(a)}${missionRows(a)}<div class="actions" style="margin-top:10px">${completed?'':`<button class="primary" onclick="startAdventure(${a.id})">Make this our adventure</button>`}</div></div></details>`;
 }
 function completedFor(set){return adventures.filter(a=>personComplete(a,set)).length}
-function jointOur Finished AdventuresCount(){return adventures.filter(togetherComplete).length}
+function jointCompletedCount(){return adventures.filter(togetherComplete).length}
 function partnerAheadCount(){return adventures.filter(a=>personComplete(a,partnerDone)&&!personComplete(a,meDone)).length}
 function unicornEarned(){return jointCompletedCount()*1000}
 function unicornBalance(){return Math.max(0,unicornEarned()-unicornRedeemed)}
@@ -157,7 +161,7 @@ function render(){
  let pinned=adventures.find(a=>a.id===lastAdventure&&!togetherComplete(a));
  if(!pinned) pinned=adventures.find(a=>startedAdventure(a)&&!togetherComplete(a));
  if(pinned&&lastAdventure!==pinned.id){lastAdventure=pinned.id;localStorage.setItem('bbb-last-adventure',pinned.id)}
- $('#pinned').innerHTML=pinned?pinnedHtml(pinned):'<div class="pinempty">Ready for another one? Tap <b>Pick Our Next Adventure</b> above.</div>';
+ $('#pinned').innerHTML=pinned?pinnedHtml(pinned):'<div class="pinempty">Ready for another one? Tap <b>Pick the Next Adventure</b> above.</div>';
  const pending=adventures.filter(a=>!togetherComplete(a)&&(!pinned||a.id!==pinned.id)&&matches(a)).sort((a,b)=>a.zone.localeCompare(b.zone)||a.title.localeCompare(b.title));
  $('#pending').innerHTML=pending.map(a=>collapsedTrip(a,false)).join('')||'<div class="pinempty">No pending adventures match this filter.</div>';
  const completed=adventures.filter(a=>togetherComplete(a)&&matches(a)).sort((a,b)=>a.zone.localeCompare(b.zone)||a.title.localeCompare(b.title));
