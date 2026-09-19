@@ -52,8 +52,8 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
       <div class="settingsfield"><label>🔐 Family Key</label><input id="set-family-key" type="password" autocomplete="new-password" placeholder="Use the same key on both devices"></div>
     </div>
     <div class="actions" style="margin-top:12px"><label class="small"><input id="set-remember-key" type="checkbox" checked> Remember Family Key on this device</label></div>
-    <div class="actions" style="margin-top:16px"><button class="primary" onclick="saveSettings()">💾 Save & Sync</button><button onclick="unlockPrivateSettings()">🔓 Load from Cloud</button><button onclick="testCurrentStaFi()">🔗 Open selected StaFi page</button></div>
-    <div class="settingsnote">Your tab names and BBB StaFi links are encrypted in your browser before they are sent to Supabase. The Family Key is never stored in the database. Use the same Family Key on both devices.</div>
+    <div class="actions" style="margin-top:16px"><button class="primary" onclick="saveSettings()">💾 Save & Sync</button><button onclick="unlockPrivateSettings()">🔓 Load from Cloud</button><button onclick="copyFamilyKey()">🔑 Copy Family Key</button><button onclick="testCurrentStaFi()">🔗 Open selected StaFi page</button></div>
+    <div class="settingsnote">Your tab names and BBB StaFi links are encrypted in your browser before they are sent to Supabase. The Family Key is never stored in the database. If you leave it blank, one is created automatically. Use the same Family Key on both devices.</div>
   </div>
 </section>
 
@@ -105,7 +105,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 function toggleSettings(){
  const p=document.getElementById('settings-page');
  p.classList.toggle('open');
- if(p.classList.contains('open'))loadSettingsForm();
+ if(p.classList.contains('open')){loadSettingsForm(); if(familyKey)autoLoadPrivateSettings();}
 }
 function loadSettingsForm(){
  $('#set-partner-name').value=tabPartnerName;
@@ -116,23 +116,46 @@ function loadSettingsForm(){
  $('#set-family-key').value=familyKey;
  $('#set-remember-key').checked=!!localStorage.getItem('bbb-family-key');
 }
+function makeFamilyKey(){
+ const a=crypto.getRandomValues(new Uint8Array(24));
+ return bytesToB64(a).replace(/=+$/,'');
+}
+function copyFamilyKey(){
+ const k=$('#set-family-key')?.value||familyKey;
+ if(!k)return toast('Save settings first to create a Family Key.');
+ copy(k,'Family Key copied');
+}
 async function saveSettings(){
  tabPartnerName=$('#set-partner-name').value.trim()||'K View';
  tabMeName=$('#set-me-name').value.trim()||'A View';
  partnerStaFiUrl=$('#set-partner-url').value.trim();
  meStaFiUrl=$('#set-me-url').value.trim();
  defaultView=$('#set-default-view').value||'partner';
- familyKey=$('#set-family-key').value;
- if(familyKey.length<8){toast('Use a Family Key with at least 8 characters.');return}
+ familyKey=$('#set-family-key').value.trim()||familyKey||makeFamilyKey();
+ $('#set-family-key').value=familyKey;
+
+ // Always persist the visible settings locally first.
  localStorage.setItem('bbb-tab-partner-name',tabPartnerName);
  localStorage.setItem('bbb-tab-me-name',tabMeName);
  localStorage.setItem('bbb-partner-stafi-url',partnerStaFiUrl);
  localStorage.setItem('bbb-me-stafi-url',meStaFiUrl);
  localStorage.setItem('bbb-default-view',defaultView);
- if($('#set-remember-key').checked){localStorage.setItem('bbb-family-key',familyKey);sessionStorage.removeItem('bbb-family-key')}
- else{localStorage.removeItem('bbb-family-key');sessionStorage.setItem('bbb-family-key',familyKey)}
- try{await writePrivateSettings();toast('Encrypted settings synced 👽');toggleSettings()}catch(e){toast('Saved on this device, but cloud sync failed')}
+
+ if($('#set-remember-key').checked){
+   localStorage.setItem('bbb-family-key',familyKey);
+   sessionStorage.removeItem('bbb-family-key');
+ }else{
+   localStorage.removeItem('bbb-family-key');
+   sessionStorage.setItem('bbb-family-key',familyKey);
+ }
+
  render();
+ try{
+   await writePrivateSettings();
+   toast('Settings saved & encrypted in the cloud 👽');
+ }catch(e){
+   toast('Settings saved on this device; cloud sync will retry later');
+ }
 }
 function bytesToB64(bytes){let bin='';bytes.forEach(b=>bin+=String.fromCharCode(b));return btoa(bin)}
 function b64ToBytes(s){const bin=atob(s);return Uint8Array.from(bin,c=>c.charCodeAt(0))}
@@ -279,7 +302,7 @@ function render(){
  if(tm){tm.textContent='🧭 '+tabMeName;tm.classList.toggle('active',currentView==='me')}
  const linked=(partnerStaFiUrl?1:0)+(meStaFiUrl?1:0);
  const st=document.getElementById('bbb-link-status');
- if(st)st.textContent='• BBB StaFi links: '+linked+'/2'+(familyKey?' · 🔐 encrypted':' · 🔒 locked');
+ if(st)st.textContent='• BBB StaFi links: '+linked+'/2'+(familyKey?' · 🔐 synced':' · 🔒 not synced');
  $('#rewards').innerHTML=rewardHtml();$('#pending-count').textContent='('+pending.length+')';$('#completed-count').textContent='('+completed.length+')';
 }
 function init(){
