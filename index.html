@@ -6,7 +6,7 @@
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 15% 0%,#24164a 0,#100d23 28%,#090816 70%);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,sans-serif}body:before{content:"";position:fixed;inset:0;pointer-events:none;background-image:radial-gradient(circle,#ffffff22 1px,transparent 1px);background-size:34px 34px;opacity:.2}
 header{position:sticky;top:0;z-index:10;background:#100c24ee;backdrop-filter:blur(12px);border-bottom:1px solid #4a376c;padding:14px 4vw;box-shadow:0 8px 30px #0005}
 .headrow{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.brand h1{margin:0;font-size:28px;background:linear-gradient(90deg,#ffd166,#ff89d2,#9d7bff,#69d8ff);-webkit-background-clip:text;color:transparent}.brand .coinhunt{font-weight:900;letter-spacing:.06em;font-size:12px;color:#ffd166;margin-top:3px}.sub,.meta,.small{color:var(--muted)}
-.scorecard{display:grid;grid-template-columns:repeat(3,minmax(150px,1fr));gap:8px;min-width:500px}.score{background:linear-gradient(180deg,#1c1534,#120f24);border:1px solid #4a376c;border-radius:14px;padding:10px 11px;text-align:center;box-shadow:inset 0 0 18px #9d7bff0c}.score b{display:block;font-size:18px}.coin{border-color:#8b6d2a;background:linear-gradient(180deg,#382a12,#1a1423)}.coin b{color:#ffd166;text-shadow:0 0 14px #ffd16677}.rewardbox{background:linear-gradient(135deg,#2b1644,#191733 55%,#3b2b12);border:1px solid #7d5fb2;border-radius:18px;padding:16px 18px;margin:16px 0;box-shadow:0 0 28px #9d7bff22}.rewardbox h3{margin:0 0 7px;font-size:21px;color:#ffd166}.bankhead{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap}.bankgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.bankcard{background:#120e24;border:1px solid #554272;border-radius:14px;padding:14px}.bankcard strong{display:block;font-size:27px;color:#ffd166}.bankcard span{font-size:12px;color:var(--muted)}.payoutdue{background:linear-gradient(135deg,#3a171f,#28142f);border:1px solid #ff7f98;border-radius:14px;padding:12px 14px;margin-top:12px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.payoutdue strong{font-size:20px;color:#ffb2c1}.cashout{background:linear-gradient(135deg,#6d4bd8,#a743bd);border-color:#cf9cff;font-weight:800}.pendingcash{color:#f7c3e9}.recent{margin-top:10px;padding-top:10px;border-top:1px solid #47385f}.recentline{font-size:12px;color:var(--muted);padding:3px 0}.compactdetails{background:#100d21;border:1px solid #332a4c;border-radius:14px;margin:14px 0}.compactdetails>summary{font-weight:800;font-size:16px}.compactdetails>.inside{padding:0 14px 14px}.filterdetails{margin-top:8px}.filterdetails summary{color:var(--muted);font-size:13px;padding:5px 0}.filterdetails[open] summary{color:#fff}.tiny{font-size:11px;color:var(--muted)}.coinhero{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:12px 0}.coinpot{flex:1;min-width:220px;background:#120e24;border:1px solid #5f4e91;border-radius:14px;padding:12px 14px}.coinpot strong{font-size:25px;color:#ffd166}.coinpot .nextreward{margin-top:5px;color:#f8c6ef}.coinvalue{display:inline-block;background:#3a2a10;border:1px solid #8b6d2a;color:#ffe49a;border-radius:999px;padding:3px 8px;font-weight:800;font-size:12px;margin-left:7px}.milestones{display:flex;gap:8px;flex-wrap:wrap}.milestone{border:1px solid #54486c;background:#120e24;border-radius:999px;padding:7px 10px;font-size:13px}.milestone.on{border-color:#ff8dd5;background:#30183a;box-shadow:0 0 12px #ff78c833}.sparkle{color:#ffd166}.score span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.scorecard{display:flex;gap:10px;align-items:center;min-width:0}.score{background:linear-gradient(180deg,#1c1534,#120f24);border:1px solid #4a376c;border-radius:999px;padding:9px 14px;text-align:center}.score b{display:inline;font-size:18px;margin-right:5px}.coin{border-color:#8b6d2a;background:linear-gradient(180deg,#382a12,#1a1423)}.coin b{color:#ffd166;text-shadow:0 0 14px #ffd16677}.rewardbox{background:linear-gradient(135deg,#2b1644,#191733 55%,#3b2b12);border:1px solid #7d5fb2;border-radius:18px;padding:16px 18px;margin:16px 0;box-shadow:0 0 28px #9d7bff22}.rewardbox h3{margin:0 0 7px;font-size:21px;color:#ffd166}.bankhead{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap}.bankgrid{display:block;margin-top:10px}.bankcard{background:#120e24;border:1px solid #554272;border-radius:14px;padding:14px}.bankcard strong{display:block;font-size:27px;color:#ffd166}.bankcard span{font-size:12px;color:var(--muted)}.payoutdue{background:linear-gradient(135deg,#3a171f,#28142f);border:1px solid #ff7f98;border-radius:14px;padding:12px 14px;margin-top:12px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.payoutdue strong{font-size:20px;color:#ffb2c1}.cashout{background:linear-gradient(135deg,#6d4bd8,#a743bd);border-color:#cf9cff;font-weight:800}.pendingcash{color:#f7c3e9}.recent{margin-top:10px;padding-top:10px;border-top:1px solid #47385f}.recentline{font-size:12px;color:var(--muted);padding:3px 0}.compactdetails{background:#100d21;border:1px solid #332a4c;border-radius:14px;margin:14px 0}.compactdetails>summary{font-weight:800;font-size:16px}.compactdetails>.inside{padding:0 14px 14px}.filterdetails{margin-top:8px}.filterdetails summary{color:var(--muted);font-size:13px;padding:5px 0}.filterdetails[open] summary{color:#fff}.tiny{font-size:11px;color:var(--muted)}.coinhero{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:12px 0}.coinpot{flex:1;min-width:220px;background:#120e24;border:1px solid #5f4e91;border-radius:14px;padding:12px 14px}.coinpot strong{font-size:25px;color:#ffd166}.coinpot .nextreward{margin-top:5px;color:#f8c6ef}.coinvalue{display:inline-block;background:#3a2a10;border:1px solid #8b6d2a;color:#ffe49a;border-radius:999px;padding:3px 8px;font-weight:800;font-size:12px;margin-left:7px}.milestones{display:flex;gap:8px;flex-wrap:wrap}.milestone{border:1px solid #54486c;background:#120e24;border-radius:999px;padding:7px 10px;font-size:13px}.milestone.on{border-color:#ff8dd5;background:#30183a;box-shadow:0 0 12px #ff78c833}.sparkle{color:#ffd166}.score span{font-size:12px;color:var(--muted)}
 .controls,.actions,.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.controls{margin-top:10px}.filters{margin-top:8px}
 button,input,select{border:1px solid #4a376c;border-radius:10px;background:#17112d;color:var(--ink);padding:9px 11px}button{cursor:pointer;transition:.15s transform,.15s border-color}button:hover{transform:translateY(-1px);border-color:#9d7bff}.primary{background:linear-gradient(135deg,#7f55ff,#b84dd8);border-color:#c693ff;font-weight:800}
 main{max-width:1180px;margin:auto;padding:20px 4vw 60px}.section{margin:18px 0}.section h2{font-size:18px;margin:0 0 10px}.light{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:8px;vertical-align:0}.yellow{background:var(--gold);box-shadow:0 0 10px #ffd16688}.green{background:var(--green);box-shadow:0 0 8px #5fd39b55}.red{background:var(--red);box-shadow:0 0 8px #ef6b7355}
@@ -18,34 +18,34 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 .mission-table{width:100%;border-collapse:separate;border-spacing:0 6px}.mission-table th{text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:0 8px}.mission-table td{background:linear-gradient(90deg,#1b1632,#211941);padding:9px 8px;vertical-align:middle}.mission-table td:first-child{border-radius:9px 0 0 9px;width:44px;text-align:center;font-weight:800;color:var(--blue)}.mission-table td:last-child{border-radius:0 9px 9px 0}.mission-table .place{font-weight:700}.mission-table .where{color:var(--muted);font-size:12px;margin-top:2px}.mission-table .who{text-align:center;white-space:nowrap;width:75px}.mission-table .act{text-align:right;white-space:nowrap}.mission-table input[type=checkbox]{width:18px;height:18px;accent-color:var(--green)}
 .nextrow td{box-shadow:inset 0 0 0 1px #ffd16677}.nexttag{color:var(--gold);font-size:11px;font-weight:800;margin-left:6px}.sl{text-decoration:none;background:#12668f;color:white;padding:7px 9px;border-radius:8px;font-weight:700;display:inline-block}
 #toast{display:none;position:fixed;right:18px;bottom:18px;z-index:50;background:#10243a;border:1px solid var(--blue);border-radius:10px;padding:12px 15px;max-width:480px}
-@media(max-width:820px){.headrow{display:block}.scorecard{min-width:0;margin-top:10px;grid-template-columns:1fr}.bankgrid{grid-template-columns:1fr}.score b{font-size:15px}.mission-setup{grid-template-columns:1fr}.summary-right{display:none}.mission-table thead{display:none}.mission-table,.mission-table tbody,.mission-table tr,.mission-table td{display:block;width:100%}.mission-table tr{margin-bottom:8px;background:var(--panel2);border-radius:10px;padding:7px}.mission-table td{background:transparent;padding:4px 6px}.mission-table td:first-child,.mission-table td:last-child{border-radius:0}.mission-table .who,.mission-table .act{text-align:left;width:auto}.mission-table .who::before{font-size:12px;color:var(--muted);margin-right:6px}.mission-table .mine::before{content:"My passport:"}.mission-table .theirs::before{content:"Partner:"}}
+@media(max-width:820px){.headrow{display:block}.scorecard{min-width:0;margin-top:10px;display:flex;flex-wrap:wrap}.bankgrid{display:block.score b{font-size:15px}.mission-setup{grid-template-columns:1fr}.summary-right{display:none}.mission-table thead{display:none}.mission-table,.mission-table tbody,.mission-table tr,.mission-table td{display:block;width:100%}.mission-table tr{margin-bottom:8px;background:var(--panel2);border-radius:10px;padding:7px}.mission-table td{background:transparent;padding:4px 6px}.mission-table td:first-child,.mission-table td:last-child{border-radius:0}.mission-table .who,.mission-table .act{text-align:left;width:auto}.mission-table .who::before{font-size:12px;color:var(--muted);margin-right:6px}.mission-table .mine::before{content:"My passport:"}.mission-table .theirs::before{content:"Partner:"}}
 @media(max-width:520px){.bankgrid{grid-template-columns:1fr}.brand h1{font-size:23px}}
 </style></head>
 <body>
 <header>
 <div class="headrow">
-  <div class="brand"><h1>🦄 BBB Unicorn Buck Adventures</h1><div class="coinhunt">EXPLORE • COMPLETE TOGETHER • CASH OUT</div><div class="sub">Every completed adventure funds the next shopping spree.</div></div>
+  <div class="brand"><h1>🦄 Unicorn Adventures</h1><div class="sub">Find stamps together. Earn shopping money.</div></div>
   <div class="scorecard" id="scorecard"></div>
 </div>
 <div class="controls">
-  <button class="primary" onclick="surpriseUs()">🦄 Pick a 1,000 Buck Mission</button>
+  <button class="primary" onclick="surpriseUs()">✨ Pick Our Next Adventure</button>
   <span id="sync-status" class="small">☁ Connecting…</span>
 </div>
-<details class="filterdetails"><summary>🔎 Find a specific adventure</summary>
-  <div class="filters"><input id="q" placeholder="Search place or region…"><select id="zone"><option value="">All areas</option></select></div>
+<details class="filterdetails"><summary>More options</summary>
+  <div class="filters"><input id="q" placeholder="Find an adventure…"><select id="zone"><option value="">All areas</option></select></div>
 </details>
 </header>
 <div id="toast"></div>
 
 <main>
 <section class="section">
-  <h2><span class="light yellow"></span>Current Mission</h2>
+  <h2>✨ Our Adventure</h2>
   <div id="pinned"></div>
 </section>
 
 <div class="rewardbox" id="rewards"></div>
 
-<details class="compactdetails" open>
+<details class="compactdetails">
   <summary><span class="light green"></span>More Adventures <span class="small" id="pending-count"></span></summary>
   <div class="inside"><div id="pending"></div></div>
 </details>
@@ -130,17 +130,13 @@ function markPaid(){
  toast('💖 Payout marked paid');
 }
 function rewardHtml(){
- const earned=unicornEarned(),balance=unicornBalance(),pending=partnerAheadCount()*1000;
- const recent=payoutLog.slice(0,5).map(r=>`<div class="recentline">${r.paid?'✅':'💸'} Redeemed <b>${r.bucks.toLocaleString()} Bucks</b> → <b>${r.linden} L$</b> ${r.paid?'· paid':'· payout due'}</div>`).join('')||'<div class="recentline">No cash-outs yet.</div>'; const due=unpaidLinden();
- return `<div class="bankhead"><div><h3>🦄 Unicorn Bank</h3><div class="small"><b>1 completed adventure together = 1,000 Unicorn Bucks = 100 L$</b></div></div><button class="cashout" onclick="cashOut()" ${balance<1000?'disabled':''}>💸 Redeem 1,000 → 100 L$</button></div>
- <div class="bankgrid">
-   <div class="bankcard"><span>Available to redeem</span><strong>🦄 ${balance.toLocaleString()}</strong><span>≈ ${lindenValue(balance)} L$</span></div>
-   <div class="bankcard"><span>Earned together</span><strong>${jointCompletedCount()}</strong><span>adventures · ${earned.toLocaleString()} total Bucks</span></div>
-   <div class="bankcard"><span>Partner has waiting for you</span><strong class="pendingcash">${partnerAheadCount()}</strong><span>adventures · 🦄 ${pending.toLocaleString()} pending</span></div>
- </div>
- <div class="small" style="margin-top:10px">Her solo work can build a pending bounty, but it only becomes spendable after <b>both passports</b> finish that adventure.</div>${due?`<div class="payoutdue"><div><span class="small">YOUR TO-DO</span><br><strong>💸 Payout due: ${due} L$</strong><div class="small">She already redeemed it. No asking required. ❤️</div></div><button onclick="markPaid()">✅ Mark paid</button></div>`:''}
- <details class="recent"><summary>💸 Cash-out history</summary>${recent}</details>
- <div class="tiny" style="margin-top:8px">Campaign max: 69,000 Unicorn Bucks = 6,900 L$. Payout is recorded here but paid manually by you in Second Life.</div>`;
+ const balance=unicornBalance(),pending=partnerAheadCount()*1000,due=unpaidLinden();
+ const recent=payoutLog.slice(0,5).map(r=>`<div class="recentline">${r.paid?'✅':'💸'} ${r.linden} L$ ${r.paid?'paid':'waiting to be paid'}</div>`).join('')||'<div class="recentline">No cash-outs yet.</div>';
+ return `<div class="bankhead"><div><h3>🦄 Unicorn Bucks</h3><div class="small">Finish an adventure together → <b>1,000 Bucks → 100 L$</b></div></div></div>
+ <div class="bankgrid"><div class="bankcard"><span>Ready to spend</span><strong>🦄 ${balance.toLocaleString()}</strong><span>Worth <b>${lindenValue(balance)} L$</b></span><div style="margin-top:10px"><button class="cashout" onclick="cashOut()" ${balance<1000?'disabled':''}>💸 Cash out 1,000 for 100 L$</button></div></div></div>
+ ${pending?`<div class="small" style="margin-top:10px">⏳ ${pending/1000} finished adventure${pending===1000?'':'s'} waiting for you to catch up.</div>`:''}
+ ${due?`<div class="payoutdue"><div><strong>💸 You owe her ${due} L$</strong><div class="small">She already cashed out. ❤️</div></div><button onclick="markPaid()">✅ Paid</button></div>`:''}
+ <details class="recent"><summary>History</summary>${recent}</details>`;
 }
 function render(){
  const q=$('#q').value.toLowerCase(),z=$('#zone').value;
@@ -148,13 +144,13 @@ function render(){
  let pinned=adventures.find(a=>a.id===lastAdventure&&!togetherComplete(a));
  if(!pinned) pinned=adventures.find(a=>startedAdventure(a)&&!togetherComplete(a));
  if(pinned&&lastAdventure!==pinned.id){lastAdventure=pinned.id;localStorage.setItem('bbb-last-adventure',pinned.id)}
- $('#pinned').innerHTML=pinned?pinnedHtml(pinned):'<div class="pinempty">No adventure in progress. Pick one below or hit <b>Pick an adventure</b>.</div>';
+ $('#pinned').innerHTML=pinned?pinnedHtml(pinned):'<div class="pinempty">Ready for another one? Tap <b>Pick Our Next Adventure</b> above.</div>';
  const pending=adventures.filter(a=>!togetherComplete(a)&&(!pinned||a.id!==pinned.id)&&matches(a)).sort((a,b)=>a.zone.localeCompare(b.zone)||a.title.localeCompare(b.title));
  $('#pending').innerHTML=pending.map(a=>collapsedTrip(a,false)).join('')||'<div class="pinempty">No pending adventures match this filter.</div>';
  const completed=adventures.filter(a=>togetherComplete(a)&&matches(a)).sort((a,b)=>a.zone.localeCompare(b.zone)||a.title.localeCompare(b.title));
  $('#completed').innerHTML=completed.map(a=>collapsedTrip(a,true)).join('')||'<div class="pinempty">No completed adventures yet.</div>';
  const completedAdventures=adventures.filter(togetherComplete).length;
- $('#scorecard').innerHTML=`<div class="score"><b>${jointCompletedCount()}/${adventures.length}</b><span>Completed together</span></div><div class="score coin"><b>🦄 ${unicornBalance().toLocaleString()}</b><span>Unicorn Bucks · ≈ ${lindenValue(unicornBalance())} L$</span></div><div class="score coin"><b>⏳ ${partnerAheadCount()}</b><span>Waiting for me · 🦄 ${(partnerAheadCount()*1000).toLocaleString()}</span></div>`;$('#rewards').innerHTML=rewardHtml();$('#pending-count').textContent='('+pending.length+')';$('#completed-count').textContent='('+completed.length+')';
+ $('#scorecard').innerHTML=`<div class="score coin"><b>🦄 ${unicornBalance().toLocaleString()}</b><span>Bucks · ${lindenValue(unicornBalance())} L$</span></div><div class="score"><b>${jointCompletedCount()}/${adventures.length}</b><span>finished</span></div>`;$('#rewards').innerHTML=rewardHtml();$('#pending-count').textContent='('+pending.length+')';$('#completed-count').textContent='('+completed.length+')';
 }
 function init(){
  [...new Set(adventures.map(a=>a.zone))].sort().forEach(z=>$('#zone').insertAdjacentHTML('beforeend',`<option>${esc(z)}</option>`));
