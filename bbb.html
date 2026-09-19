@@ -6,18 +6,18 @@
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 12% 0,#342052 0,#171126 30%,#0d0a16 72%);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,sans-serif}body:before{content:"";position:fixed;inset:0;pointer-events:none;background-image:radial-gradient(circle,#ffffff1d 1px,transparent 1px);background-size:34px 34px;opacity:.22}
 header{position:sticky;top:0;z-index:20;background:#100c24ee;backdrop-filter:blur(12px);border-bottom:1px solid #4a376c;padding:13px 4vw}.top{max-width:1180px;margin:auto;display:flex;gap:14px;align-items:center;justify-content:space-between}.brand h1{margin:0;font-size:27px;background:linear-gradient(90deg,#ffe39a,#ff9bd7,#b99cff);-webkit-background-clip:text;color:transparent}.brand div{color:var(--muted);font-size:13px}
 button,input,select{border:1px solid #4b3b61;border-radius:12px;background:#171121;color:var(--ink);padding:10px 12px}button{cursor:pointer}.navwrap{position:relative}.navmenu{display:none;position:absolute;right:0;top:44px;min-width:210px;background:#171121;border:1px solid #5c4775;border-radius:14px;padding:8px;box-shadow:0 16px 36px #0008}.navwrap.open .navmenu{display:block}.navmenu a{display:block;color:var(--ink);text-decoration:none;padding:10px 12px;border-radius:10px}.navmenu a:hover{background:#2a1e3d}.navmenu .here{color:var(--gold)}
-main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:16px;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;background:linear-gradient(135deg,#231633,#171121);border:1px solid #624c82;border-radius:22px;padding:18px}.hero h2{margin:0 0 5px;font-size:27px}.hero p{margin:0;color:var(--muted)}.count{font-size:32px;font-weight:900;color:#ffe08a}.toolbar{display:grid;grid-template-columns:1.7fr .8fr .8fr;gap:10px;margin:14px 0}.toolbar input,.toolbar select{width:100%}
-.layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr);gap:16px;align-items:start}.panel{background:#141020;border:1px solid var(--line);border-radius:18px;overflow:hidden}.panelhead{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center}.panelhead h3{margin:0}.results{max-height:68vh;overflow:auto}.stoprow{padding:13px 15px;border-bottom:1px solid #2c233e;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:12px}.stoprow:hover{background:#211834}.stoprow.active{background:linear-gradient(90deg,#30204b,#221a35);box-shadow:inset 4px 0 #ff78c8}.stopname{font-weight:800}.meta{font-size:12px;color:var(--muted);margin-top:3px}.zone{display:inline-block;font-size:10px;padding:3px 7px;border:1px solid #5c4c72;border-radius:999px;color:#d8cae8;margin-left:6px}.status{font-size:11px;white-space:nowrap}.yes{color:var(--green)}.no{color:#d0c4d9}
-.detail{padding:18px;position:sticky;top:105px}.detail h2{margin:0 0 4px}.detail .where{color:var(--muted);margin-bottom:14px}.actionrow{display:flex;gap:8px;flex-wrap:wrap;margin:13px 0}.primary{background:linear-gradient(135deg,#8b63e8,#c45ca8);border-color:#d7a4e8;font-weight:800}.near{margin-top:18px}.near h3{margin-bottom:8px}.nearitem{border-top:1px solid #332845;padding:9px 0;display:flex;justify-content:space-between;gap:12px;align-items:center}.nearitem:first-of-type{border-top:0}.nearitem b{font-size:13px}.nearitem span{font-size:11px;color:var(--muted)}.small{font-size:12px;color:var(--muted)}.empty{padding:18px;color:var(--muted)}.tip{margin-top:14px;padding:12px 14px;border:1px solid #4e3a65;border-radius:14px;background:#171124;color:#cdbfd9}.pill{font-size:11px;color:var(--muted)}
-@media(max-width:860px){.toolbar{grid-template-columns:1fr}.layout{grid-template-columns:1fr}.detail{position:static}.results{max-height:none}.top{align-items:flex-start}.brand h1{font-size:22px}}
+main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:16px;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;background:linear-gradient(135deg,#231633,#171121);border:1px solid #624c82;border-radius:22px;padding:18px}.hero h2{margin:0 0 5px;font-size:27px}.hero p{margin:0;color:var(--muted)}.count{font-size:32px;font-weight:900;color:#ffe08a}.toolbar{display:grid;grid-template-columns:1.5fr .9fr .9fr .8fr auto;gap:10px;margin:14px 0}.toolbar input,.toolbar select{width:100%}.randomBtn{background:linear-gradient(135deg,#6f55d6,#b34fa5);border-color:#d79ce7;font-weight:800;white-space:nowrap}
+.layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr);gap:16px;align-items:start}.panel{background:#141020;border:1px solid var(--line);border-radius:18px;overflow:hidden}.panelhead{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center}.panelhead h3{margin:0}.results{max-height:68vh;overflow:auto}.stoprow{padding:13px 15px;border-bottom:1px solid #2c233e;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:12px}.rowactions{display:flex;gap:7px;align-items:center}.copymini{padding:7px 9px;font-size:11px;background:#201831;border-color:#55436d}.stoprow:hover{background:#211834}.stoprow.active{background:linear-gradient(90deg,#30204b,#221a35);box-shadow:inset 4px 0 #ff78c8}.stopname{font-weight:800}.meta{font-size:12px;color:var(--muted);margin-top:3px}.zone{display:inline-block;font-size:10px;padding:3px 7px;border:1px solid #5c4c72;border-radius:999px;color:#d8cae8;margin-left:6px}.status{font-size:11px;white-space:nowrap}.yes{color:var(--green)}.no{color:#d0c4d9}
+.detail{padding:18px;position:sticky;top:105px}.detail h2{margin:0 0 4px}.detail .where{color:var(--muted);margin-bottom:14px}.actionrow{display:flex;gap:8px;flex-wrap:wrap;margin:13px 0}.primary{background:linear-gradient(135deg,#8b63e8,#c45ca8);border-color:#d7a4e8;font-weight:800}.near{margin-top:18px}.near h3{margin-bottom:8px}.nearitem{border-top:1px solid #332845;padding:9px 0;display:flex;justify-content:space-between;gap:12px;align-items:center}.nearitem:first-of-type{border-top:0}.nearitem b{font-size:13px}.nearitem span{font-size:11px;color:var(--muted)}.small{font-size:12px;color:var(--muted)}.empty{padding:18px;color:var(--muted)}.randomset{margin:14px 0;background:linear-gradient(135deg,#171124,#21152f);border:1px solid #604878;border-radius:18px;padding:14px 16px}.randomset h3{margin:0 0 4px}.randomgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}.randomcard{background:#110d1c;border:1px solid #3f3152;border-radius:12px;padding:10px}.randomcard b{display:block;font-size:12px;margin-bottom:4px}.randomcard span{font-size:10px;color:var(--muted)}.randomcard .actionrow{margin:8px 0 0}.randomcard button{padding:6px 7px;font-size:10px}.tip{margin-top:14px;padding:12px 14px;border:1px solid #4e3a65;border-radius:14px;background:#171124;color:#cdbfd9}.pill{font-size:11px;color:var(--muted)}
+@media(max-width:860px){.toolbar{grid-template-columns:1fr}.randomgrid{grid-template-columns:1fr 1fr}.layout{grid-template-columns:1fr}.detail{position:static}.results{max-height:none}.top{align-items:flex-start}.brand h1{font-size:22px}}
 </style></head>
 <body>
 <header><div class="top"><div class="brand"><h1>📍 BBB Passport Stops</h1><div>A cleaner, searchable catalog for the passport hunt</div></div>
 <div class="navwrap" id="nav"><button onclick="document.getElementById('nav').classList.toggle('open')">☰ Menu</button><div class="navmenu"><a href="index.html">🎮 Adventures</a><a href="instructions.html">📖 Instructions</a><a class="here" href="bbb.html">📍 BBB Passport Stops</a></div></div></div></header>
 
 <main>
-<section class="hero"><div><h2>Explore the Stop Catalog</h2><p>Search by stop name, region, area, or coordinates. Choose a stop to see 10 nearby suggestions.</p></div><div><div class="count" id="catalog-count">381</div><div class="small">campaign stops indexed</div></div></section>
-<div class="toolbar"><input id="search" placeholder="Search stops, regions, areas…"><select id="zone"><option value="">All areas</option></select><select id="status"><option value="">All statuses</option><option value="needed">Needed</option><option value="got">Collected</option></select></div>
+<section class="hero"><div><h2>Explore the Stop Catalog</h2><p>Search by text or narrow the list with quick dropdowns. Choose a stop to see 10 nearby suggestions.</p></div><div><div class="count" id="catalog-count">381</div><div class="small">campaign stops indexed</div></div></section>
+<div class="toolbar"><input id="search" placeholder="Search stops, regions, areas…"><select id="browse"><option value="">All 20 browse groups</option></select><select id="zone"><option value="">All areas</option></select><select id="status"><option value="">All statuses</option><option value="needed">Needed</option><option value="got">Collected</option></select><button class="randomBtn" onclick="pickRandomFive()">🎲 5 Nearby</button></div><div id="random-set"></div>
 <div class="layout"><section class="panel"><div class="panelhead"><h3>Passport stops</h3><span class="pill" id="result-count"></span></div><div class="results" id="results"></div></section><aside class="panel detail" id="detail"><div class="empty">Choose a passport stop to see its location, copy a Firestorm destination, and discover 10 nearby stops.</div></aside></div>
 <div class="tip"><b>Nearby logic:</b> same-region stops are ranked first by coordinate distance. After that, stops in the same broader area are preferred. This is intentionally conservative until we have reliable grid-wide map coordinates for every region.</div>
 </main>
@@ -33,6 +33,11 @@ var partnerDone=new Set(JSON.parse(localStorage.getItem('bbb-done-partner')||'[]
 var view=localStorage.getItem('bbb-view')||localStorage.getItem('bbb-default-view')||'partner';
 var currentDone=view==='partner'?partnerDone:meDone;
 var currentName=view==='partner'?(localStorage.getItem('bbb-tab-partner-name')||'K View'):(localStorage.getItem('bbb-tab-me-name')||'A View');
+var browseGroups=[
+ ['A','A'],['B','B'],['C','C'],['D','D'],['E–F','EF'],['G','G'],['H','H'],['I–J','IJ'],['K','K'],['L','L'],
+ ['M','M'],['N','N'],['O–P','OP'],['Q–R','QR'],['S','S'],['T','T'],['U–V','UV'],['W','W'],['X–Y','XY'],['Z / #','Z#']
+];
+function browseKey(s){var ch=String(s.name||'').trim().charAt(0).toUpperCase();if(!/[A-Z]/.test(ch))return 'Z#';for(var i=0;i<browseGroups.length;i++){if(browseGroups[i][1].indexOf(ch)>=0)return browseGroups[i][1]}return 'Z#'}
 function $(s){return document.querySelector(s)}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function fsUrl(s){return 'secondlife://'+encodeURIComponent(s.region)+'/'+s.x+'/'+s.y+'/'+s.z}
@@ -61,20 +66,37 @@ function selectStop(id){
  history.replaceState(null,'','#stop-'+s.id);
  if(innerWidth<860)$('#detail').scrollIntoView({behavior:'smooth',block:'start'});
 }
-function render(){
- var q=$('#search').value.trim().toLowerCase(),z=$('#zone').value,st=$('#status').value;
- var arr=stops.filter(function(s){
+function filteredStops(){
+ var q=$('#search').value.trim().toLowerCase(),z=$('#zone').value,st=$('#status').value,b=$('#browse').value;
+ return stops.filter(function(s){
+   if(b&&browseKey(s)!==b)return false;
    if(z&&s.zone!==z)return false;
    var got=currentDone.has(s.id);if(st==='got'&&!got)return false;if(st==='needed'&&got)return false;
    if(q&&![s.name,s.region,s.zone,s.adventure,s.x,s.y,s.z].join(' ').toLowerCase().includes(q))return false;
    return true;
- }).sort(function(a,b){return a.name.localeCompare(b.name)});
- $('#result-count').textContent=arr.length+' shown';$('#catalog-count').textContent=stops.length;
- $('#results').innerHTML=arr.length?arr.map(function(s){return '<div class="stoprow" data-id="'+s.id+'"><div><div class="stopname">'+esc(s.name)+' <span class="zone">'+esc(s.zone)+'</span></div><div class="meta">'+esc(s.region)+' · '+s.x+', '+s.y+', '+s.z+'</div></div><div class="status '+(currentDone.has(s.id)?'yes':'no')+'">'+(currentDone.has(s.id)?'✅ Got it':'○ Needed')+'</div></div>'}).join(''):'<div class="empty">No stops match those filters.</div>';
- document.querySelectorAll('.stoprow').forEach(function(r){r.onclick=function(){selectStop(Number(r.dataset.id))}});
+ });
 }
+function pickRandomFive(){
+ var pool=filteredStops();if(!pool.length){$('#random-set').innerHTML='<div class="tip">No stops match the current filters.</div>';return}
+ var first=pool[Math.floor(Math.random()*pool.length)];
+ var others=stops.filter(function(s){return s.id!==first.id}).sort(function(a,b){return nearbyScore(first,a)-nearbyScore(first,b)}).slice(0,4);
+ var group=[first].concat(others);
+ var h='<div class="randomset"><h3>🎲 Five-stop mini route</h3><div class="small">Stop 1 is random. The next four are filled with the closest matches we can infer from the catalog. Tap again for a different route.</div><div class="randomgrid">';
+ group.forEach(function(s,i){h+='<div class="randomcard"><b>'+(i+1)+'. '+esc(s.name)+'</b><span>'+esc(s.region)+' · '+s.x+', '+s.y+', '+s.z+'</span><div class="actionrow"><button data-rview="'+s.id+'">View</button><button data-rcopy="'+s.id+'">Copy SLURL</button></div></div>'});
+ h+='</div></div>';$('#random-set').innerHTML=h;
+ document.querySelectorAll('[data-rview]').forEach(function(b){b.onclick=function(){selectStop(Number(b.dataset.rview))}});
+ document.querySelectorAll('[data-rcopy]').forEach(function(b){b.onclick=function(){var s=map.get(Number(b.dataset.rcopy));if(s)copyText(fsUrl(s))}});
+}
+function render(){
+ var arr=filteredStops().sort(function(a,b){return a.name.localeCompare(b.name)});
+ $('#result-count').textContent=arr.length+' shown';$('#catalog-count').textContent=stops.length;
+ $('#results').innerHTML=arr.length?arr.map(function(s){return '<div class="stoprow" data-id="'+s.id+'"><div><div class="stopname">'+esc(s.name)+' <span class="zone">'+esc(s.zone)+'</span></div><div class="meta">'+esc(s.region)+' · '+s.x+', '+s.y+', '+s.z+'</div></div><div class="rowactions"><div class="status '+(currentDone.has(s.id)?'yes':'no')+'">'+(currentDone.has(s.id)?'✅ Got it':'○ Needed')+'</div><button class="copymini" data-copy="'+s.id+'">Copy SLURL</button></div></div>'}).join(''):'<div class="empty">No stops match those filters.</div>';
+ document.querySelectorAll('.stoprow').forEach(function(r){r.onclick=function(){selectStop(Number(r.dataset.id))}});
+ document.querySelectorAll('[data-copy]').forEach(function(b){b.onclick=function(e){e.stopPropagation();var s=map.get(Number(b.dataset.copy));if(s)copyText(fsUrl(s))}});
+}
+browseGroups.forEach(function(g){var n=stops.filter(function(s){return browseKey(s)===g[1]}).length;$('#browse').insertAdjacentHTML('beforeend','<option value="'+g[1]+'">'+g[0]+' · '+n+' stops</option>')});
 Array.from(new Set(stops.map(function(s){return s.zone}))).sort().forEach(function(z){$('#zone').insertAdjacentHTML('beforeend','<option>'+esc(z)+'</option>')});
-['search','zone','status'].forEach(function(id){$('#'+id).addEventListener(id==='search'?'input':'change',render)});
+['search','browse','zone','status'].forEach(function(id){$('#'+id).addEventListener(id==='search'?'input':'change',render)});
 render();var m=location.hash.match(/stop-(\d+)/);if(m)selectStop(Number(m[1]));
 document.addEventListener('click',function(e){var n=document.getElementById('nav');if(n&&!n.contains(e.target))n.classList.remove('open')});
 </script></body></html>
