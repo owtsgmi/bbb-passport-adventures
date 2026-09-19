@@ -28,7 +28,7 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 </div>
 <div class="controls">
   <button class="primary" onclick="surpriseUs()">🎲 Pick an adventure</button>
-  <button onclick="jumpPinned()">📌 Pinned adventure</button>
+  <button onclick="jumpPinned()">📌 Pinned adventure</button><span id="sync-status" class="small">☁ Connecting…</span>
 </div>
 <div class="filters">
   <input id="q" placeholder="Search place or region…">
@@ -119,5 +119,92 @@ function init(){
  if(m)setTimeout(()=>document.getElementById(m[2]?`trip-${m[1]}-stop-${m[2]}`:'pinned-card')?.scrollIntoView({behavior:'smooth',block:'center'}),120);
 }
 init();
+</script>
+
+<script>
+/* Shared Supabase sync: publishable key is intentionally safe for browser use.
+   RLS restricts this tiny project to the single shared expedition-state row. */
+const SUPA_URL='https://tzxlrglgwzinefutledx.supabase.co';
+const SUPA_KEY='sb_publishable_s54v4rmFk_BjHoweE7mliA_w64vK6WR';
+const STATE_URL=SUPA_URL+'/rest/v1/bbb_board_state?id=eq.1&select=*';
+let cloudBusy=false,lastCloudUpdate='';
+
+function syncStatus(text,good=true){
+  const e=document.getElementById('sync-status');
+  if(e){e.textContent=(good?'☁ ':'⚠ ')+text;e.style.color=good?'#9fb4c8':'#ffd166'}
+}
+async function readCloud(){
+  const r=await fetch(STATE_URL,{headers:{apikey:SUPA_KEY}});
+  if(!r.ok) throw new Error('Cloud read '+r.status);
+  const rows=await r.json();
+  return rows[0];
+}
+async function writeCloud(){
+  if(cloudBusy)return;
+  cloudBusy=true;
+  try{
+    const body={
+      me_done:[...meDone].sort((a,b)=>a-b),
+      partner_done:[...partnerDone].sort((a,b)=>a-b),
+      started:[...started].sort((a,b)=>a-b),
+      last_adventure:lastAdventure,
+      updated_at:new Date().toISOString()
+    };
+    const r=await fetch(SUPA_URL+'/rest/v1/bbb_board_state?id=eq.1',{
+      method:'PATCH',
+      headers:{apikey:SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify(body)
+    });
+    if(!r.ok)throw new Error('Cloud write '+r.status);
+    const rows=await r.json();
+    if(rows[0]?.updated_at)lastCloudUpdate=rows[0].updated_at;
+    syncStatus('Synced');
+  }catch(e){syncStatus('Offline — local progress saved',false)}
+  finally{cloudBusy=false}
+}
+function adoptCloud(row){
+  meDone=new Set((row.me_done||[]).map(Number));
+  partnerDone=new Set((row.partner_done||[]).map(Number));
+  started=new Set((row.started||[]).map(Number));
+  lastAdventure=Number(row.last_adventure||0);
+  localStorage.setItem('bbb-done-me',JSON.stringify([...meDone]));
+  localStorage.setItem('bbb-done-partner',JSON.stringify([...partnerDone]));
+  localStorage.setItem('bbb-started',JSON.stringify([...started]));
+  localStorage.setItem('bbb-last-adventure',lastAdventure);
+  lastCloudUpdate=row.updated_at||'';
+}
+async function firstCloudSync(){
+  try{
+    syncStatus('Connecting…');
+    const row=await readCloud();
+    if(!row)throw new Error('No board row');
+    // Merge anything already recorded on either browser into the new shared state.
+    meDone=new Set([...(row.me_done||[]).map(Number),...meDone]);
+    partnerDone=new Set([...(row.partner_done||[]).map(Number),...partnerDone]);
+    started=new Set([...(row.started||[]).map(Number),...started]);
+    lastAdventure=Number(row.last_adventure||lastAdventure||0);
+    render();
+    await writeCloud();
+    syncStatus('Synced');
+  }catch(e){syncStatus('Offline — using this browser',false)}
+}
+const localSaveAll=saveAll;
+saveAll=function(){
+  localSaveAll();
+  writeCloud();
+};
+async function pollCloud(){
+  if(cloudBusy)return;
+  try{
+    const row=await readCloud();
+    if(row && row.updated_at && row.updated_at!==lastCloudUpdate){
+      adoptCloud(row);
+      render();
+      syncStatus('Synced');
+    }
+  }catch(e){syncStatus('Reconnecting…',false)}
+}
+firstCloudSync();
+setInterval(pollCloud,3000);
 </script>
 </body></html>
