@@ -1,0 +1,73 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Feedback · Second Life Passport Adventures</title>
+<style>
+:root{--ink:#fff9ff;--muted:#bcb0ca;--gold:#ffd166;--green:#63e6a5;--pink:#ff78c8;--line:#3c3153}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% 0,#342052 0,#171126 32%,#0c0915 75%);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,sans-serif}body:before{content:"";position:fixed;inset:0;pointer-events:none;background-image:radial-gradient(circle,#ffffff1b 1px,transparent 1px);background-size:34px 34px;opacity:.25}
+header{position:sticky;top:0;z-index:10;background:#100c24ee;backdrop-filter:blur(12px);border-bottom:1px solid #4a376c;padding:14px 4vw}.top{max-width:1000px;margin:auto;display:flex;gap:16px;align-items:center}.brand h1{margin:0;font-size:27px;background:linear-gradient(90deg,#ffe39a,#ff9bd7,#b99cff);-webkit-background-clip:text;color:transparent}.brand div{color:var(--muted);font-size:13px}
+button,input,select,textarea{border:1px solid #4b3b61;border-radius:12px;background:#171121;color:var(--ink);padding:10px 12px;font:inherit}button{cursor:pointer}.navwrap{position:relative}.navmenu{display:none;position:absolute;left:0;top:44px;min-width:220px;background:#171121;border:1px solid #5c4775;border-radius:14px;padding:8px;box-shadow:0 16px 36px #0008}.navwrap.open .navmenu{display:block}.navmenu a{display:block;color:var(--ink);text-decoration:none;padding:10px 12px;border-radius:10px}.navmenu a:hover{background:#2a1e3d}.navmenu .here{color:var(--gold)}
+main{max-width:1000px;margin:auto;padding:26px 4vw 60px}.hero{background:linear-gradient(135deg,#25163a,#171121);border:1px solid #6d548d;border-radius:22px;padding:22px}.hero h2{margin:0 0 6px}.hero p{color:var(--muted);line-height:1.5;margin:0}
+.grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:16px;margin-top:16px}.card{background:#151020;border:1px solid var(--line);border-radius:18px;padding:18px}.card h3{margin:0 0 12px;color:#ffe08a}.field{margin:12px 0}.field label{display:block;font-weight:800;margin-bottom:5px}.field input,.field select,.field textarea{width:100%}.field textarea{min-height:150px;resize:vertical}.primary{background:linear-gradient(135deg,#8b63e8,#c45ca8);border-color:#d7a4e8;font-weight:800}.small{font-size:12px;color:var(--muted)}#form-status{min-height:18px;margin-top:8px}.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.feedback{border-top:1px solid #342943;padding:13px 0}.feedback:first-of-type{border-top:0}.feedbackhead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.feedbackhead b{font-size:14px}.tag{font-size:10px;border:1px solid #655079;border-radius:999px;padding:3px 7px;color:#d9cde5}.message{margin-top:7px;color:#ddd2e5;white-space:pre-wrap;line-height:1.45}.meta{font-size:11px;color:var(--muted);margin-top:5px}.empty{color:var(--muted);padding:14px 0}
+@media(max-width:780px){.grid{grid-template-columns:1fr}.brand h1{font-size:22px}.top{align-items:flex-start}}
+</style></head>
+<body>
+<header><div class="top"><div class="navwrap" id="nav"><button onclick="document.getElementById('nav').classList.toggle('open')">☰ Menu</button><div class="navmenu"><a href="index.html">🎮 Adventures</a><a href="instructions.html">📖 Instructions + Architecture</a><a href="bbb.html">📍 BBB Passport Stops</a><a class="here" href="feedback.html">💬 Comments & Bugs</a></div></div><div class="brand"><h1>💬 Comments, Suggestions & Bugs</h1><div>Public feedback for Passport Adventures</div></div></div></header>
+<main>
+<section class="hero"><h2>Help shape the app</h2><p>There is no account system here yet, so type any display name you want. Feedback is public so other users can see what has already been suggested or reported.</p></section>
+<div class="grid">
+<section class="card">
+<h3>Add feedback</h3>
+<form id="feedback-form">
+<div class="field"><label for="name">Display name</label><input id="name" maxlength="60" required placeholder="Your SL name, nickname, or anything you want"></div>
+<div class="field"><label for="kind">Type</label><select id="kind"><option value="suggestion">Suggestion</option><option value="bug">Bug</option><option value="comment">Comment</option></select></div>
+<div class="field"><label for="page">Page / area</label><input id="page" maxlength="120" placeholder="e.g. BBB Stops, Adventures, Settings"></div>
+<div class="field"><label for="message">Message</label><textarea id="message" maxlength="2000" required placeholder="Tell us what you would change, what broke, or what you liked."></textarea></div>
+<button class="primary" type="submit">Submit feedback</button>
+<div id="form-status" class="small" aria-live="polite"></div>
+</form>
+<p class="small">Please do not post passwords, Secret Club Codes, private StaFi links, or other private information.</p>
+</section>
+<section class="card">
+<h3>Recent feedback</h3>
+<div class="filters"><select id="filter"><option value="">All types</option><option value="suggestion">Suggestions</option><option value="bug">Bugs</option><option value="comment">Comments</option></select><button id="refresh" type="button">Refresh</button></div>
+<div id="feedback-list"><div class="empty">Loading…</div></div>
+</section>
+</div>
+</main>
+<script>
+(function(){
+const SUPA_URL='https://tzxlrglgwzinefutledx.supabase.co';
+const SUPA_KEY='sb_publishable_s54v4rmFk_BjHoweE7mliA_w64vK6WR';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function loadFeedback(){
+  const kind=$('#filter').value;
+  let url=SUPA_URL+'/rest/v1/app_feedback?select=id,display_name,kind,message,page,created_at&order=created_at.desc&limit=100';
+  if(kind)url+='&kind=eq.'+encodeURIComponent(kind);
+  try{
+    const r=await fetch(url,{headers:{apikey:SUPA_KEY}});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const rows=await r.json();
+    $('#feedback-list').innerHTML=rows.length?rows.map(x=>'<div class="feedback"><div class="feedbackhead"><div><b>'+esc(x.display_name)+'</b> <span class="tag">'+esc(x.kind)+'</span></div><span class="small">'+new Date(x.created_at).toLocaleString()+'</span></div><div class="message">'+esc(x.message)+'</div>'+(x.page?'<div class="meta">Area: '+esc(x.page)+'</div>':'')+'</div>').join(''):'<div class="empty">No feedback yet.</div>';
+  }catch(e){$('#feedback-list').innerHTML='<div class="empty">Could not load feedback right now.</div>'}
+}
+$('#feedback-form').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const body={display_name:$('#name').value.trim(),kind:$('#kind').value,page:$('#page').value.trim(),message:$('#message').value.trim()};
+  if(!body.display_name||body.message.length<2){$('#form-status').textContent='Add a name and a little more detail.';return}
+  $('#form-status').textContent='Submitting…';
+  try{
+    const r=await fetch(SUPA_URL+'/rest/v1/app_feedback',{method:'POST',headers:{apikey:SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(body)});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    $('#message').value='';$('#page').value='';
+    $('#form-status').textContent='Thanks — feedback posted.';
+    loadFeedback();
+  }catch(e){$('#form-status').textContent='Could not post right now. Please try again.'}
+});
+$('#filter').addEventListener('change',loadFeedback);
+$('#refresh').addEventListener('click',loadFeedback);
+document.addEventListener('click',e=>{const n=$('#nav');if(n&&!n.contains(e.target))n.classList.remove('open')});
+loadFeedback();
+})();
+</script>
+</body></html>
