@@ -20,6 +20,8 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 #toast{display:none;position:fixed;right:18px;bottom:18px;z-index:50;background:#10243a;border:1px solid var(--blue);border-radius:10px;padding:12px 15px;max-width:480px}
 @media(max-width:820px){.settingsgrid{grid-template-columns:1fr}.headrow{display:block}.scorecard{min-width:0;margin-top:10px;display:flex;flex-wrap:wrap}.bankgrid{display:block}.score b{font-size:15px}.mission-setup{grid-template-columns:1fr}.summary-right{display:none}.mission-table thead{display:none}.mission-table,.mission-table tbody,.mission-table tr,.mission-table td{display:block;width:100%}.mission-table tr{margin-bottom:8px;background:var(--panel2);border-radius:10px;padding:7px}.mission-table td{background:transparent;padding:4px 6px}.mission-table td:first-child,.mission-table td:last-child{border-radius:0}.mission-table .who,.mission-table .act{text-align:left;width:auto}.mission-table .who::before{font-size:12px;color:var(--muted);margin-right:6px}.mission-table .mine::before{content:"My passport:"}.mission-table .theirs::before{content:"Partner:"}}
 @media(max-width:520px){.bankgrid{grid-template-columns:1fr}.brand h1{font-size:23px}}
+
+.navwrap{position:relative;margin-left:auto}.navbtn{font-weight:900}.navmenu{display:none;position:absolute;right:0;top:44px;min-width:210px;background:#171121;border:1px solid #5c4775;border-radius:14px;padding:8px;box-shadow:0 16px 36px #0008;z-index:30}.navwrap.open .navmenu{display:block}.navmenu a{display:block;color:var(--ink);text-decoration:none;padding:10px 12px;border-radius:10px}.navmenu a:hover{background:#2a1e3d}.navmenu .here{color:#ffd166}
 </style></head>
 <body>
 <header>
@@ -30,6 +32,7 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 <div class="controls">
   <button class="primary" onclick="surpriseUs()">✨ Pick an Adventure</button>
   <span id="sync-status" class="small">☁ Connecting…</span><span id="bbb-link-status" class="small"></span><button onclick="toggleSettings()">⚙ Settings</button>
+    <div class="navwrap" id="main-nav"><button class="navbtn" onclick="document.getElementById('main-nav').classList.toggle('open')">☰ Menu</button><div class="navmenu"><a class="here" href="index.html">🎮 Adventures</a><a href="instructions.html">📖 Instructions</a><a href="bbb.html">📍 BBB Passport Stops</a></div></div>
 </div>
 <div class="viewtabs">
   <button id="tab-partner" class="viewtab" onclick="setView('partner')">❤️ K View</button>
