@@ -52,3 +52,10 @@ This file is the persistent source of truth for future edits to this project.
 - When changing wording, do not blindly global-replace strings that can alter JavaScript function names.
 - After edits, inspect the updated source for syntax damage before telling the user it is fixed.
 - Preserve the user's personal/fun design now; generalize for other couples/friends only later if requested.
+
+
+## Total passport counter
+- The top stamp counter should show the **full passport total**, not only the 381-stamp campaign subset.
+- Current snapshot total: **382 stamps** = 381 campaign/uncollected stamps + 1 pre-campaign stamp already collected by the user's StaFi page Ref=50970.
+- Display format should include both collected/total and remaining, e.g. **1/382 stamps · 381 to go**.
+- Adventure rewards still use only the 381 campaign stamps grouped into 127 three-stop runs.
