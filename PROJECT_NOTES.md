@@ -15,8 +15,9 @@ This file is the persistent source of truth for future edits to this project.
 - Current dataset: **381 stamps = 127 adventures**.
 - A run only counts when **both players have all 3 stamps**.
 - One player completing the three stamps alone is only "waiting on the other" and earns no payout yet.
-- Each jointly completed 3-stop adventure earns **500 Unicorn Bucks = 51 L$**.
+- Each jointly completed 3-stop adventure earns **500 Unicorn Bucks** plus a **random 20–100 L$ mystery reward**.
 - The reward recipient is **KK** (the second/player-two tab), while **AA** is the sponsor/payer.
+- The L$ amount stays hidden until both players complete all 3 stops. A completed adventure gets one persisted random reward in `bbb_board_state.adventure_rewards`; reopening or switching devices must not reroll it.
 - Reward ownership does not change when switching tabs.
 - Both tabs show passport progress, but the Unicorn Bucks balance/top score/reward bank must always be labeled for the reward recipient (KK).
 
@@ -148,3 +149,22 @@ This file is the persistent source of truth for future edits to this project.
   - Add rate limits/abuse controls to feedback, invitations, and other write endpoints.
   - Replace temporary feedback Owner Passphrase with authenticated owner/admin roles when public launch happens.
   - Keep the BBB public catalog global/read-only while private gameplay remains user/club scoped.
+
+
+## Shared Second Life map component
+- Reusable map code lives in `slmap.js`.
+- It uses Linden Lab's documented map tile pyramid: zoom level 1 is region detail and level 8 is the broadest/world view.
+- The map renders a 5×5 tile neighborhood around the current center, supports drag/pan, wheel/buttons for zoom, **Fit**, and **World**.
+- BBB Stops page uses this map for the selected stop and gives it substantial vertical space.
+- The Adventures page places a map at the bottom of the current run and marks all 3 stops (1, 2, 3); Fit frames the route and World provides broad SL context.
+- Region names are translated to grid coordinates through Linden Lab's public region-coordinate capability.
+- Do not revert to embedding the maps.secondlife.com SLURL page in an iframe; that approach produced blank embeds.
+
+## Mystery L$ reward model
+- Each jointly completed adventure still grants **500 Unicorn Bucks**.
+- The actual Linden reward is random from **20 through 100 L$ inclusive**.
+- Never show the specific L$ amount before both passports complete the adventure.
+- On first joint completion, generate the value once and persist it in `bbb_board_state.adventure_rewards`, keyed by adventure ID.
+- Completed-adventure UI may reveal the amount; active/pending runs should say **Mystery L$**.
+- Cash-out consumes 500 Bucks and the next revealed, unredeemed adventure reward; payout log stores the actual L$ amount and adventure ID.
+- Historical payout entries without an adventure ID are treated as legacy redemptions and must not cause duplicate payouts.
