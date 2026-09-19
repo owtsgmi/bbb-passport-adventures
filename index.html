@@ -24,7 +24,7 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 <body>
 <header>
 <div class="headrow">
-  <div class="brand"><h1>🦄 Second Life Passport Adventures</h1><div class="sub">Hunt BBB passport stamps across the Second Life universe. Finish adventures together. Earn Unicorn Bucks.</div></div>
+  <div class="brand"><h1>🦄 Second Life Passport Adventures</h1><div class="sub">Hunt BBB passport stamps across the Second Life universe in quick 3-stop adventures. Both passports must finish all 3 to earn Unicorn Bucks.</div></div>
   <div class="scorecard" id="scorecard"></div>
 </div>
 <div class="controls">
@@ -118,25 +118,25 @@ function missionRows(a){
 function pinnedHtml(a){
  const mine=progressFor(a,meDone),hers=progressFor(a,partnerDone),together=a.stamps.filter(s=>meDone.has(s.id)&&partnerDone.has(s.id)).length;
  const shown=currentView==='partner'?hers:mine;
- return `<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>${esc(a.title)} <span class="badge">🦄 1,000 Bucks</span></h3><div class="meta">${esc(a.zone)} · about ${a.minutes} min · ${a.stamps.length} stops</div><div class="progress"><div class="bar" style="width:${Math.round((shown/a.stamps.length)*100)}%"></div></div><div class="small">${currentView==='partner'?'Her':'My'} passport: ${shown}/${a.stamps.length} · Together: ${together}/${a.stamps.length}</div></div></div>${missionSetup(a)}<div style="padding:0 17px 17px">${missionRows(a)}</div></div>`;
+ return `<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>${esc(a.title)} <span class="badge">🦄 500 Bucks</span></h3><div class="meta">${esc(a.zone)} · about ${a.minutes} min · 3 stops</div><div class="progress"><div class="bar" style="width:${Math.round((shown/a.stamps.length)*100)}%"></div></div><div class="small">${currentView==='partner'?'Her':'My'} passport: ${shown}/${a.stamps.length} · Together: ${together}/${a.stamps.length}</div></div></div>${missionSetup(a)}<div style="padding:0 17px 17px">${missionRows(a)}</div></div>`;
 }
 function collapsedTrip(a,completed=false){
- return `<details class="trip ${completed?'completed-row':''}"><summary><div class="summary-main"><span class="light ${completed?'red':'green'}"></span><strong>${esc(a.title)}</strong> <span class="small">· ${a.stamps.length} stops · ~${a.minutes} min</span></div><div class="summary-right">🦄 1,000 Bucks</div></summary><div class="tripbody">${missionSetup(a)}${missionRows(a)}<div class="actions" style="margin-top:10px">${completed?'':`<button class="primary" onclick="startAdventure(${a.id})">Make this our adventure</button>`}</div></div></details>`;
+ return `<details class="trip ${completed?'completed-row':''}"><summary><div class="summary-main"><span class="light ${completed?'red':'green'}"></span><strong>${esc(a.title)}</strong> <span class="small">· 3 stops · ~${a.minutes} min</span></div><div class="summary-right">🦄 500 Bucks</div></summary><div class="tripbody">${missionSetup(a)}${missionRows(a)}<div class="actions" style="margin-top:10px">${completed?'':`<button class="primary" onclick="startAdventure(${a.id})">Make this our adventure</button>`}</div></div></details>`;
 }
 function completedFor(set){return adventures.filter(a=>personComplete(a,set)).length}
 function jointCompletedCount(){return adventures.filter(togetherComplete).length}
 function partnerAheadCount(){return adventures.filter(a=>personComplete(a,partnerDone)&&!personComplete(a,meDone)).length}
-function unicornEarned(){return jointCompletedCount()*1000}
+function unicornEarned(){return jointCompletedCount()*500}
 function unicornBalance(){return Math.max(0,unicornEarned()-unicornRedeemed)}
-function lindenValue(bucks){return Math.floor(bucks/10)}
+function lindenValue(bucks){return Math.floor((bucks/500)*57)}
 function cashOut(){
- if(unicornBalance()<1000)return toast('Complete another adventure together first 🦄');
- if(!confirm('Redeem 1,000 Unicorn Bucks for 100 L$?'))return;
- unicornRedeemed+=1000;
+ if(unicornBalance()<500)return toast('Complete another 3-stop adventure together first 🦄');
+ if(!confirm('Redeem 500 Unicorn Bucks for 57 L$?'))return;
+ unicornRedeemed+=500;
  payoutLog.unshift({bucks:1000,linden:100,paid:false,at:new Date().toISOString()});
  payoutLog=payoutLog.slice(0,30);
  saveAll();
- toast('🦄 1,000 Unicorn Bucks redeemed for 100 L$ — payout pending');
+ toast('🦄 500 Unicorn Bucks redeemed for 57 L$ — payout pending');
 }
 function unpaidLinden(){return payoutLog.filter(r=>!r.paid).reduce((n,r)=>n+Number(r.linden||0),0)}
 function markPaid(){
@@ -148,10 +148,10 @@ function markPaid(){
  toast('💖 Payout marked paid');
 }
 function rewardHtml(){
- const balance=unicornBalance(),pending=partnerAheadCount()*1000,due=unpaidLinden();
- return `<div class="bankhead"><div><h3>🦄 Unicorn Bucks</h3><div class="small">Every adventure you both finish is worth <b>100 L$</b>.</div></div></div>
- <div class="bankgrid"><div class="bankcard"><span>Her balance</span><strong>${balance.toLocaleString()} 🦄</strong><span>${lindenValue(balance)} L$ ready to spend</span><div style="margin-top:12px"><button class="cashout" onclick="cashOut()" ${balance<1000?'disabled':''}>Cash out 1,000 Bucks · 100 L$</button></div></div></div>
- ${pending?`<div class="small" style="margin-top:10px">✨ ${pending/1000} adventure${pending===1000?'':'s'} already finished by her — waiting for you.</div>`:''}
+ const balance=unicornBalance(),pending=partnerAheadCount()*500,due=unpaidLinden();
+ return `<div class="bankhead"><div><h3>🦄 Unicorn Bucks</h3><div class="small">Every 3-stop adventure you both finish is worth <b>57 L$</b>.</div></div></div>
+ <div class="bankgrid"><div class="bankcard"><span>Her balance</span><strong>${balance.toLocaleString()} 🦄</strong><span>${lindenValue(balance)} L$ ready to spend</span><div style="margin-top:12px"><button class="cashout" onclick="cashOut()" ${balance<1000?'disabled':''}>Cash out 500 Bucks · 57 L$</button></div></div></div>
+ ${pending?`<div class="small" style="margin-top:10px">✨ ${pending/500} adventure${pending===500?'':'s'} already finished by her — waiting for you.</div>`:''}
  ${due?`<div class="payoutdue"><div><strong>💸 ${due} L$ payout due</strong><div class="small">She already redeemed it. ❤️</div></div><button onclick="markPaid()">Mark paid</button></div>`:''}
  <details class="recent"><summary>Past payouts</summary>${payoutLog.slice(0,5).map(r=>`<div class="recentline">${r.paid?'✓':'•'} ${r.linden} L$ ${r.paid?'paid':'due'}</div>`).join('')||'<div class="recentline">None yet.</div>'}</details>`;
 }
