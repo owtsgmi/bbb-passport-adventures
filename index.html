@@ -42,16 +42,18 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 <div id="toast"></div>
 <section id="settings-page" class="settingspage">
   <div class="settingscard">
-    <div class="advhead"><div><h2 style="margin:0 0 4px">⚙ Passport Settings <span class="alienmark">👽</span></h2><div class="small">Names and BBB StaFi progress pages.</div></div><button onclick="toggleSettings()">✕ Close</button></div>
+    <div class="advhead"><div><h2 style="margin:0 0 4px">⚙ Passport Settings <span class="alienmark">👽</span></h2><div class="small">Names and encrypted BBB StaFi progress pages.</div></div><button onclick="toggleSettings()">✕ Close</button></div>
     <div class="settingsgrid" style="margin-top:16px">
       <div class="settingsfield"><label>❤️ First tab name</label><input id="set-partner-name" placeholder="K View"></div>
       <div class="settingsfield"><label>🧭 Second tab name</label><input id="set-me-name" placeholder="A View"></div>
       <div class="settingsfield"><label>❤️ First BBB StaFi progress page</label><input id="set-partner-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
       <div class="settingsfield"><label>🧭 Second BBB StaFi progress page</label><input id="set-me-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
       <div class="settingsfield"><label>Open on</label><select id="set-default-view"><option value="partner">First tab</option><option value="me">Second tab</option></select></div>
+      <div class="settingsfield"><label>🔐 Family Key</label><input id="set-family-key" type="password" autocomplete="new-password" placeholder="Use the same key on both devices"></div>
     </div>
-    <div class="actions" style="margin-top:16px"><button class="primary" onclick="saveSettings()">💾 Save Settings</button><button onclick="testCurrentStaFi()">🔗 Open selected StaFi page</button></div>
-    <div class="settingsnote">StaFi links are private coded BBB progress pages. For now they are saved only in this browser and are not written to the public shared database.</div>
+    <div class="actions" style="margin-top:12px"><label class="small"><input id="set-remember-key" type="checkbox" checked> Remember Family Key on this device</label></div>
+    <div class="actions" style="margin-top:16px"><button class="primary" onclick="saveSettings()">💾 Save & Sync</button><button onclick="unlockPrivateSettings()">🔓 Load from Cloud</button><button onclick="testCurrentStaFi()">🔗 Open selected StaFi page</button></div>
+    <div class="settingsnote">Your tab names and BBB StaFi links are encrypted in your browser before they are sent to Supabase. The Family Key is never stored in the database. Use the same Family Key on both devices.</div>
   </div>
 </section>
 
@@ -95,6 +97,8 @@ let tabMeName=localStorage.getItem('bbb-tab-me-name')||'A View';
 let partnerStaFiUrl=localStorage.getItem('bbb-partner-stafi-url')||'';
 let meStaFiUrl=localStorage.getItem('bbb-me-stafi-url')||'';
 let defaultView=localStorage.getItem('bbb-default-view')||'partner';
+let familyKey=localStorage.getItem('bbb-family-key')||sessionStorage.getItem('bbb-family-key')||'';
+let privateSettingsUpdated='';
 let currentView=localStorage.getItem('bbb-view')||defaultView;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -109,20 +113,70 @@ function loadSettingsForm(){
  $('#set-partner-url').value=partnerStaFiUrl;
  $('#set-me-url').value=meStaFiUrl;
  $('#set-default-view').value=defaultView;
+ $('#set-family-key').value=familyKey;
+ $('#set-remember-key').checked=!!localStorage.getItem('bbb-family-key');
 }
-function saveSettings(){
+async function saveSettings(){
  tabPartnerName=$('#set-partner-name').value.trim()||'K View';
  tabMeName=$('#set-me-name').value.trim()||'A View';
  partnerStaFiUrl=$('#set-partner-url').value.trim();
  meStaFiUrl=$('#set-me-url').value.trim();
  defaultView=$('#set-default-view').value||'partner';
+ familyKey=$('#set-family-key').value;
+ if(familyKey.length<8){toast('Use a Family Key with at least 8 characters.');return}
  localStorage.setItem('bbb-tab-partner-name',tabPartnerName);
  localStorage.setItem('bbb-tab-me-name',tabMeName);
  localStorage.setItem('bbb-partner-stafi-url',partnerStaFiUrl);
  localStorage.setItem('bbb-me-stafi-url',meStaFiUrl);
  localStorage.setItem('bbb-default-view',defaultView);
- toast('Settings saved 👽');
+ if($('#set-remember-key').checked){localStorage.setItem('bbb-family-key',familyKey);sessionStorage.removeItem('bbb-family-key')}
+ else{localStorage.removeItem('bbb-family-key');sessionStorage.setItem('bbb-family-key',familyKey)}
+ try{await writePrivateSettings();toast('Encrypted settings synced 👽');toggleSettings()}catch(e){toast('Saved on this device, but cloud sync failed')}
  render();
+}
+function bytesToB64(bytes){let bin='';bytes.forEach(b=>bin+=String.fromCharCode(b));return btoa(bin)}
+function b64ToBytes(s){const bin=atob(s);return Uint8Array.from(bin,c=>c.charCodeAt(0))}
+async function derivePrivateKey(secret,salt){
+ const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),'PBKDF2',false,['deriveKey']);
+ return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function encryptPrivatePayload(payload,secret){
+ const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+ const key=await derivePrivateKey(secret,salt);
+ const plain=new TextEncoder().encode(JSON.stringify(payload));
+ const enc=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,plain));
+ return {ciphertext:bytesToB64(enc),salt:bytesToB64(salt),iv:bytesToB64(iv)};
+}
+async function decryptPrivatePayload(row,secret){
+ const salt=b64ToBytes(row.salt),iv=b64ToBytes(row.iv),data=b64ToBytes(row.ciphertext);
+ const key=await derivePrivateKey(secret,salt);
+ const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,data);
+ return JSON.parse(new TextDecoder().decode(plain));
+}
+async function writePrivateSettings(){
+ const payload={tabPartnerName,tabMeName,partnerStaFiUrl,meStaFiUrl,defaultView};
+ const enc=await encryptPrivatePayload(payload,familyKey);
+ const r=await fetch(SUPA_URL+'/rest/v1/bbb_private_settings?id=eq.1',{method:'PATCH',headers:{apikey:SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({...enc,version:1,updated_at:new Date().toISOString()})});
+ if(!r.ok)throw new Error('Private settings write '+r.status);
+ const rows=await r.json();privateSettingsUpdated=rows[0]?.updated_at||'';
+}
+async function readPrivateSettings(){
+ const r=await fetch(SUPA_URL+'/rest/v1/bbb_private_settings?id=eq.1&select=*',{headers:{apikey:SUPA_KEY}});
+ if(!r.ok)throw new Error('Private settings read '+r.status);
+ const rows=await r.json();return rows[0];
+}
+function applyPrivateSettings(p){
+ tabPartnerName=p.tabPartnerName||'K View';tabMeName=p.tabMeName||'A View';partnerStaFiUrl=p.partnerStaFiUrl||'';meStaFiUrl=p.meStaFiUrl||'';defaultView=p.defaultView||'partner';
+ localStorage.setItem('bbb-tab-partner-name',tabPartnerName);localStorage.setItem('bbb-tab-me-name',tabMeName);localStorage.setItem('bbb-partner-stafi-url',partnerStaFiUrl);localStorage.setItem('bbb-me-stafi-url',meStaFiUrl);localStorage.setItem('bbb-default-view',defaultView);
+}
+async function unlockPrivateSettings(){
+ familyKey=$('#set-family-key')?.value||familyKey;
+ if(familyKey.length<8){toast('Enter your Family Key first.');return}
+ try{const row=await readPrivateSettings();if(!row?.ciphertext){toast('No encrypted cloud settings saved yet.');return}const p=await decryptPrivatePayload(row,familyKey);applyPrivateSettings(p);privateSettingsUpdated=row.updated_at||'';if($('#set-remember-key')?.checked)localStorage.setItem('bbb-family-key',familyKey);else sessionStorage.setItem('bbb-family-key',familyKey);loadSettingsForm();render();toast('Private settings unlocked 🔓')}catch(e){toast('Could not unlock — check the Family Key')}
+}
+async function autoLoadPrivateSettings(){
+ if(!familyKey)return;
+ try{const row=await readPrivateSettings();if(row?.ciphertext){const p=await decryptPrivatePayload(row,familyKey);applyPrivateSettings(p);privateSettingsUpdated=row.updated_at||'';render()}}catch(e){}
 }
 function currentStaFiUrl(){return currentView==='partner'?partnerStaFiUrl:meStaFiUrl}
 function testCurrentStaFi(){
@@ -225,7 +279,7 @@ function render(){
  if(tm){tm.textContent='🧭 '+tabMeName;tm.classList.toggle('active',currentView==='me')}
  const linked=(partnerStaFiUrl?1:0)+(meStaFiUrl?1:0);
  const st=document.getElementById('bbb-link-status');
- if(st)st.textContent='• BBB StaFi links: '+linked+'/2';
+ if(st)st.textContent='• BBB StaFi links: '+linked+'/2'+(familyKey?' · 🔐 encrypted':' · 🔒 locked');
  $('#rewards').innerHTML=rewardHtml();$('#pending-count').textContent='('+pending.length+')';$('#completed-count').textContent='('+completed.length+')';
 }
 function init(){
@@ -340,6 +394,7 @@ async function pollCloud(){
   }catch(e){syncStatus('Reconnecting…',false)}
 }
 firstCloudSync();
+autoLoadPrivateSettings();
 setInterval(pollCloud,3000);
 </script>
 </body></html>
