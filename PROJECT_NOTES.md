@@ -69,7 +69,7 @@ This file is the persistent source of truth for future edits to this project.
 - Instructions page must state clearly that the current Secret Club Code/shared-state design supports exactly **2 players** for now.
 - BBB Passport Stops page is a user-friendly searchable catalog of the current indexed campaign stop dataset.
 - Stop catalog supports text search, area filtering, collected/needed filtering, Firestorm destination copy, and a selected-stop detail view.
-- Selecting a stop shows **10 nearby suggestions**. Nearby ranking is conservative: same-region coordinate distance first; then same broader area; it must not claim full grid-distance accuracy without reliable global region coordinates.
+- Selecting a stop shows **6 nearby suggestions**. Nearby ranking is conservative: same-region coordinate distance first; then same broader area; it must not claim full grid-distance accuracy without reliable global region coordinates.
 - Current catalog indexes the 381 campaign stops. The user's pre-campaign Bryggen stamp is counted in the whole-passport counter but is not yet a row in the campaign stop dataset.
 
 
@@ -82,3 +82,23 @@ This file is the persistent source of truth for future edits to this project.
 - Last successful public BBB catalog response is cached locally only as a fallback if BBB is temporarily unavailable.
 - UI shows whether the page was refreshed live, is using cached BBB data, or has fallen back to the built-in catalog.
 - Do not claim the adventure dataset itself automatically restructures when BBB changes; live BBB additions belong to the searchable stop catalog unless intentionally reconciled into adventures later.
+
+
+## Living documentation and feedback
+- `instructions.html` contains both user-facing instructions and a plain-English **App Architecture** section.
+- The instructions and architecture sections are **living documentation**. Any meaningful feature, data-flow, privacy, persistence, sync, page, reward, or user-model change should update those sections in the same development pass.
+- Navigation now includes `feedback.html` for public comments, suggestions, and bug reports.
+- Feedback is stored in Supabase table `public.app_feedback`.
+- There is no user account system for feedback; submitters may enter any display name.
+- Public feedback fields: display name, type (suggestion/bug/comment), optional page/area, message, created timestamp.
+- Anonymous/authenticated users can read and insert feedback; they cannot update or delete rows through the public client.
+- The feedback page must warn users not to post Secret Club Codes, private StaFi links, passwords, or other private information.
+- App Architecture should describe:
+  - GitHub Pages front end
+  - stable 381-stop / 127-adventure game dataset
+  - Supabase shared game state and encrypted private settings
+  - two-player Secret Club Code model
+  - BBB live catalog mirror via Edge Function
+  - distinction between live public BBB catalog and private StaFi progress
+  - public feedback system
+  - current limitations/boundaries
