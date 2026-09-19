@@ -59,3 +59,15 @@ This file is the persistent source of truth for future edits to this project.
 - Current snapshot total: **382 stamps** = 381 campaign/uncollected stamps + 1 pre-campaign stamp already collected by the user's StaFi page Ref=50970.
 - Display format should include both collected/total and remaining, e.g. **1/382 stamps · 381 to go**.
 - Adventure rewards still use only the 381 campaign stamps grouped into 127 three-stop runs.
+
+
+## Navigation / extra pages
+- Site now uses a hamburger menu with:
+  - Adventures: `index.html`
+  - Instructions: `instructions.html`
+  - BBB Passport Stops: `bbb.html`
+- Instructions page must state clearly that the current Secret Club Code/shared-state design supports exactly **2 players** for now.
+- BBB Passport Stops page is a user-friendly searchable catalog of the current indexed campaign stop dataset.
+- Stop catalog supports text search, area filtering, collected/needed filtering, Firestorm destination copy, and a selected-stop detail view.
+- Selecting a stop shows **10 nearby suggestions**. Nearby ranking is conservative: same-region coordinate distance first; then same broader area; it must not claim full grid-distance accuracy without reliable global region coordinates.
+- Current catalog indexes the 381 campaign stops. The user's pre-campaign Bryggen stamp is counted in the whole-passport counter but is not yet a row in the campaign stop dataset.
