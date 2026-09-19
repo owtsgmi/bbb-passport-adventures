@@ -117,3 +117,15 @@ This file is the persistent source of truth for future edits to this project.
 - Hidden feedback is excluded from normal public reads but remains visible in curator mode.
 - The browser remembers curator unlock only in `sessionStorage` for the current tab/session.
 - Do not use the shared two-player Secret Club Code as the feedback Curator Code.
+
+
+## Owner-only feedback curation
+- Public users can submit and read visible feedback, but cannot update or delete it directly.
+- Public insert is column-limited to display name, type, message, and page/area. New public submissions are forced to status `open`, not pinned, and not hidden.
+- Owner moderation uses the `feedback-admin` Supabase Edge Function.
+- Owner actions available: edit, change status (`open/planned/fixed/closed`), pin/unpin, hide/unhide, and permanent delete.
+- The feedback page exposes an **Owner tools** panel. The Owner Code is stored only in browser `sessionStorage` after unlock and clears when that browser session ends or the user presses Lock.
+- The Owner Code is **separate from the Secret Club Code** used by the two-player game.
+- Only a SHA-256 hash of the Owner Code is stored in `public.feedback_admin_config`; the plaintext Owner Code must never be committed to GitHub, displayed publicly, or placed in client JavaScript.
+- `public.feedback_admin_config` has RLS enabled and no anon/authenticated grants. Backend admin access uses Supabase server credentials inside the Edge Function.
+- If the Owner Code is ever exposed, rotate it by replacing the stored hash and giving the owner a new code.
