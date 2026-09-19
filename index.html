@@ -283,12 +283,12 @@ function renderRunMap(a){
 function pinnedHtml(a){
  const mine=progressFor(a,meDone),hers=progressFor(a,partnerDone),together=a.stamps.filter(s=>meDone.has(s.id)&&partnerDone.has(s.id)).length;
  const shown=currentView==='partner'?hers:mine;
- return \`<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>\${esc(a.title)} <span class="badge">🦄 500 Bucks</span> <span class="badge mystery">🎁 Mystery L$</span></h3><div class="meta">\${esc(a.zone)} · about \${a.minutes} min · 3 stops</div><div class="progress"><div class="bar" style="width:\${Math.round((shown/a.stamps.length)*100)}%"></div></div><div class="small">\${currentView==='partner'?tabPartnerName:tabMeName} passport: \${shown}/\${a.stamps.length} · Together: \${together}/\${a.stamps.length} · L$ amount reveals only when both finish</div></div></div>\${missionSetup(a)}<div style="padding:0 17px 17px">\${missionRows(a)}</div><div class="runmap" id="run-map"></div></div>\`;
+ return `<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>${esc(a.title)} <span class="badge">🦄 500 Bucks</span> <span class="badge mystery">🎁 Mystery L$</span></h3><div class="meta">${esc(a.zone)} · about ${a.minutes} min · 3 stops</div><div class="progress"><div class="bar" style="width:${Math.round((shown/a.stamps.length)*100)}%"></div></div><div class="small">${currentView==='partner'?tabPartnerName:tabMeName} passport: ${shown}/${a.stamps.length} · Together: ${together}/${a.stamps.length} · L$ amount reveals only when both finish</div></div></div>${missionSetup(a)}<div style="padding:0 17px 17px">${missionRows(a)}</div><div class="runmap" id="run-map"></div></div>`;
 }
 function collapsedTrip(a,completed=false){
  const r=completed?rewardFor(a):0;
- const rewardText=completed&&r?\`🦄 500 Bucks · 🎁 \${r} L$\`:'🦄 500 Bucks · 🎁 mystery';
- return \`<details class="trip \${completed?'completed-row':''}"><summary><div class="summary-main"><span class="light \${completed?'red':'green'}"></span><strong>\${esc(a.title)}</strong> <span class="small">· 3 stops · ~\${a.minutes} min</span></div><div class="summary-right">\${rewardText}</div></summary><div class="tripbody">\${missionSetup(a)}\${missionRows(a)}<div class="actions" style="margin-top:10px">\${completed?'':\`<button class="primary" onclick="startAdventure(\${a.id})">Make this our adventure</button>\`}</div></div></details>\`;
+ const rewardText=completed&&r?`🦄 500 Bucks · 🎁 ${r} L$`:'🦄 500 Bucks · 🎁 mystery';
+ return `<details class="trip ${completed?'completed-row':''}"><summary><div class="summary-main"><span class="light ${completed?'red':'green'}"></span><strong>${esc(a.title)}</strong> <span class="small">· 3 stops · ~${a.minutes} min</span></div><div class="summary-right">${rewardText}</div></summary><div class="tripbody">${missionSetup(a)}${missionRows(a)}<div class="actions" style="margin-top:10px">${completed?'':`<button class="primary" onclick="startAdventure(${a.id})">Make this our adventure</button>`}</div></div></details>`;
 }
 function rewardOwnerName(){return tabMeName}
 function completedFor(set){return adventures.filter(a=>personComplete(a,set)).length}
@@ -321,11 +321,11 @@ function markPaid(){
 function rewardHtml(){
  ensureAdventureRewards();
  const balance=unicornBalance(),pending=partnerAheadCount()*500,due=unpaidLinden(),ready=availableRewardAdventures(),readyL=revealedReadyLinden(),next=ready[0],nextL=next?rewardFor(next):0;
- return \`<div class="bankhead"><div><h3>🦄 Unicorn Bucks <span class="alienmark">👽</span></h3><div class="small">Each jointly completed 3-stop adventure reveals a random <b>20–100 L$</b> reward. The amount stays secret until both passports finish the run.</div></div></div>
- <div class="bankgrid"><div class="bankcard"><span>\${rewardOwnerName()}'s balance</span><strong>\${balance.toLocaleString()} 🦄</strong><span>\${ready.length?\`\${readyL} L$ revealed across \${ready.length} completed reward\${ready.length===1?'':'s'}\`:'No L$ reward revealed yet'}</span><div style="margin-top:12px"><button class="cashout" onclick="cashOut()" \${balance<500||!next?'disabled':''}>\${next?\`Cash out 500 Bucks · \${nextL} L$\`:'Cash out after the next completed run'}</button></div></div></div>
- \${pending?\`<div class="small" style="margin-top:10px">✨ \${pending/500} adventure\${pending===500?'':'s'} already finished by her — waiting for you. The L$ amount is still hidden.</div>\`:''}
- \${due?\`<div class="payoutdue"><div><strong>💸 \${due} L$ payout due</strong><div class="small">Already redeemed. ❤️</div></div><button onclick="markPaid()">Mark paid</button></div>\`:''}
- <details class="recent"><summary>Past payouts</summary>\${payoutLog.slice(0,5).map(r=>\`<div class="recentline">\${r.paid?'✓':'•'} \${r.linden} L$ \${r.title?'· '+esc(r.title)+' ':''}\${r.paid?'paid':'due'}</div>\`).join('')||'<div class="recentline">None yet.</div>'}</details>\`;
+ return `<div class="bankhead"><div><h3>🦄 Unicorn Bucks <span class="alienmark">👽</span></h3><div class="small">Each jointly completed 3-stop adventure reveals a random <b>20–100 L$</b> reward. The amount stays secret until both passports finish the run.</div></div></div>
+ <div class="bankgrid"><div class="bankcard"><span>${rewardOwnerName()}'s balance</span><strong>${balance.toLocaleString()} 🦄</strong><span>${ready.length?`${readyL} L$ revealed across ${ready.length} completed reward${ready.length===1?'':'s'}`:'No L$ reward revealed yet'}</span><div style="margin-top:12px"><button class="cashout" onclick="cashOut()" ${balance<500||!next?'disabled':''}>${next?`Cash out 500 Bucks · ${nextL} L$`:'Cash out after the next completed run'}</button></div></div></div>
+ ${pending?`<div class="small" style="margin-top:10px">✨ ${pending/500} adventure${pending===500?'':'s'} already finished by her — waiting for you. The L$ amount is still hidden.</div>`:''}
+ ${due?`<div class="payoutdue"><div><strong>💸 ${due} L$ payout due</strong><div class="small">Already redeemed. ❤️</div></div><button onclick="markPaid()">Mark paid</button></div>`:''}
+ <details class="recent"><summary>Past payouts</summary>${payoutLog.slice(0,5).map(r=>`<div class="recentline">${r.paid?'✓':'•'} ${r.linden} L$ ${r.title?'· '+esc(r.title)+' ':''}${r.paid?'paid':'due'}</div>`).join('')||'<div class="recentline">None yet.</div>'}</details>`;
 }
 function render(){
  ensureAdventureRewards();
@@ -343,7 +343,7 @@ function render(){
  const campaignDone=currentView==='partner'?partnerDone.size:meDone.size;
  const passportDone=Math.min(TOTAL_PASSPORT_STAMPS,campaignDone+knownPreCampaignStamps(currentView));
  const toGo=Math.max(0,TOTAL_PASSPORT_STAMPS-passportDone);
- $('#scorecard').innerHTML=\`<div class="score coin"><b>🦄 \${unicornBalance().toLocaleString()}</b><span>\${rewardOwnerName()}'s Bucks · \${availableRewardAdventures().length?revealedReadyLinden()+' L$ revealed':'L$ mystery'}</span></div><div class="score"><b>\${passportDone}/\${TOTAL_PASSPORT_STAMPS}</b><span>\${currentView==='partner'?tabPartnerName:tabMeName} stamps · \${toGo} to go</span></div>\`;
+ $('#scorecard').innerHTML=`<div class="score coin"><b>🦄 ${unicornBalance().toLocaleString()}</b><span>${rewardOwnerName()}'s Bucks · ${availableRewardAdventures().length?revealedReadyLinden()+' L$ revealed':'L$ mystery'}</span></div><div class="score"><b>${passportDone}/${TOTAL_PASSPORT_STAMPS}</b><span>${currentView==='partner'?tabPartnerName:tabMeName} stamps · ${toGo} to go</span></div>`;
  const tp=document.getElementById('tab-partner'), tm=document.getElementById('tab-me');
  if(tp){tp.textContent='❤️ '+tabPartnerName;tp.classList.toggle('active',currentView==='partner')}
  if(tm){tm.textContent='🧭 '+tabMeName;tm.classList.toggle('active',currentView==='me')}
