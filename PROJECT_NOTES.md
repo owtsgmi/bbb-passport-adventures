@@ -24,7 +24,7 @@ This file is the persistent source of truth for future edits to this project.
 ## UI
 - Two configurable player tabs; current intended labels are **AA** and **KK**.
 - Button text: **Pick an Adventure**.
-- Current run loads collapsed.
+- Current adventure loads collapsed.
 - Adult-playful purple/pink/gold style with subtle alien graphics.
 - Settings page allows:
   - player/tab names
@@ -45,7 +45,7 @@ This file is the persistent source of truth for future edits to this project.
 - Shared progress table: `public.bbb_board_state`.
 - Encrypted private settings table: `public.bbb_private_settings`.
 - Current shared-state row is id=1.
-- Adventure progress, current run, mystery reward values, and payout history are persisted in Supabase. Legacy Unicorn-Bucks columns may remain in the table for backward compatibility but are no longer part of the app's game model or UI.
+- Adventure progress, current adventure, mystery reward values, and payout history are persisted in Supabase. Legacy Unicorn-Bucks columns may remain in the table for backward compatibility but are no longer part of the app's game model or UI.
 
 ## Important implementation cautions
 - Do not claim BBB automatic stamp sync is working until the StaFi parser/sync has actually been connected and tested.
@@ -130,7 +130,7 @@ This file is the persistent source of truth for future edits to this project.
   - Roles: owner/admin/member.
 - Phase 3 — Scope game state:
   - Replace the single global `bbb_board_state` row with club-scoped state.
-  - Adventure starts, current run, completion history, reward rules, payout history, and settings belong to a club.
+  - Adventure starts, current adventure, completion history, reward rules, payout history, and settings belong to a club.
 - Phase 4 — Per-user passport progress:
   - Add normalized `user_stamp_progress` keyed by user + stamp.
   - Each user's StaFi URL remains private to that user; only derived progress is shared with clubs as needed.
@@ -144,7 +144,7 @@ This file is the persistent source of truth for future edits to this project.
 - Phase 7 — Generalize rewards:
   - Replace AA/KK-specific reward ownership with configurable club rules: earner(s), sponsor(s), reward amount, required participants, and payout model.
 - Phase 8 — Migration:
-  - Convert the current AA/KK installation into the first club and preserve existing completed adventures, current run, revealed reward values, and payout history.
+  - Convert the current AA/KK installation into the first club and preserve existing completed adventures, current adventure, revealed reward values, and payout history.
 - Phase 9 — Public hardening:
   - Add rate limits/abuse controls to feedback, invitations, and other write endpoints.
   - Replace temporary feedback Owner Passphrase with authenticated owner/admin roles when public launch happens.
@@ -156,7 +156,7 @@ This file is the persistent source of truth for future edits to this project.
 - It uses Linden Lab's documented map tile pyramid: zoom level 1 is region detail and level 8 is the broadest/world view.
 - The map renders a 5×5 tile neighborhood around the current center, supports drag/pan, wheel/buttons for zoom, **Fit**, and **World**.
 - BBB Stops page uses this map for the selected stop and gives it substantial vertical space.
-- The Adventures page places a map at the bottom of the current run and marks all 3 stops (1, 2, 3); Fit frames the route and World provides broad SL context.
+- The Adventures page places a map at the bottom of the current adventure and marks all 3 stops (1, 2, 3); Fit frames the route and World provides broad SL context.
 - Region names are translated to grid coordinates through Linden Lab's public region-coordinate capability.
 - Do not revert to embedding the maps.secondlife.com SLURL page in an iframe; that approach produced blank embeds.
 
@@ -170,3 +170,13 @@ This file is the persistent source of truth for future edits to this project.
 - AA remains sponsor/payer; KK remains reward recipient.
 - Payout log stores the actual L$ amount and adventure ID so a completed run cannot be paid twice.
 - Historical payout entries and the old `unicorn_redeemed` field are legacy migration data only; do not expose them as a current game concept.
+
+
+## Adventure stop map selection
+- Use **adventure** as the main user-facing term; avoid mixing “run” and “adventure” unless “run” is specifically useful.
+- The **Current Adventure** stop rows are map-selectable.
+- Clicking a stop row or its **🗺 Map** button focuses the shared map on that stop at region-detail zoom.
+- Selecting a stop must reset previous map manipulation (pan/zoom) before focusing the new stop.
+- The automatic **NEXT** indicator is separate from the user's selected map stop. The selected map row gets its own visual highlight / MAP tag.
+- The current-adventure overview map initially shows all 3 stops; **Fit** restores the adventure overview and **World** shows broad SL context.
+- Do not make stops in non-current collapsed adventures control the current-adventure map.
