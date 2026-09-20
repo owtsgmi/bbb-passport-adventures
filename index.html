@@ -218,6 +218,7 @@ async function readPrivateSettings(){
 }
 function applyPrivateSettings(p){
  tabPartnerName=p.tabPartnerName||'K View';tabMeName=p.tabMeName||'A View';partnerStaFiUrl=p.partnerStaFiUrl||'';meStaFiUrl=p.meStaFiUrl||'';defaultView=p.defaultView||'partner';
+ if(!localStorage.getItem('bbb-view'))currentView=defaultView;
  localStorage.setItem('bbb-tab-partner-name',tabPartnerName);localStorage.setItem('bbb-tab-me-name',tabMeName);localStorage.setItem('bbb-partner-stafi-url',partnerStaFiUrl);localStorage.setItem('bbb-me-stafi-url',meStaFiUrl);localStorage.setItem('bbb-default-view',defaultView);
 }
 async function unlockPrivateSettings(){
@@ -495,6 +496,7 @@ function adoptCloud(row){
   if(row.tab_partner_name)tabPartnerName=String(row.tab_partner_name);
   if(row.tab_me_name)tabMeName=String(row.tab_me_name);
   if(row.default_view==='partner'||row.default_view==='me')defaultView=row.default_view;
+  if(!localStorage.getItem('bbb-view'))currentView=defaultView;
   localStorage.setItem('bbb-tab-partner-name',tabPartnerName);
   localStorage.setItem('bbb-tab-me-name',tabMeName);
   localStorage.setItem('bbb-default-view',defaultView);
@@ -527,6 +529,7 @@ async function firstCloudSync(){
     if(row.tab_partner_name)tabPartnerName=String(row.tab_partner_name);
     if(row.tab_me_name)tabMeName=String(row.tab_me_name);
     if(row.default_view==='partner'||row.default_view==='me')defaultView=row.default_view;
+    if(!localStorage.getItem('bbb-view'))currentView=defaultView;
     localStorage.setItem('bbb-tab-partner-name',tabPartnerName);
     localStorage.setItem('bbb-tab-me-name',tabMeName);
     localStorage.setItem('bbb-default-view',defaultView);
