@@ -43,15 +43,15 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
 </section>
 
 <section class="card">
-<h3>4. Unicorn Bucks + mystery L$</h3>
-<p>Each jointly completed three-stop adventure earns <b>KK 500 Unicorn Bucks</b> and reveals a random <b>20–100 L$</b> reward.</p>
-<p>The L$ amount is deliberately hidden while the run is in progress. It is generated once and revealed only after both passports finish all three stops. AA is the sponsor/payer; KK remains the reward recipient.</p>
+<h3>4. Mystery L$ reward</h3>
+<p>Each jointly completed three-stop adventure reveals a random <b>20–100 L$</b> prize for KK.</p>
+<p>The amount stays completely hidden while the run is in progress. It is generated once when both passports finish all three stops, then saved so reopening the app or switching devices cannot reroll it.</p>
 </section>
 
 <section class="card">
-<h3>5. Cashing out</h3>
-<p>When 500 Bucks are available, KK can redeem the corresponding revealed mystery reward. The site records that exact L$ amount as due until AA marks it paid.</p>
-<p>The site does not transfer Linden dollars itself; it only tracks the promise and payment status.</p>
+<h3>5. Getting paid</h3>
+<p>As soon as a run is completed, its revealed L$ prize is added directly to the unpaid prize total. There is no separate points currency or cash-out step.</p>
+<p>AA is the sponsor/payer. The app records the amount as due until AA marks it paid; it does not transfer Linden dollars itself.</p>
 </section>
 
 <section class="card">
@@ -90,8 +90,8 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
     </section>
     <section class="archcard">
       <h3>Shared state & rewards</h3>
-      <p>Supabase stores the shared current adventure, each player's campaign progress, reward redemption history, and payout state.</p>
-      <p>An adventure completes only when both players have all three stamps. The present personal setup awards KK 500 Unicorn Bucks plus a hidden random 20–100 L$ reward per jointly completed adventure, with AA as sponsor. The L$ value is persisted only after completion so the reveal survives syncing between devices.</p>
+      <p>Supabase stores the shared current adventure, each player's campaign progress, revealed reward history, and payout state.</p>
+      <p>An adventure completes only when both players have all three stamps. The present personal setup awards KK one hidden random 20–100 L$ prize per jointly completed adventure, with AA as sponsor. The L$ value is persisted only after completion so the reveal survives syncing between devices, and it is added directly to the unpaid payout total.</p>
     </section>
     <section class="archcard">
       <h3>Private settings</h3>
@@ -124,7 +124,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
         <li><b>Make stamp progress user-scoped:</b> each member gets their own passport progress records. StaFi links remain private to that user; the club only needs the resulting stamp state.</li>
         <li><b>Use RLS everywhere:</b> Supabase policies should allow users to see/change only their own profile data and clubs they actually belong to. Club owners/admins get explicit moderation permissions.</li>
         <li><b>Add live collaboration:</b> subscribe to club state changes so adventure progress updates instantly across members' devices.</li>
-        <li><b>Generalize rewards:</b> move KK/AA-specific ownership into configurable club rules: who earns, who sponsors, reward amount, and whether everyone or selected members must complete a run.</li>
+        <li><b>Generalize rewards:</b> move KK/AA-specific ownership into configurable club rules: who receives the prize, who sponsors it, the reward range or fixed amount, and whether everyone or selected members must complete a run.</li>
         <li><b>Migrate this prototype:</b> preserve the existing AA/KK history by converting it into the first club, keeping completed adventures and payout records intact.</li>
         <li><b>Harden public features:</b> rate-limit feedback/invites, add basic abuse controls, and eventually replace the temporary Owner Passphrase with authenticated owner/admin roles.</li>
       </ol>
