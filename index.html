@@ -283,9 +283,40 @@ function syncCompletedRewardsToPayouts(){
 }
 function progressFor(a,set){return a.stamps.filter(s=>set.has(s.id)).length}
 function sharedNextIndex(a){let i=a.stamps.findIndex(s=>!(meDone.has(s.id)&&partnerDone.has(s.id)));return i<0?0:i}
-function startAdventure(id){started.add(id);lastAdventure=id;localStorage.setItem('bbb-last-adventure',id);saveAll();setTimeout(jumpPinned,40)}
+function activeAdventure(){
+ let a=adventures.find(x=>x.id===lastAdventure&&!togetherComplete(x));
+ if(!a)a=adventures.find(x=>startedAdventure(x)&&!togetherComplete(x));
+ return a||null;
+}
+function setAdventureLocked(v){
+ adventureLocked=!!v;
+ localStorage.setItem('bbb-adventure-locked',adventureLocked?'true':'false');
+ saveAll();
+ toast(adventureLocked?'🔒 Current adventure locked':'🔓 Current adventure unlocked');
+}
+function startAdventure(id){
+ const target=adventures.find(a=>a.id===Number(id));if(!target)return false;
+ const current=activeAdventure();
+ if(current&&current.id!==target.id){
+   if(adventureLocked){
+     toast('🔒 Current adventure is locked. Unlock it before switching.');
+     return false;
+   }
+   if(!confirm('Switch from "'+current.title+'" to "'+target.title+'"?\n\nYour existing stamp progress will be kept.'))return false;
+ }
+ started.add(target.id);lastAdventure=target.id;adventureLocked=true;
+ localStorage.setItem('bbb-last-adventure',target.id);
+ localStorage.setItem('bbb-adventure-locked','true');
+ saveAll();setTimeout(jumpPinned,40);return true;
+}
 function toggleFor(person,id,advId){const set=person==='me'?meDone:partnerDone;set.has(id)?set.delete(id):set.add(id);started.add(advId);lastAdventure=advId;localStorage.setItem('bbb-last-adventure',advId);syncCompletedRewardsToPayouts();saveAll()}
-function surpriseUs(){const pool=adventures.filter(a=>!startedAdventure(a)&&!togetherComplete(a));if(!pool.length)return toast('No untouched adventures left.');const a=pool[Math.floor(Math.random()*pool.length)];startAdventure(a.id);toast('Pinned: '+a.title)}
+function surpriseUs(){
+ const current=activeAdventure();
+ if(current&&adventureLocked)return toast('🔒 Current adventure is locked. Unlock it before picking another.');
+ const pool=adventures.filter(a=>!startedAdventure(a)&&!togetherComplete(a));if(!pool.length)return toast('No untouched adventures left.');
+ const a=pool[Math.floor(Math.random()*pool.length)];
+ if(startAdventure(a.id))toast('Pinned: '+a.title);
+}
 function jumpPinned(){document.getElementById('pinned')?.scrollIntoView({behavior:'smooth',block:'start'})}
 function fsUrl(s){return 'secondlife://'+encodeURIComponent(s.region).replace(/%20/g,'%20')+'/'+s.x+'/'+s.y+'/'+s.z}
 function meetHere(a,i){const s=a.stamps[i];copy(`Meet me at ${s.name} — Stop ${i+1} of ${a.stamps.length} on ${a.title}. Paste/click in Firestorm: ${fsUrl(s)}`,'Meetup copied for Firestorm')}
