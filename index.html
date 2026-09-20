@@ -5,7 +5,7 @@
 :root{--bg:#090816;--panel:#151229;--panel2:#1d1737;--ink:#fff9ff;--muted:#bcb0ca;--blue:#69d8ff;--gold:#ffd166;--green:#63e6a5;--red:#ff6b81;--pink:#ff78c8;--purple:#9d7bff;--line:#332a4c}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 12% 0%,#342052 0,#171126 30%,#0d0a16 72%);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,sans-serif}body:before{content:"";position:fixed;inset:0;pointer-events:none;background-image:radial-gradient(circle,#ffffff22 1px,transparent 1px);background-size:34px 34px;opacity:.2}
 header{position:sticky;top:0;z-index:10;background:#100c24ee;backdrop-filter:blur(12px);border-bottom:1px solid #4a376c;padding:14px 4vw;box-shadow:0 8px 30px #0005}
-.headrow{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.brand h1{margin:0;font-size:30px;font-weight:800;letter-spacing:-.02em;background:linear-gradient(90deg,#ffe39a,#ff9bd7,#b99cff);-webkit-background-clip:text;color:transparent}.brand .coinhunt{font-weight:900;letter-spacing:.06em;font-size:12px;color:#ffd166;margin-top:3px}.sub,.meta,.small{color:var(--muted)}.brand .sub{font-size:14px;margin-top:2px}.section h2{letter-spacing:-.01em}
+.headrow{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;position:relative}.brand h1{margin:0;font-size:30px;font-weight:800;letter-spacing:-.02em;background:linear-gradient(90deg,#ffe39a,#ff9bd7,#b99cff);-webkit-background-clip:text;color:transparent}.brand .coinhunt{font-weight:900;letter-spacing:.06em;font-size:12px;color:#ffd166;margin-top:3px}.sub,.meta,.small{color:var(--muted)}.brand .sub{font-size:14px;margin-top:2px}.section h2{letter-spacing:-.01em}
 .scorecard{display:flex;gap:10px;align-items:center;min-width:0}.score{background:#181124cc;border:1px solid #4d3a66;border-radius:999px;padding:9px 14px;text-align:center;box-shadow:0 5px 20px #0002}.score b{display:inline;font-size:18px;margin-right:5px}.coin{border-color:#8b6d2a;background:linear-gradient(180deg,#382a12,#1a1423)}.coin b{color:#ffd166;text-shadow:0 0 14px #ffd16677}.rewardbox{background:linear-gradient(135deg,#26183b,#171323 70%);border:1px solid #6c548f;border-radius:22px;padding:18px 20px;margin:18px 0;box-shadow:0 12px 34px #0003}.rewardbox h3{margin:0 0 7px;font-size:21px;color:#ffd166}.bankhead{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap}.bankgrid{display:block;margin-top:10px}.bankcard{background:#110d1dcc;border:1px solid #49395f;border-radius:18px;padding:16px}.bankcard strong{display:block;font-size:34px;color:#ffe08a;letter-spacing:-.02em}.bankcard span{font-size:12px;color:var(--muted)}.payoutdue{background:linear-gradient(135deg,#3a171f,#28142f);border:1px solid #ff7f98;border-radius:14px;padding:12px 14px;margin-top:12px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.payoutdue strong{font-size:20px;color:#ffb2c1}.cashout{background:linear-gradient(135deg,#6d4bd8,#a743bd);border-color:#cf9cff;font-weight:800}.pendingcash{color:#f7c3e9}.recent{margin-top:10px;padding-top:10px;border-top:1px solid #47385f}.recentline{font-size:12px;color:var(--muted);padding:3px 0}.compactdetails{background:#100d21;border:1px solid #332a4c;border-radius:14px;margin:14px 0}.currentrun{border-color:#70568f;background:linear-gradient(135deg,#1b1228,#110e1c)}.currentrun>summary{font-size:18px}.compactdetails>summary{font-weight:800;font-size:16px}.compactdetails>.inside{padding:0 14px 14px}.filterdetails{margin-top:8px}.filterdetails summary{color:var(--muted);font-size:13px;padding:5px 0}.filterdetails[open] summary{color:#fff}.tiny{font-size:11px;color:var(--muted)}.coinhero{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:12px 0}.coinpot{flex:1;min-width:220px;background:#120e24;border:1px solid #5f4e91;border-radius:14px;padding:12px 14px}.coinpot strong{font-size:25px;color:#ffd166}.coinpot .nextreward{margin-top:5px;color:#f8c6ef}.coinvalue{display:inline-block;background:#2b2212;border:1px solid #766028;color:#ffe49a;border-radius:999px;padding:3px 8px;font-weight:800;font-size:11px;margin-left:7px}.milestones{display:flex;gap:8px;flex-wrap:wrap}.milestone{border:1px solid #54486c;background:#120e24;border-radius:999px;padding:7px 10px;font-size:13px}.milestone.on{border-color:#ff8dd5;background:#30183a;box-shadow:0 0 12px #ff78c833}.sparkle{color:#ffd166}.score span{font-size:12px;color:var(--muted)}
 .controls,.actions,.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.settingspage{display:none;max-width:900px;margin:18px auto;padding:0 4vw}.settingspage.open{display:block}.settingscard{background:linear-gradient(135deg,#171121,#21122a);border:1px solid #674d85;border-radius:20px;padding:18px;box-shadow:0 12px 32px #0003}.settingsgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.settingsfield label{display:block;font-weight:800;margin-bottom:6px}.settingsfield input,.settingsfield select{width:100%}.settingsnote{margin-top:12px;color:var(--muted);font-size:12px}.alienmark{font-size:18px;filter:drop-shadow(0 0 8px #69d8ff66)}.viewtabs{display:flex;gap:6px;margin-top:10px}.viewtab{border-radius:999px;padding:9px 15px;background:#171121;border:1px solid #4b3b61;color:var(--muted);font-weight:700}.viewtab.active{background:linear-gradient(135deg,#8b63e8,#c45ca8);color:white;border-color:#d7a4e8}.controls{margin-top:10px}.filters{margin-top:8px}
 button,input,select{border:1px solid #4b3b61;border-radius:12px;background:#171121;color:var(--ink);padding:10px 12px}button{cursor:pointer;transition:.15s transform,.15s border-color}button:hover{transform:translateY(-1px);border-color:#9d7bff}.primary{background:linear-gradient(135deg,#8b63e8,#c45ca8);border-color:#d7a4e8;font-weight:800}
@@ -19,14 +19,14 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 .nextrow td{box-shadow:inset 0 0 0 1px #ffd16677}.nexttag{color:var(--gold);font-size:11px;font-weight:800;margin-left:6px}.mapselectable{cursor:pointer}.mapselectable:hover td{background:linear-gradient(90deg,#261d43,#30234e)}.mapselected td{box-shadow:inset 0 0 0 2px #ff78c8aa!important}.maptag{color:#ffc3e8;font-size:11px;font-weight:900;margin-left:6px}.mapbtn{margin-left:6px;background:#2a1c45;border-color:#76599a}.sl{text-decoration:none;background:#12668f;color:white;padding:7px 9px;border-radius:8px;font-weight:700;display:inline-block}
 #toast{display:none;position:fixed;right:18px;bottom:18px;z-index:50;background:#10243a;border:1px solid var(--blue);border-radius:10px;padding:12px 15px;max-width:480px}
 @media(max-width:820px){.settingsgrid{grid-template-columns:1fr}.headrow{display:block}.scorecard{min-width:0;margin-top:10px;display:flex;flex-wrap:wrap}.bankgrid{display:block}.score b{font-size:15px}.mission-setup{grid-template-columns:1fr}.summary-right{display:none}.mission-table thead{display:none}.mission-table,.mission-table tbody,.mission-table tr,.mission-table td{display:block;width:100%}.mission-table tr{margin-bottom:8px;background:var(--panel2);border-radius:10px;padding:7px}.mission-table td{background:transparent;padding:4px 6px}.mission-table td:first-child,.mission-table td:last-child{border-radius:0}.mission-table .who,.mission-table .act{text-align:left;width:auto}.mission-table .who::before{font-size:12px;color:var(--muted);margin-right:6px}.mission-table .mine::before{content:"My passport:"}.mission-table .theirs::before{content:"Partner:"}}
-@media(max-width:520px){.bankgrid{grid-template-columns:1fr}.brand h1{font-size:23px}}
+@media(max-width:820px){.navwrap{position:relative;right:auto;top:auto;margin:0 0 8px 0}.headrow{display:block}.scorecard{margin-top:10px}}@media(max-width:520px){.bankgrid{grid-template-columns:1fr}.brand h1{font-size:23px}}
 
-.navwrap{position:relative;margin-right:auto}.navbtn{font-weight:900}.navmenu{display:none;position:absolute;left:0;right:auto;top:44px;min-width:210px;background:#171121;border:1px solid #5c4775;border-radius:14px;padding:8px;box-shadow:0 16px 36px #0008;z-index:30}.navwrap.open .navmenu{display:block}.navmenu a{display:block;color:var(--ink);text-decoration:none;padding:10px 12px;border-radius:10px}.navmenu a:hover{background:#2a1e3d}.navmenu .here{color:#ffd166}
+.navwrap{position:absolute;right:100%;top:1px;margin-right:8px;z-index:31}.navbtn{font-weight:900;width:40px;height:40px;padding:0;font-size:20px;display:grid;place-items:center}.navmenu{display:none;position:absolute;left:0;right:auto;top:44px;min-width:210px;background:#171121;border:1px solid #5c4775;border-radius:14px;padding:8px;box-shadow:0 16px 36px #0008;z-index:30}.navwrap.open .navmenu{display:block}.navmenu a{display:block;color:var(--ink);text-decoration:none;padding:10px 12px;border-radius:10px}.navmenu a:hover{background:#2a1e3d}.navmenu .here{color:#ffd166}
 </style></head>
 <body>
 <header>
-<div class="navwrap" id="main-nav"><button class="navbtn" onclick="document.getElementById('main-nav').classList.toggle('open')">☰ Menu</button><div class="navmenu"><a class="here" href="index.html">🎮 Adventures</a><a href="instructions.html">📖 Instructions</a><a href="bbb.html">📍 BBB Passport Stops</a><a href="feedback.html">💬 Comments & Bugs</a></div></div>
 <div class="headrow">
+  <div class="navwrap" id="main-nav"><button class="navbtn" title="Menu" aria-label="Menu" onclick="document.getElementById('main-nav').classList.toggle('open')">☰</button><div class="navmenu"><a class="here" href="index.html">🎮 Adventures</a><a href="instructions.html">📖 Instructions</a><a href="bbb.html">📍 BBB Passport Stops</a><a href="feedback.html">💬 Comments & Bugs</a></div></div>
   <div class="brand"><h1>🦄👽 Second Life Passport Adventures</h1><div class="sub">Hunt BBB passport stamps across the Second Life universe in quick 3-stop adventures. Both passports must finish all 3 to reveal the mystery L$ prize.</div></div>
   <div class="scorecard" id="scorecard"></div>
 </div>
@@ -36,8 +36,8 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
     
 </div>
 <div class="viewtabs">
-  <button id="tab-partner" class="viewtab" onclick="setView('partner')">❤️ K View</button>
-  <button id="tab-me" class="viewtab" onclick="setView('me')">🧭 A View</button>
+  <button id="tab-partner" class="viewtab" onclick="setView('partner')">🗡️ K View</button>
+  <button id="tab-me" class="viewtab" onclick="setView('me')">👽 A View</button>
 </div>
 <details class="filterdetails"><summary>Search & options</summary>
   <div class="filters"><input id="q" placeholder="Find an adventure…"><select id="zone"><option value="">All areas</option></select></div>
@@ -48,16 +48,16 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
   <div class="settingscard">
     <div class="advhead"><div><h2 style="margin:0 0 4px">⚙ Passport Settings <span class="alienmark">👽</span></h2><div class="small">Names and encrypted BBB StaFi progress pages.</div></div><button onclick="toggleSettings()">✕ Close</button></div>
     <div class="settingsgrid" style="margin-top:16px">
-      <div class="settingsfield"><label>❤️ First tab name</label><input id="set-partner-name" placeholder="K View"></div>
-      <div class="settingsfield"><label>🧭 Second tab name</label><input id="set-me-name" placeholder="A View"></div>
-      <div class="settingsfield"><label>❤️ First BBB StaFi progress page</label><input id="set-partner-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
-      <div class="settingsfield"><label>🧭 Second BBB StaFi progress page</label><input id="set-me-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
+      <div class="settingsfield"><label>🗡️ First tab name</label><input id="set-partner-name" placeholder="K View"></div>
+      <div class="settingsfield"><label>👽 Second tab name</label><input id="set-me-name" placeholder="A View"></div>
+      <div class="settingsfield"><label>🗡️ First BBB StaFi progress page</label><input id="set-partner-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
+      <div class="settingsfield"><label>👽 Second BBB StaFi progress page</label><input id="set-me-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
       <div class="settingsfield"><label>Open on</label><select id="set-default-view"><option value="partner">First tab</option><option value="me">Second tab</option></select></div>
       <div class="settingsfield"><label>🔐 Secret Club Code</label><input id="set-family-key" type="password" autocomplete="new-password" placeholder="Use the same key on both devices"></div>
     </div>
     <div class="actions" style="margin-top:12px"><label class="small"><input id="set-remember-key" type="checkbox" checked> Remember Secret Club Code on this device</label></div>
-    <div class="actions" style="margin-top:16px"><button class="primary" onclick="saveSettings()">💾 Save & Sync</button><button onclick="unlockPrivateSettings()">🔓 Load from Cloud</button><button onclick="copyFamilyKey()">🔑 Copy Secret Club Code</button><button onclick="copySetupLink()">🔗 Copy Device Setup Link</button><button onclick="testCurrentStaFi()">🔗 Open selected StaFi page</button></div>
-    <div class="settingsnote"><b>Tab names and the default tab now sync automatically across devices.</b> BBB StaFi links remain encrypted. For a new device, either enter the same Secret Club Code or use <b>Copy Device Setup Link</b>; its secret travels only in the URL fragment and is removed from the address bar when opened. Automatic stamp importing is still a separate connection.</div>
+    <div class="actions" style="margin-top:16px"><button class="primary" onclick="saveSettings()">💾 Save & Sync</button><button onclick="unlockPrivateSettings()">🔓 Load from Cloud</button><button onclick="copyFamilyKey()">🔑 Copy Secret Club Code</button><button onclick="testCurrentStaFi()">🔗 Open selected StaFi page</button></div>
+    <div class="settingsnote"><b>Tab names and the default tab sync automatically across devices.</b> BBB StaFi links remain encrypted. On a new trusted device, enter or paste the same Secret Club Code and use <b>Load from Cloud</b>. Automatic stamp importing is still a separate connection.</div>
   </div>
 </section>
 
@@ -133,25 +133,6 @@ function copyFamilyKey(){
  if(!k)return toast('Save settings first to create a Secret Club Code.');
  copy(k,'Secret Club Code copied');
 }
-function copySetupLink(){
- const k=$('#set-family-key')?.value.trim()||familyKey;
- if(!k)return toast('Save settings first to create a Secret Club Code.');
- const url=location.origin+location.pathname+location.search+'#setup='+encodeURIComponent(k);
- copy(url,'Device setup link copied');
-}
-function importSetupKeyFromHash(){
- const h=location.hash||'';
- if(!h.startsWith('#setup='))return false;
- try{
-   const k=decodeURIComponent(h.slice(7)).trim();
-   if(k.length<8)return false;
-   familyKey=k;
-   localStorage.setItem('bbb-family-key',familyKey);
-   sessionStorage.removeItem('bbb-family-key');
-   history.replaceState(null,'',location.pathname+location.search);
-   return true;
- }catch(e){return false}
-}
 async function saveSettings(){
  tabPartnerName=$('#set-partner-name').value.trim()||'K View';
  tabMeName=$('#set-me-name').value.trim()||'A View';
@@ -205,7 +186,7 @@ async function decryptPrivatePayload(row,secret){
  return JSON.parse(new TextDecoder().decode(plain));
 }
 async function writePrivateSettings(){
- const payload={tabPartnerName,tabMeName,partnerStaFiUrl,meStaFiUrl,defaultView};
+ const payload={partnerStaFiUrl,meStaFiUrl};
  const enc=await encryptPrivatePayload(payload,familyKey);
  const r=await fetch(SUPA_URL+'/rest/v1/bbb_private_settings?id=eq.1',{method:'PATCH',headers:{apikey:SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({...enc,version:1,updated_at:new Date().toISOString()})});
  if(!r.ok)throw new Error('Private settings write '+r.status);
@@ -217,9 +198,10 @@ async function readPrivateSettings(){
  const rows=await r.json();return rows[0];
 }
 function applyPrivateSettings(p){
- tabPartnerName=p.tabPartnerName||'K View';tabMeName=p.tabMeName||'A View';partnerStaFiUrl=p.partnerStaFiUrl||'';meStaFiUrl=p.meStaFiUrl||'';defaultView=p.defaultView||'partner';
- if(!localStorage.getItem('bbb-view'))currentView=defaultView;
- localStorage.setItem('bbb-tab-partner-name',tabPartnerName);localStorage.setItem('bbb-tab-me-name',tabMeName);localStorage.setItem('bbb-partner-stafi-url',partnerStaFiUrl);localStorage.setItem('bbb-me-stafi-url',meStaFiUrl);localStorage.setItem('bbb-default-view',defaultView);
+ partnerStaFiUrl=p.partnerStaFiUrl||'';
+ meStaFiUrl=p.meStaFiUrl||'';
+ localStorage.setItem('bbb-partner-stafi-url',partnerStaFiUrl);
+ localStorage.setItem('bbb-me-stafi-url',meStaFiUrl);
 }
 async function unlockPrivateSettings(){
  familyKey=$('#set-family-key')?.value||familyKey;
@@ -401,20 +383,18 @@ function render(){
  const toGo=Math.max(0,TOTAL_PASSPORT_STAMPS-passportDone);
  $('#scorecard').innerHTML=`<div class="score coin"><b>🎁 ${unpaidLinden()?unpaidLinden()+' L$':'? L$'}</b><span>${unpaidLinden()?rewardOwnerName()+"'s prize due":'Next prize stays hidden'}</span></div><div class="score"><b>${passportDone}/${TOTAL_PASSPORT_STAMPS}</b><span>${currentView==='partner'?tabPartnerName:tabMeName} stamps · ${toGo} to go</span></div>`;
  const tp=document.getElementById('tab-partner'), tm=document.getElementById('tab-me');
- if(tp){tp.textContent='❤️ '+tabPartnerName;tp.classList.toggle('active',currentView==='partner')}
- if(tm){tm.textContent='🧭 '+tabMeName;tm.classList.toggle('active',currentView==='me')}
+ if(tp){tp.textContent='🗡️ '+tabPartnerName;tp.classList.toggle('active',currentView==='partner')}
+ if(tm){tm.textContent='👽 '+tabMeName;tm.classList.toggle('active',currentView==='me')}
  const linked=(partnerStaFiUrl?1:0)+(meStaFiUrl?1:0);
  const st=document.getElementById('bbb-link-status');
  if(st)st.textContent='• BBB StaFi links: '+linked+'/2'+(familyKey?' · 🔐 saved':' · 🔒 not saved')+' · stamp import pending';
  $('#rewards').innerHTML=rewardHtml();$('#pending-count').textContent='('+pending.length+')';$('#completed-count').textContent='('+completed.length+')';
 }
 function init(){
- const setupImported=importSetupKeyFromHash();
  [...new Set(adventures.map(a=>a.zone))].sort().forEach(z=>$('#zone').insertAdjacentHTML('beforeend',`<option>${esc(z)}</option>`));
  ['q','zone'].forEach(id=>$('#'+id).addEventListener(id==='q'?'input':'change',render));
  const m=location.hash.match(/trip-(\d+)(?:-stop-(\d+))?/);if(m){lastAdventure=Number(m[1]);started.add(lastAdventure);localStorage.setItem('bbb-last-adventure',lastAdventure);localStorage.setItem('bbb-started',JSON.stringify([...started]))}
  render();
- if(setupImported)setTimeout(()=>toast('Device linked — loading shared private settings 🔓'),250);
  if(m)setTimeout(()=>document.getElementById(m[2]?`trip-${m[1]}-stop-${m[2]}`:'pinned-card')?.scrollIntoView({behavior:'smooth',block:'center'}),120);
 }
 init();
