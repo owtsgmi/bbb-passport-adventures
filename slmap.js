@@ -18,7 +18,7 @@
 .slg-tile{position:absolute;width:${TILE}px;height:${TILE}px;object-fit:cover;background:#14101a}
 .slg-marker{position:absolute;transform:translate(-50%,-100%);z-index:5;display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50% 50% 50% 0;background:#ff5fa8;border:3px solid #fff;color:#1b0f1b;font-size:11px;font-weight:900;box-shadow:0 2px 12px #000;rotate:-45deg}
 .slg-marker>span{rotate:45deg}
-.slg-marker.secondary{background:#69d8ff}.slg-marker.tertiary{background:#ffd166}
+.slg-marker.secondary{background:#69d8ff}.slg-marker.tertiary{background:#ffd166}.slg-marker.focused{box-shadow:0 0 0 5px #ff78c855,0 2px 16px #000;z-index:8}
 .slg-empty{padding:28px;text-align:center;color:#bcb0ca}
 @media(max-width:760px){.slg-viewport{height:560px}.slg-level{min-width:auto}}
 `;
@@ -48,7 +48,7 @@
       this.level=Number(opts.level||4);
       this.center={x:1024,y:1024};
       this.markers=[];
-      this.panX=0;this.panY=0;this.scale=1;this.drag=null;
+      this.panX=0;this.panY=0;this.scale=1;this.drag=null;this.focusIndex=-1;
       this._build();
     }
     _build(){
@@ -120,13 +120,36 @@
       }
       return 8;
     }
+    async focusLocation(location,opts={}){
+      let idx=this.markers.findIndex(m=>
+        String(m.region||'').toLowerCase()===String(location.region||'').toLowerCase() &&
+        Number(m.x||0)===Number(location.x||0) &&
+        Number(m.y||0)===Number(location.y||0)
+      );
+      let pos=idx>=0?{x:this.markers[idx].gridX,y:this.markers[idx].gridY}:await lookupRegion(location.region);
+      if(!pos)return false;
+      if(idx<0){
+        this.markers.push({...location,gridX:Number(pos.x),gridY:Number(pos.y)});
+        idx=this.markers.length-1;
+      }
+      this.focusIndex=idx;
+      this.center={x:Number(pos.x),y:Number(pos.y)};
+      this.level=Math.max(1,Math.min(8,Number(opts.level||1)));
+      this.panX=0;this.panY=0;this.scale=1;
+      this.render();
+      return true;
+    }
+    clearFocus(){
+      this.focusIndex=-1;
+      this.render();
+    }
     fitMarkers(){
       if(!this.markers.length)return;
       this.center={
         x:this.markers.reduce((n,m)=>n+m.gridX,0)/this.markers.length,
         y:this.markers.reduce((n,m)=>n+m.gridY,0)/this.markers.length
       };
-      this.level=this._fitLevel(this.markers);this.panX=0;this.panY=0;this.scale=1;this.render();
+      this.level=this._fitLevel(this.markers);this.panX=0;this.panY=0;this.scale=1;this.focusIndex=-1;this.render();
     }
     setLevel(z,world=false){
       this.level=Math.max(1,Math.min(8,Number(z)||1));
@@ -158,7 +181,7 @@
         const wx=m.gridX+Number(m.x||128)/256,wy=m.gridY+Number(m.y||128)/256;
         const px=((wx-baseX)/span)*TILE,py=((topY-wy)/span)*TILE;
         if(px>=-20&&px<=TILE*GRID+20&&py>=-20&&py<=TILE*GRID+20){
-          const cls=i===1?' secondary':i===2?' tertiary':'';
+          const cls=(i===1?' secondary':i===2?' tertiary':'')+(i===this.focusIndex?' focused':'');
           h+='<div class="slg-marker'+cls+'" title="'+String(m.name||m.region).replace(/"/g,'&quot;')+'" style="left:'+px+'px;top:'+py+'px"><span>'+(m.label||String(i+1))+'</span></div>';
         }
       });
