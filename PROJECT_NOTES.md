@@ -203,7 +203,15 @@ This file is the persistent source of truth for future edits to this project.
 - Non-sensitive display settings now live in `bbb_board_state`: `tab_partner_name`, `tab_me_name`, and `default_view`.
 - These display settings sync across devices without requiring the Secret Club Code.
 - Current shared tab names are seeded as **AA** (first tab) and **KK** (second tab).
-- Private StaFi URLs remain in encrypted `bbb_private_settings` and still require the same Secret Club Code on each device.
+- Private StaFi URLs remain in encrypted `bbb_private_settings` and still require the same Secret Club Code on each device. The encrypted payload now contains only StaFi URLs; stale encrypted tab names/default-view values must not override shared display settings.
 - The app polls encrypted private settings every 10 seconds when a Secret Club Code is available, so private-setting changes can propagate to another already-open device.
-- Settings includes **Copy Device Setup Link**. The Secret Club Code is placed only in the URL fragment (`#setup=...`), which is not sent to the web server; the app stores the code locally and immediately removes the fragment from the visible URL.
+- There is **no device setup link**. New trusted devices must manually enter or paste the same Secret Club Code and use **Load from Cloud**. This intentionally avoids putting the permanent club secret into a shareable URL.
 - Do not move raw StaFi URLs or the Secret Club Code into public shared-state columns.
+
+
+## Header and player icon conventions
+- Desktop navigation hamburger is an icon-only **☰** in the left gutter, vertically aligned with the page title/unicorn line rather than sitting on its own row.
+- On narrow/mobile screens the hamburger falls back into normal flow above the title so it remains reachable.
+- First/player-one tab icon: **🗡️**.
+- Second/player-two tab icon: **👽**.
+- Use these same icons for the matching Settings labels and StaFi fields.
