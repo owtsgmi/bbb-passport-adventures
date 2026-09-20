@@ -406,6 +406,10 @@ function render(){
  if(!pinned) pinned=adventures.find(a=>startedAdventure(a)&&!togetherComplete(a));
  if(pinned&&lastAdventure!==pinned.id){lastAdventure=pinned.id;localStorage.setItem('bbb-last-adventure',pinned.id)}
  $('#pinned').innerHTML=pinned?pinnedHtml(pinned):'<div class="pinempty">Ready for another one? Tap <b>Pick an Adventure</b> above.</div>';if(pinned)setTimeout(()=>renderRunMap(pinned),0);
+ const lockBox=document.getElementById('current-lock'),lockLabel=document.getElementById('current-lock-label'),lockText=document.getElementById('current-lock-text');
+ if(lockBox){lockBox.checked=!!(pinned&&adventureLocked);lockBox.disabled=!pinned}
+ if(lockLabel){lockLabel.style.display=pinned?'flex':'none';lockLabel.classList.toggle('locked',!!(pinned&&adventureLocked))}
+ if(lockText)lockText.textContent=adventureLocked?'Adventure locked':'Adventure unlocked';
  const pending=adventures.filter(a=>!togetherComplete(a)&&(!pinned||a.id!==pinned.id)&&matches(a)).sort((a,b)=>a.zone.localeCompare(b.zone)||a.title.localeCompare(b.title));
  $('#pending').innerHTML=pending.map(a=>collapsedTrip(a,false)).join('')||'<div class="pinempty">No pending adventures match this filter.</div>';
  const completed=adventures.filter(a=>togetherComplete(a)&&matches(a)).sort((a,b)=>a.zone.localeCompare(b.zone)||a.title.localeCompare(b.title));
