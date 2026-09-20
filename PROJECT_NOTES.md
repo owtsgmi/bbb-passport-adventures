@@ -197,3 +197,13 @@ This file is the persistent source of truth for future edits to this project.
 - Failed tile URLs are remembered for 5 minutes in a bounded in-memory cache (max 400 entries) so known-missing tiles are not hammered repeatedly.
 - Reusing successful browser-cached tiles is preferred; do not add aggressive cache-busting to normal tile URLs.
 - If missing tiles become widespread even after throttling, investigate the Linden map tile service/network before assuming a JavaScript memory leak.
+
+
+## Cross-device settings sync
+- Non-sensitive display settings now live in `bbb_board_state`: `tab_partner_name`, `tab_me_name`, and `default_view`.
+- These display settings sync across devices without requiring the Secret Club Code.
+- Current shared tab names are seeded as **AA** (first tab) and **KK** (second tab).
+- Private StaFi URLs remain in encrypted `bbb_private_settings` and still require the same Secret Club Code on each device.
+- The app polls encrypted private settings every 10 seconds when a Secret Club Code is available, so private-setting changes can propagate to another already-open device.
+- Settings includes **Copy Device Setup Link**. The Secret Club Code is placed only in the URL fragment (`#setup=...`), which is not sent to the web server; the app stores the code locally and immediately removes the fragment from the visible URL.
+- Do not move raw StaFi URLs or the Secret Club Code into public shared-state columns.
