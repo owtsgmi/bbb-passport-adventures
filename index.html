@@ -280,7 +280,7 @@ function missionRows(a,mapInteractive=false){
    else if(!personDone&&otherDone)note=viewingHer?' · you already have it':' · she already has it';
    const cls=(nr?'nextrow ':'')+(mapInteractive?'mapselectable':'');
    const rowClick=mapInteractive?` onclick="selectAdventureStop(${a.id},${i})"`:'';
-   const mapButton=mapInteractive?`<button class="sl mapbtn" onclick="event.stopPropagation();selectAdventureStop(${a.id},${i})">🗺 Map</button>`:'';
+   const mapButton=mapInteractive?`<button class="sl mapbtn" title="Reset map and zoom to this stop" onclick="event.stopPropagation();selectAdventureStop(${a.id},${i})">🎯 Focus</button>`:'';
    h+=`<tr class="${cls}" data-map-row="${mapInteractive?i:''}" id="trip-${a.id}-stop-${i+1}"${rowClick}><td>${i+1}</td><td><div class="place">${esc(s.name)}${nr?'<span class="nexttag">NEXT</span>':''}</div><div class="where">${esc(s.region)} · ${s.x}, ${s.y}, ${s.z}</div></td><td class="who">${status}<span class="small">${note}</span></td><td class="act"><button class="sl" onclick='event.stopPropagation();copy(fsUrl(adventures.find(x=>x.id===${a.id}).stamps[${i}]),"Destination copied for Firestorm")'>🔥 Copy</button>${mapButton}</td></tr>`;
  });
  return h+'</tbody></table>';
@@ -303,7 +303,7 @@ async function selectAdventureStop(advId,index){
    const p=r.querySelector('.place');
    if(p){
      const old=p.querySelector('.maptag');if(old)old.remove();
-     if(selected)p.insertAdjacentHTML('beforeend','<span class="maptag">MAP</span>');
+     if(selected)p.insertAdjacentHTML('beforeend','<span class="maptag">FOCUS</span>');
    }
  });
  const s=a.stamps[index];
@@ -312,7 +312,7 @@ async function selectAdventureStop(advId,index){
 function pinnedHtml(a){
  const mine=progressFor(a,meDone),hers=progressFor(a,partnerDone),together=a.stamps.filter(s=>meDone.has(s.id)&&partnerDone.has(s.id)).length;
  const shown=currentView==='partner'?hers:mine;
- return `<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>${esc(a.title)} <span class="badge mystery">🎁 Mystery L$</span></h3><div class="meta">${esc(a.zone)} · about ${a.minutes} min · 3 stops</div><div class="progress"><div class="bar" style="width:${Math.round((shown/a.stamps.length)*100)}%"></div></div><div class="small">${currentView==='partner'?tabPartnerName:tabMeName} passport: ${shown}/${a.stamps.length} · Together: ${together}/${a.stamps.length} · L$ amount reveals only when both finish</div></div></div>${missionSetup(a)}<div style="padding:0 17px 17px">${missionRows(a,true)}</div><div class="runmap"><div class="small" style="margin:0 0 8px 2px">Click any stop above (or its 🗺 Map button) to reset the map and zoom directly to that stop.</div><div id="run-map"></div></div></div>`;
+ return `<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>${esc(a.title)} <span class="badge mystery">🎁 Mystery L$</span></h3><div class="meta">${esc(a.zone)} · about ${a.minutes} min · 3 stops</div><div class="progress"><div class="bar" style="width:${Math.round((shown/a.stamps.length)*100)}%"></div></div><div class="small">${currentView==='partner'?tabPartnerName:tabMeName} passport: ${shown}/${a.stamps.length} · Together: ${together}/${a.stamps.length} · L$ amount reveals only when both finish</div></div></div>${missionSetup(a)}<div style="padding:0 17px 17px">${missionRows(a,true)}</div><div class="runmap"><div class="small" style="margin:0 0 8px 2px">Click any stop above (or its 🎯 Focus button) to reset the map and zoom directly to that stop.</div><div id="run-map"></div></div></div>`;
 }
 function collapsedTrip(a,completed=false){
  const r=completed?rewardFor(a):0;
