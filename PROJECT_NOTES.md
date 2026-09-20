@@ -187,3 +187,13 @@ This file is the persistent source of truth for future edits to this project.
 - It advances from the shared `meDone` / `partnerDone` stamp state, not from map selection.
 - The intended final behavior is: BBB passport accepts a stamp → StaFi sync imports that accepted stamp → shared progress updates → NEXT advances automatically when both players have that stop.
 - Automatic StaFi stamp importing is **not yet fully connected/tested**, so do not tell users that merely accepting a stamp in Second Life currently advances NEXT by itself.
+
+
+## Map tile reliability
+- Missing map squares are normally failed/unavailable Linden map tile requests, not meaningful SL regions.
+- This is more likely to be **request churn / tile-server availability** than a browser memory leak.
+- The shared map now debounces mouse-wheel zoom so one wheel gesture triggers one zoom render rather than many 25-tile request bursts.
+- Each tile is retried once after a short delay. If it still fails, the browser shows a clean map placeholder instead of a broken-image icon.
+- Failed tile URLs are remembered for 5 minutes in a bounded in-memory cache (max 400 entries) so known-missing tiles are not hammered repeatedly.
+- Reusing successful browser-cached tiles is preferred; do not add aggressive cache-busting to normal tile URLs.
+- If missing tiles become widespread even after throttling, investigate the Linden map tile service/network before assuming a JavaScript memory leak.
