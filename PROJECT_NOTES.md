@@ -175,8 +175,15 @@ This file is the persistent source of truth for future edits to this project.
 ## Adventure stop map selection
 - Use **adventure** as the main user-facing term; avoid mixing “run” and “adventure” unless “run” is specifically useful.
 - The **Current Adventure** stop rows are map-selectable.
-- Clicking a stop row or its **🗺 Map** button focuses the shared map on that stop at region-detail zoom.
+- Clicking a stop row or its **🎯 Focus** button focuses the shared map on that stop at region-detail zoom.
 - Selecting a stop must reset previous map manipulation (pan/zoom) before focusing the new stop.
-- The automatic **NEXT** indicator is separate from the user's selected map stop. The selected map row gets its own visual highlight / MAP tag.
+- The automatic **NEXT** indicator is separate from the user's selected map stop. The selected map row gets its own visual highlight / FOCUS tag.
 - The current-adventure overview map initially shows all 3 stops; **Fit** restores the adventure overview and **World** shows broad SL context.
 - Do not make stops in non-current collapsed adventures control the current-adventure map.
+
+
+## NEXT indicator semantics
+- **NEXT** means the first stop not yet recorded complete for **both** players.
+- It advances from the shared `meDone` / `partnerDone` stamp state, not from map selection.
+- The intended final behavior is: BBB passport accepts a stamp → StaFi sync imports that accepted stamp → shared progress updates → NEXT advances automatically when both players have that stop.
+- Automatic StaFi stamp importing is **not yet fully connected/tested**, so do not tell users that merely accepting a stamp in Second Life currently advances NEXT by itself.
