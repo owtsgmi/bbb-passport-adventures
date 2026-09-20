@@ -2,6 +2,9 @@
   if(window.SLGridMap)return;
 
   const TILE=256, GRID=5;
+  const FAILED_TILE_TTL=5*60*1000, failedTiles=new Map();
+  function tileFailedRecently(url){const t=failedTiles.get(url);if(!t)return false;if(Date.now()-t>FAILED_TILE_TTL){failedTiles.delete(url);return false}return true}
+  function rememberFailedTile(url){failedTiles.set(url,Date.now());if(failedTiles.size>400){const first=failedTiles.keys().next().value;failedTiles.delete(first)}}
   function injectStyles(){
     if(document.getElementById('slg-map-styles'))return;
     const s=document.createElement('style');s.id='slg-map-styles';
@@ -15,7 +18,7 @@
 .slg-viewport{height:700px;overflow:hidden;position:relative;background:#09070d;touch-action:none;user-select:none;cursor:grab}.slg-viewport.dragging{cursor:grabbing}
 .slg-stage{position:absolute;left:50%;top:50%;width:${TILE*GRID}px;height:${TILE*GRID}px;transform-origin:center center;cursor:grab;background:#09070d}
 .slg-stage.dragging{cursor:grabbing}
-.slg-tile{position:absolute;width:${TILE}px;height:${TILE}px;object-fit:cover;background:#14101a}
+.slg-tilecell{position:absolute;width:${TILE}px;height:${TILE}px;overflow:hidden;background:linear-gradient(135deg,#173f54,#204f66)}.slg-tile{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:transparent;pointer-events:none;-webkit-user-drag:none;user-select:none}.slg-tilecell.missing:after{content:'map tile unavailable';position:absolute;inset:0;display:grid;place-items:center;color:#ffffff55;font-size:10px;letter-spacing:.04em}
 .slg-marker{position:absolute;transform:translate(-50%,-100%);z-index:5;display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50% 50% 50% 0;background:#ff5fa8;border:3px solid #fff;color:#1b0f1b;font-size:11px;font-weight:900;box-shadow:0 2px 12px #000;rotate:-45deg}
 .slg-marker>span{rotate:45deg}
 .slg-marker.secondary{background:#69d8ff}.slg-marker.tertiary{background:#ffd166}.slg-marker.focused{box-shadow:0 0 0 5px #ff78c855,0 2px 16px #000;z-index:8}
@@ -48,7 +51,7 @@
       this.level=Number(opts.level||4);
       this.center={x:1024,y:1024};
       this.markers=[];
-      this.panX=0;this.panY=0;this.scale=1;this.drag=null;this.focusIndex=-1;
+      this.panX=0;this.panY=0;this.scale=1;this.drag=null;this.focusIndex=-1;this.wheelTimer=null;this.wheelDir=0;this.tileStats={loaded:0,missing:0,total:0};
       this._build();
     }
     _build(){
@@ -64,7 +67,15 @@
       this.el.querySelector('[data-slg-out]').onclick=()=>this.setLevel(Math.min(8,this.level+1));
       this.el.querySelector('[data-slg-fit]').onclick=()=>this.fitMarkers();
       this.el.querySelector('[data-slg-world]').onclick=()=>this.setLevel(8,true);
-      this.vp.addEventListener('wheel',e=>{e.preventDefault();this.setLevel(Math.max(1,Math.min(8,this.level+(e.deltaY>0?1:-1))))},{passive:false});
+      this.vp.addEventListener('wheel',e=>{
+        e.preventDefault();
+        this.wheelDir=e.deltaY>0?1:-1;
+        clearTimeout(this.wheelTimer);
+        this.wheelTimer=setTimeout(()=>{
+          this.setLevel(Math.max(1,Math.min(8,this.level+this.wheelDir)));
+          this.wheelTimer=null;
+        },140);
+      },{passive:false});
       this.vp.addEventListener('dragstart',e=>e.preventDefault());
       this.vp.addEventListener('pointerdown',e=>{
         if(e.button!==undefined&&e.button!==0)return;
@@ -152,7 +163,9 @@
       this.level=this._fitLevel(this.markers);this.panX=0;this.panY=0;this.scale=1;this.focusIndex=-1;this.render();
     }
     setLevel(z,world=false){
-      this.level=Math.max(1,Math.min(8,Number(z)||1));
+      const next=Math.max(1,Math.min(8,Number(z)||1));
+      if(next===this.level&&!world)return;
+      this.level=next;
       this.panX=0;this.panY=0;this.scale=1;
       if(world&&this.markers.length){
         this.center={
@@ -165,6 +178,49 @@
     _applyTransform(){
       this.stage.style.transform='translate(calc(-50% + '+this.panX+'px),calc(-50% + '+this.panY+'px)) scale('+this.scale+')';
     }
+    _levelText(){
+      const z=this.level,span=Math.pow(2,z-1);
+      let text=(z===1?'Region detail':z===8?'World view':'Zoom '+z)+' · '+span+' region'+(span===1?'':'s')+'/tile';
+      if(this.tileStats.missing)text+=' · '+this.tileStats.missing+' tile'+(this.tileStats.missing===1?'':'s')+' unavailable';
+      return text;
+    }
+    _updateLevelText(){this.levelLabel.textContent=this._levelText()}
+    _wireTiles(){
+      const cells=Array.from(this.stage.querySelectorAll('.slg-tilecell'));
+      this.tileStats={loaded:0,missing:0,total:cells.length};
+      const update=()=>this._updateLevelText();
+      cells.forEach(cell=>{
+        const img=cell.querySelector('.slg-tile'),url=img&&img.dataset.src;
+        if(!img||!url)return;
+        if(tileFailedRecently(url)){
+          cell.classList.add('missing');
+          img.remove();
+          this.tileStats.missing++;
+          update();
+          return;
+        }
+        let retried=false;
+        img.onload=()=>{
+          failedTiles.delete(url);
+          this.tileStats.loaded++;
+          update();
+        };
+        img.onerror=()=>{
+          if(!retried){
+            retried=true;
+            setTimeout(()=>{if(img.isConnected)img.src=url+(url.includes('?')?'&':'?')+'retry='+Date.now()},650);
+            return;
+          }
+          rememberFailedTile(url);
+          cell.classList.add('missing');
+          img.remove();
+          this.tileStats.missing++;
+          update();
+        };
+        img.src=url;
+      });
+      update();
+    }
     render(){
       const z=this.level,span=Math.pow(2,z-1),half=Math.floor(GRID/2);
       const cx=Math.floor(this.center.x/span)*span,cy=Math.floor(this.center.y/span)*span;
@@ -174,7 +230,8 @@
         const ty=cy+(half-row)*span;
         for(let col=0;col<GRID;col++){
           const tx=baseX+col*span;
-          h+='<img class="slg-tile" loading="lazy" draggable="false" src="https://map.secondlife.com/map-'+z+'-'+tx+'-'+ty+'-objects.jpg" style="left:'+(col*TILE)+'px;top:'+(row*TILE)+'px" alt="">';
+          const tileUrl='https://map.secondlife.com/map-'+z+'-'+tx+'-'+ty+'-objects.jpg';
+          h+='<div class="slg-tilecell" style="left:'+(col*TILE)+'px;top:'+(row*TILE)+'px"><img class="slg-tile" draggable="false" decoding="async" data-src="'+tileUrl+'" alt=""></div>';
         }
       }
       this.markers.forEach((m,i)=>{
@@ -186,7 +243,7 @@
         }
       });
       this.stage.innerHTML=h;
-      this.levelLabel.textContent=(z===1?'Region detail':z===8?'World view':'Zoom '+z)+' · '+span+' region'+(span===1?'':'s')+'/tile';
+      this._wireTiles();
       this._applyTransform();
     }
   }
