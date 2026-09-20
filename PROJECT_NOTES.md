@@ -215,3 +215,14 @@ This file is the persistent source of truth for future edits to this project.
 - First/player-one tab icon: **🗡️**.
 - Second/player-two tab icon: **👽**.
 - Use these same icons for the matching Settings labels and StaFi fields.
+
+
+## Current adventure protection
+- The active Current Adventure is **locked by default**.
+- Shared lock state is stored in `bbb_board_state.adventure_locked` and synchronized across devices.
+- While locked, both **Pick an Adventure** and lower **Make this our adventure** actions must refuse to replace the current incomplete adventure.
+- The Current Adventure summary contains an **Adventure locked** checkbox so switching requires an intentional unlock.
+- Even after unlocking, switching to a different adventure requires an **Are you sure?** confirmation.
+- Existing stamp progress in the old adventure is preserved if the user intentionally switches.
+- Every newly selected adventure automatically re-locks itself.
+- If there is no active incomplete adventure, the lock control is hidden/disabled and choosing an adventure works normally.
