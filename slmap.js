@@ -12,7 +12,7 @@
 .slg-controls{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .slg-controls button{border:1px solid #4b3b61;border-radius:10px;background:#171121;color:#fff9ff;padding:7px 9px;cursor:pointer}
 .slg-level{font-size:11px;color:#bcb0ca;min-width:95px;text-align:center}
-.slg-viewport{height:700px;overflow:hidden;position:relative;background:#09070d;touch-action:none}
+.slg-viewport{height:700px;overflow:hidden;position:relative;background:#09070d;touch-action:none;user-select:none;cursor:grab}.slg-viewport.dragging{cursor:grabbing}
 .slg-stage{position:absolute;left:50%;top:50%;width:${TILE*GRID}px;height:${TILE*GRID}px;transform-origin:center center;cursor:grab;background:#09070d}
 .slg-stage.dragging{cursor:grabbing}
 .slg-tile{position:absolute;width:${TILE}px;height:${TILE}px;object-fit:cover;background:#14101a}
@@ -65,10 +65,30 @@
       this.el.querySelector('[data-slg-fit]').onclick=()=>this.fitMarkers();
       this.el.querySelector('[data-slg-world]').onclick=()=>this.setLevel(8,true);
       this.vp.addEventListener('wheel',e=>{e.preventDefault();this.setLevel(Math.max(1,Math.min(8,this.level+(e.deltaY>0?1:-1))))},{passive:false});
-      this.stage.addEventListener('pointerdown',e=>{this.drag={x:e.clientX-this.panX,y:e.clientY-this.panY};this.stage.classList.add('dragging');try{this.stage.setPointerCapture(e.pointerId)}catch(err){}});
-      this.stage.addEventListener('pointermove',e=>{if(!this.drag)return;this.panX=e.clientX-this.drag.x;this.panY=e.clientY-this.drag.y;this._applyTransform()});
-      this.stage.addEventListener('pointerup',()=>{this.drag=null;this.stage.classList.remove('dragging')});
-      this.stage.addEventListener('pointercancel',()=>{this.drag=null;this.stage.classList.remove('dragging')});
+      this.vp.addEventListener('dragstart',e=>e.preventDefault());
+      this.vp.addEventListener('pointerdown',e=>{
+        if(e.button!==undefined&&e.button!==0)return;
+        e.preventDefault();
+        this.drag={x:e.clientX-this.panX,y:e.clientY-this.panY};
+        this.vp.classList.add('dragging');
+        try{this.vp.setPointerCapture(e.pointerId)}catch(err){}
+      });
+      this.vp.addEventListener('pointermove',e=>{
+        if(!this.drag)return;
+        e.preventDefault();
+        this.panX=e.clientX-this.drag.x;
+        this.panY=e.clientY-this.drag.y;
+        this._applyTransform();
+      });
+      const endDrag=e=>{
+        if(!this.drag)return;
+        this.drag=null;
+        this.vp.classList.remove('dragging');
+        try{if(e&&this.vp.hasPointerCapture(e.pointerId))this.vp.releasePointerCapture(e.pointerId)}catch(err){}
+      };
+      this.vp.addEventListener('pointerup',endDrag);
+      this.vp.addEventListener('pointercancel',endDrag);
+      this.vp.addEventListener('lostpointercapture',endDrag);
     }
     async setLocations(locations,opts={}){
       const out=[];
@@ -131,7 +151,7 @@
         const ty=cy+(half-row)*span;
         for(let col=0;col<GRID;col++){
           const tx=baseX+col*span;
-          h+='<img class="slg-tile" loading="lazy" src="https://map.secondlife.com/map-'+z+'-'+tx+'-'+ty+'-objects.jpg" style="left:'+(col*TILE)+'px;top:'+(row*TILE)+'px" alt="">';
+          h+='<img class="slg-tile" loading="lazy" draggable="false" src="https://map.secondlife.com/map-'+z+'-'+tx+'-'+ty+'-objects.jpg" style="left:'+(col*TILE)+'px;top:'+(row*TILE)+'px" alt="">';
         }
       }
       this.markers.forEach((m,i)=>{
