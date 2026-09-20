@@ -25,7 +25,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
 <div class="step"><div class="num">2</div><div>Give each tab a name, such as <b>AA</b> and <b>KK</b>.</div></div>
 <div class="step"><div class="num">3</div><div>Add each player's BBB StaFi progress-page link.</div></div>
 <div class="step"><div class="num">4</div><div>Use the <b>same Secret Club Code</b> on both devices.</div></div>
-<p class="small">The Secret Club Code unlocks encrypted private settings. It is not your BBB password and should not be posted publicly.</p>
+<p class="small">Tab names and the default tab sync automatically across devices. The Secret Club Code is only needed to unlock encrypted private settings such as StaFi links. For a new device, you can enter the same code or use the <b>Copy Device Setup Link</b> button from Settings.</p>
 </section>
 
 <section class="card">
@@ -96,7 +96,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
     <section class="archcard">
       <h3>Private settings</h3>
       <p>Player names and StaFi links are encrypted in the browser before being stored in Supabase. The shared <b>Secret Club Code</b> derives the decryption key and is not stored in the database.</p>
-      <p>The current private game architecture supports exactly <b>two players sharing one Secret Club Code</b>.</p>
+      <p>The current private game architecture supports exactly <b>two players</b>. Non-sensitive display settings (player/tab names and default tab) are stored with shared board state so they sync without a secret. StaFi links remain encrypted and require the same Secret Club Code on each device.</p>
     </section>
     <section class="archcard">
       <h3>BBB catalog mirror</h3>
