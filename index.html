@@ -36,8 +36,8 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
     
 </div>
 <div class="viewtabs">
-  <button id="tab-partner" class="viewtab" onclick="setView('partner')">🗡️ K View</button>
-  <button id="tab-me" class="viewtab" onclick="setView('me')">👽 A View</button>
+  <button id="tab-partner" class="viewtab" onclick="setView('partner')">🗡️ AA</button>
+  <button id="tab-me" class="viewtab" onclick="setView('me')">👽 KK</button>
 </div>
 <details class="filterdetails"><summary>Search & options</summary>
   <div class="filters"><input id="q" placeholder="Find an adventure…"><select id="zone"><option value="">All areas</option></select></div>
@@ -48,8 +48,8 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
   <div class="settingscard">
     <div class="advhead"><div><h2 style="margin:0 0 4px">⚙ Passport Settings <span class="alienmark">👽</span></h2><div class="small">Names and encrypted BBB StaFi progress pages.</div></div><button onclick="toggleSettings()">✕ Close</button></div>
     <div class="settingsgrid" style="margin-top:16px">
-      <div class="settingsfield"><label>🗡️ First tab name</label><input id="set-partner-name" placeholder="K View"></div>
-      <div class="settingsfield"><label>👽 Second tab name</label><input id="set-me-name" placeholder="A View"></div>
+      <div class="settingsfield"><label>🗡️ First tab name</label><input id="set-partner-name" placeholder="AA"></div>
+      <div class="settingsfield"><label>👽 Second tab name</label><input id="set-me-name" placeholder="KK"></div>
       <div class="settingsfield"><label>🗡️ First BBB StaFi progress page</label><input id="set-partner-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
       <div class="settingsfield"><label>👽 Second BBB StaFi progress page</label><input id="set-me-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
       <div class="settingsfield"><label>Open on</label><select id="set-default-view"><option value="partner">First tab</option><option value="me">Second tab</option></select></div>
@@ -100,8 +100,8 @@ let rewardLog=JSON.parse(localStorage.getItem('bbb-reward-log')||'[]');
 let unicornRedeemed=Number(localStorage.getItem('bbb-unicorn-redeemed')||0);
 let payoutLog=JSON.parse(localStorage.getItem('bbb-payout-log')||'[]');
 let adventureRewards=JSON.parse(localStorage.getItem('bbb-adventure-rewards')||'{}');
-let tabPartnerName=localStorage.getItem('bbb-tab-partner-name')||'K View';
-let tabMeName=localStorage.getItem('bbb-tab-me-name')||'A View';
+let tabPartnerName=localStorage.getItem('bbb-tab-partner-name')||'AA';
+let tabMeName=localStorage.getItem('bbb-tab-me-name')||'KK';
 let partnerStaFiUrl=localStorage.getItem('bbb-partner-stafi-url')||'';
 let meStaFiUrl=localStorage.getItem('bbb-me-stafi-url')||'';
 let defaultView=localStorage.getItem('bbb-default-view')||'partner';
@@ -134,8 +134,8 @@ function copyFamilyKey(){
  copy(k,'Secret Club Code copied');
 }
 async function saveSettings(){
- tabPartnerName=$('#set-partner-name').value.trim()||'K View';
- tabMeName=$('#set-me-name').value.trim()||'A View';
+ tabPartnerName=$('#set-partner-name').value.trim()||'AA';
+ tabMeName=$('#set-me-name').value.trim()||'KK';
  partnerStaFiUrl=$('#set-partner-url').value.trim();
  meStaFiUrl=$('#set-me-url').value.trim();
  defaultView=$('#set-default-view').value||'partner';
