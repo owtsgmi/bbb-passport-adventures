@@ -418,25 +418,15 @@ function markPaid(){
 function payLink(){return pushState.recipient_uuid?'secondlife:///app/agent/'+pushState.recipient_uuid+'/pay':''}
 function bankHtml(due){
  const ready=Math.floor(due/1000),enabled=!!pushState.enabledThisDevice,perm=pushState.permission;
- let status=enabled?'✓ Alerts enabled on this device':(perm==='denied'?'⚠ Browser notifications blocked':'○ Alerts not enabled');
- let h='<div class="banktest"><div class="banktesthead"><div><b>🔔 Payout alerts</b><div class="small">Free browser notifications when '+esc(tabMeName)+' reaches another 1,000 L$ payout.</div></div><div class="'+(enabled?'testok':'small')+'">'+status+'</div></div>';
- if(perm==='denied'){
-   h+='<div class="payoutdue" style="border-color:#ffd166;background:#2c2414"><div><strong style="color:#ffe08a">Chromium has blocked notifications for this site.</strong><div class="small">Click the site-controls icon (sliders/tune icon) at the left of the address bar → <b>Site settings</b> → set <b>Notifications</b> to <b>Allow</b> → reload this page.</div></div><button onclick="showNotificationHelp()">Show steps</button></div>';
- }
+ let h='<div class="banktest"><div class="banktesthead"><div><b>🔔 Payout alerts</b><div class="small">Get a desktop notification when '+esc(tabMeName)+' reaches a 1,000 L$ payout.</div></div><div class="'+(enabled?'testok':'small')+'">'+(enabled?'✓ On this device':perm==='denied'?'⚠ Needs attention':'○ Off on this device')+'</div></div>';
  if(due>=1000){
-   h+='<div class="payoutdue"><div><strong>💸 '+ready+' × 1,000 L$ payment'+(ready===1?'':'s')+' due</strong><div class="small">Pay '+esc(tabMeName)+' manually in Second Life, then record one 1,000 L$ payment here.</div></div><div class="actions">'+(payLink()?'<a class="sl" href="'+payLink()+'">Pay '+esc(tabMeName)+' in SL</a>':'')+'<button onclick="markPaid()">Mark 1,000 L$ paid</button></div></div>';
+   h+='<div class="payoutdue"><div><strong>💸 '+ready+' × 1,000 L$ payment'+(ready===1?'':'s')+' due</strong><div class="small">Pay '+esc(tabMeName)+' in Second Life, then mark one payment paid.</div></div><div class="actions">'+(payLink()?'<a class="sl" href="'+payLink()+'">Pay '+esc(tabMeName)+' in SL</a>':'')+'<button onclick="markPaid()">Mark 1,000 L$ paid</button></div></div>';
  }else{
-   h+='<div class="small" style="margin-top:9px">'+Math.max(0,1000-due)+' L$ more must be earned before the next payout.</div>';
+   h+='<div class="small" style="margin-top:9px">'+Math.max(0,1000-due)+' L$ to the next payout.</div>';
  }
- h+='<div class="bankpair"><button class="primary" onclick="'+(perm==='denied'?'showNotificationHelp()':'enablePayoutAlerts()')+'">'+(enabled?'🔔 Re-enable / refresh alerts':perm==='denied'?'⚠ Notifications blocked — fix':'🔔 Enable payout alerts')+'</button>';
- if(enabled)h+='<button onclick="testLocalNotification()">🖥 Test local popup</button><button onclick="sendPushTest()">🌐 Test server push</button>';
- h+='<a class="sl" href="bank.html">How alerts work</a></div>';
- if(enabled)h+='<div class="small" style="margin-top:8px">💡 <b>Where to look:</b> payout alerts appear as normal <b>desktop/system notifications</b>, not inside this browser tab. On Windows, look for a lower-right toast / Notification Center. On Linux, look in your desktop notification area. Diagnostic: permission <b>'+esc(String(pushState.permission))+'</b> · push subscription <b>present</b>.</div>';
- if(enabled&&!pushState.recipient_uuid){
-   h+='<details class="recent"><summary>Optional: add one-click Second Life Pay link</summary><div class="small" style="margin:8px 0">Linden Lab requires an API key to translate the saved SL username into its avatar UUID. The key is used once and is not stored.</div><div class="bankpair"><input id="ll-api-key" type="password" placeholder="Linden Lab API key" autocomplete="off"><button onclick="resolvePayRecipient()">Resolve '+esc(tabMeName)+'</button><a class="sl" href="https://accounts.secondlife.com/manage_api_key" target="_blank" rel="noopener">Get LL API key</a></div></details>';
- }else if(enabled&&pushState.recipient_uuid){
-   h+='<div class="small" style="margin-top:9px">✓ '+esc(tabMeName)+' Pay link is ready. If your browser does not pass the link to Firestorm, pay the username manually.</div>';
- }
+ if(!enabled&&perm!=='denied')h+='<div class="bankpair"><button class="primary" onclick="enablePayoutAlerts()">🔔 Enable payout alerts</button></div>';
+ if(perm==='denied')h+='<div class="bankpair"><a class="sl" href="payout-admin.html">Fix payout alerts</a></div>';
+ h+='<div class="small" style="margin-top:9px"><a href="payout-admin.html">🔧 Admins: diagnose browser popups</a></div>';
  h+='</div>';
  return h;
 }
@@ -521,15 +511,12 @@ async function loadPushStatus(){
     refreshRewardPanel();
   }catch(e){}finally{pushBusy=false}
 }
-function showNotificationHelp(){
-  alert('Chromium has blocked notifications for this site.\n\n1. Click the sliders/tune (site controls) icon just left of the address bar.\n2. Open Site settings.\n3. Find Notifications and change it to Allow.\n4. Reload Passport Adventures.\n5. Click Enable payout alerts again.\n\nIf Notifications is already Allow but alerts still do not appear, check Chromium Settings → Privacy and security → Site settings → Notifications, and your Linux desktop notification settings.');
-}
 async function enablePayoutAlerts(){
   if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window))return toast('This browser does not support web push notifications.');
   try{
-    if(Notification.permission==='denied'){pushState.permission='denied';refreshRewardPanel();return showNotificationHelp();}
+    if(Notification.permission==='denied'){pushState.permission='denied';refreshRewardPanel();location.href='payout-admin.html';return;}
     const permission=await Notification.requestPermission();
-    if(permission!=='granted'){pushState.permission=permission;refreshRewardPanel();return permission==='denied'?showNotificationHelp():toast('Notification permission was not granted.');}
+    if(permission!=='granted'){pushState.permission=permission;refreshRewardPanel();if(permission==='denied')location.href='payout-admin.html';else toast('Notification permission was not granted.');return;}
     const status=await pushCall('status');
     const reg=await navigator.serviceWorker.register('sw.js');
     await navigator.serviceWorker.ready;
@@ -540,42 +527,6 @@ async function enablePayoutAlerts(){
     await loadPushStatus();
     toast('🔔 Payout alerts enabled on this device');
   }catch(e){toast('Could not enable payout alerts: '+e.message)}
-}
-async function testLocalNotification(){
-  try{
-    if(Notification.permission!=='granted')return toast('Notifications are not allowed for this site.');
-    let reg=await navigator.serviceWorker.getRegistration('./');
-    if(!reg){
-      reg=await navigator.serviceWorker.register('sw.js');
-      await navigator.serviceWorker.ready;
-    }
-    await reg.showNotification('🖥 Passport Adventures local test',{
-      body:'If you can see this, Chromium/KDE can display notifications. Next test the server push.',
-      tag:'bbb-local-test',
-      renotify:true
-    });
-    toast('🖥 Local notification requested');
-  }catch(e){toast('Local popup test failed: '+e.message)}
-}
-async function sendPushTest(){
-  try{
-    const sub=await currentPushSubscription(),ctl=localStorage.getItem('bbb-push-control')||'';
-    if(!sub||!ctl)return enablePayoutAlerts();
-    await pushCall('test',{endpoint:sub.endpoint,control_token:ctl});
-    toast('🌐 Server push accepted — if local popup works but this does not, the push transport is the problem.');
-  }catch(e){toast(e.message==='test_cooldown'?'Wait about 30 seconds before another test.':'Could not send the test alert.')}
-}
-async function resolvePayRecipient(){
-  const key=document.getElementById('ll-api-key')?.value.trim()||'';
-  if(!key)return toast('Paste your Linden Lab API key first.');
-  try{
-    const sub=await currentPushSubscription(),ctl=localStorage.getItem('bbb-push-control')||'';
-    if(!sub||!ctl)return toast('Enable payout alerts first.');
-    await pushCall('resolve_recipient',{endpoint:sub.endpoint,control_token:ctl,username:tabMeName,api_key:key});
-    const input=document.getElementById('ll-api-key');if(input)input.value='';
-    await loadPushStatus();
-    toast('✓ '+tabMeName+' resolved — Second Life Pay link is ready');
-  }catch(e){toast('Could not resolve the SL username. Check the username and Linden API key.')}
 }
 function syncStatus(text,good=true){
   const e=document.getElementById('sync-status');
