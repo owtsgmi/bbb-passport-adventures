@@ -22,10 +22,10 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
 <section class="card">
 <h3>1. Set up both players</h3>
 <div class="step"><div class="num">1</div><div>Open <b>Settings</b> on the Adventures page.</div></div>
-<div class="step"><div class="num">2</div><div>Enter each player's actual <b>Second Life username</b>. The first username is the payer; the second is the reward recipient. Those usernames also become the tab labels.</div></div>
+<div class="step"><div class="num">2</div><div>Enter each player's actual <b>Second Life username</b>. Those usernames become the two player tabs.</div></div>
 <div class="step"><div class="num">3</div><div>Add each player's BBB StaFi progress-page link.</div></div>
 <div class="step"><div class="num">4</div><div>Use the <b>same Secret Club Code</b> on both devices.</div></div>
-<p class="small">The two SL usernames and the default tab sync automatically across devices. Use usernames, not display names or nicknames. The Secret Club Code is only needed to unlock encrypted private settings such as StaFi links.</p>
+<p class="small">Use usernames, not display names or nicknames. The Secret Club Code is only needed on trusted devices to load the private BBB StaFi links.</p>
 </section>
 
 <section class="card">
@@ -79,7 +79,8 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
       <h3>Front end</h3>
       <p>The app is a static GitHub Pages site built from plain HTML, CSS, and JavaScript.</p>
       <ul>
-        <li><b>Adventures:</b> the shared two-player game board.</li>
+        <li><b>Adventures:</b> the shared two-player game board with a deliberately simple player-facing header.</li>
+        <li><b>Admin:</b> setup, Adventure Treasure controls, notifications, and payout bookkeeping.</li>
         <li><b>Instructions:</b> user guide plus this architecture reference.</li>
         <li><b>BBB Stops:</b> searchable live-aware stop catalog, nearby-stop tools, images, and Second Life map display.</li>
         <li><b>Comments & Bugs:</b> public suggestions and bug reports.</li>
@@ -94,7 +95,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
       <h3>Shared state & rewards</h3>
       <p>Supabase stores the shared current adventure, each player's campaign progress, revealed reward history, and payout state.</p>
       <p>An adventure completes only when both players have all three stamps. The second player receives one hidden random 20–100 L$ prize per jointly completed adventure, with the first player as sponsor. The prize is persisted once revealed and accumulates in the recipient's reward balance.</p>
-      <p>The player-facing reward panel never exposes alert setup or payment bookkeeping. It only presents the benefactor's Adventure Treasure in friendly game language.</p>
+      <p>The player-facing Adventures page deliberately keeps technical status and payout setup out of the header. When Adventure Treasure is enabled, the reward panel presents only the second player's treasure in friendly game language.</p>
       <p>All reward administration lives on <a href="admin.html">Admin</a>: the Adventure Treasure on/off switch, player-name setup checks, browser payout alerts, notification testing, the optional Second Life Pay shortcut, current amount owed, and the fixed 1,000 L$ manual-payment record.</p>
       <p>The browser must allow <b>Notifications</b> for payout alerts to appear. The optional Firestorm Pay shortcut may also require allowing an external-app launch when the browser asks.</p>
       <p>The background threshold check runs every five minutes through Supabase cron and also after app state writes. Real payout alerts are paused while Adventure Treasure is off. The Linden API key used for the optional username-to-UUID lookup is used only for that lookup and is not stored.</p>
