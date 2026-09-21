@@ -228,30 +228,28 @@ This file is the persistent source of truth for future edits to this project.
 - If there is no active incomplete adventure, the lock control is hidden/disabled and choosing an adventure works normally.
 
 
-## Passport Bank fixed-1000 payout model
-- Player identity is simplified around the two **actual SL usernames** stored in Settings.
-- First/player-one username (🗡️ tab) = **payer**.
-- Second/player-two username (👽 tab) = **recipient**.
-- These usernames also label the tabs and are used by Passport Bank identity verification.
-- The in-world object must be personally owned by the payer. It verifies the object owner's current username with Second Life and refuses setup if it does not match the first username.
-- The object resolves the second username with Second Life's username→UUID lookup and stores that recipient UUID. Payments never accept an arbitrary recipient from the browser.
-- The paired bank object requests `PERMISSION_DEBIT` only after payer and recipient identities have been verified.
-- Every transfer is exactly **1,000 L$**. No 20–100 L$ individual adventure prize is paid directly.
-- Real adventure rewards accumulate in `payout_log`. A payout becomes available only when at least **1,000 L$** remains unpaid.
-- If the balance is above 1,000 L$, payments still occur one 1,000 L$ transaction at a time. Example: 2,350 L$ → pay 1,000 → 1,350 → pay 1,000 → 350 remains.
-- Partial allocation across adventure-reward rows uses `paid_linden`; legacy boolean `paid` remains honored for older rows.
-- Successful live transfers are recorded only after Second Life's `transaction_result` confirms success. The server then applies exactly 1,000 L$ against the reward ledger.
-- One pending bank request at a time.
-- Browser-created payment requests do not supply the amount or recipient. The Edge Function derives both from verified server state.
-- Object pairing uses a short-lived 8-digit code. The long random object token stays in Second Life linkset data and is tied to the stored owner/object UUID.
-- Pairing code guesses are limited; changing either configured SL username requires resetting/re-pairing the in-world object.
-- The in-world owner still receives a confirmation dialog for **every** real 1,000 L$ transfer.
-- `passport-bank.lsl` is the current live script. `passport-bank-test.lsl` is obsolete/legacy and should not be linked from the UI.
-- `bank.html` is the current setup guide.
-- Testing no longer means a fake transfer. Instead, `bbb_bank_config.test_balance` can temporarily hold exactly **1,000 L$ of simulated earnings**. This lets the real payout workflow be tested without completing adventures.
-- Test earnings do **not** alter adventure history or the real reward ledger. However, pressing Pay against test earnings and approving the object performs a **real 1,000 L$ transfer**; on success the test balance returns to zero.
-- Manual fallback is also fixed at 1,000 L$: it may only record one 1,000 L$ payment when at least 1,000 L$ of real reward balance is due.
-- Supabase tables:
-  - `public.bbb_bank_config` — singleton pairing, verified identities, debit-ready flag, and optional 1,000 L$ test balance; direct anon/auth grants revoked.
-  - `public.bbb_bank_requests` — fixed-1,000 payment queue with source kind (`rewards` or `test_credit`); direct anon/auth grants revoked.
-- Edge Function: `passport-bank`. JWT is disabled because Second Life objects cannot supply Supabase JWTs; sensitive object actions use the long object token plus the Second Life owner/object UUID headers.
+## Manual fixed-1000 payout + in-world reminder model
+- Adventure rewards still reveal random **20–100 L$** values and accumulate in the second/player-two recipient's unpaid balance.
+- Payout threshold and unit remain **1,000 L$**.
+- No automatic L$ transfer is performed by the app.
+- The payer manually pays the recipient in Second Life, then records **one 1,000 L$ payment** on the Adventures page.
+- Partial allocation across adventure reward rows uses `paid_linden`; balances above 1,000 L$ can be paid in multiple 1,000 L$ chunks and any remainder stays toward the next payout.
+- Actual SL usernames remain the intended player/tab labels:
+  - first/player-one username (🗡️) = payer
+  - second/player-two username (👽) = recipient / benefactor
+- The optional in-world script is `passport-reminder.lsl`.
+- The reminder script:
+  - never requests `PERMISSION_DEBIT`;
+  - never calls `llTransferLindenDollars` or `llGiveMoney`;
+  - polls the reminder endpoint about once per minute;
+  - IMs only the object's owner when one or more 1,000 L$ payments are available;
+  - stores the last ready-payment count/source in linkset data to avoid repetitive spam;
+  - can be touched by the owner for an immediate status check.
+- No pairing code, avatar UUID exchange, debit permission, or group is required for the reminder.
+- `bank.html` is now the in-world reminder setup page.
+- The old debit-enabled `passport-bank.lsl` file is intentionally replaced with a harmless disabled stub so it cannot be used accidentally.
+- The Supabase Edge Function slug remains `passport-bank` for compatibility, but version 4 is reminder-only. It exposes only:
+  - `status`: payer/recipient display usernames, real unpaid balance, optional test balance, effective balance, number of 1,000 L$ payments ready, and source;
+  - `set_test_balance`: set/clear exactly 1,000 L$ of simulated earnings.
+- Reminder test mode means **simulated earnings only**. Setting test balance to 1,000 L$ should trigger the same in-world IM as a real threshold, without completing adventures or moving money.
+- A private two-person SL group is optional for social use, but it is not part of payout/reminder infrastructure.
