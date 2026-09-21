@@ -3,78 +3,69 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Passport Bank Setup</title>
+<title>In-world Payout Reminder</title>
 <style>
 :root{--bg:#090816;--panel:#151229;--ink:#fff9ff;--muted:#bcb0ca;--gold:#ffd166;--green:#63e6a5;--line:#3b3152}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 12% 0%,#342052 0,#171126 30%,#0d0a16 72%);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
 header{position:sticky;top:0;background:#100c24ee;backdrop-filter:blur(12px);border-bottom:1px solid #4a376c;padding:14px 4vw;z-index:10}
 .top{max-width:950px;margin:auto;display:flex;gap:14px;align-items:center}.brand h1{margin:0;font-size:27px;background:linear-gradient(90deg,#ffe39a,#ff9bd7,#b99cff);-webkit-background-clip:text;color:transparent}.brand div{color:var(--muted);font-size:13px}
 button,a.btn{border:1px solid #4b3b61;border-radius:12px;background:#171121;color:var(--ink);padding:10px 12px;cursor:pointer;text-decoration:none;display:inline-block}.primary{background:linear-gradient(135deg,#8b63e8,#c45ca8);border-color:#d7a4e8;font-weight:800}
-main{max-width:950px;margin:auto;padding:26px 4vw 60px}.hero,.card{background:#151020;border:1px solid var(--line);border-radius:20px;padding:20px;margin-bottom:16px}.hero{background:linear-gradient(135deg,#25163a,#171121);border-color:#6d548d}.hero h2,.card h3{margin:0 0 8px}.card h3{color:#ffe08a}.small{font-size:12px;color:var(--muted);line-height:1.5}.safe{border:1px solid #8b6d2a;background:#2b2212;border-radius:14px;padding:13px 14px;color:#ffe49a}.step{display:flex;gap:12px;margin:13px 0;align-items:flex-start}.num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#2c2141;border:1px solid #725a94;font-weight:900;flex:0 0 auto}
-textarea{width:100%;min-height:340px;background:#0c0a12;color:#e8e1ef;border:1px solid #45375c;border-radius:12px;padding:12px;font:12px ui-monospace,SFMono-Regular,Consolas,monospace;resize:vertical}.actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.status{min-height:18px;color:var(--muted);font-size:12px}b.money{color:#ffd166}
+main{max-width:950px;margin:auto;padding:26px 4vw 60px}.hero,.card{background:#151020;border:1px solid var(--line);border-radius:20px;padding:20px;margin-bottom:16px}.hero{background:linear-gradient(135deg,#25163a,#171121);border-color:#6d548d}.hero h2,.card h3{margin:0 0 8px}.card h3{color:#ffe08a}.small{font-size:12px;color:var(--muted);line-height:1.5}.safe{border:1px solid #4f8a70;background:#10271f;border-radius:14px;padding:13px 14px;color:#baf3d8}.step{display:flex;gap:12px;margin:13px 0;align-items:flex-start}.num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#2c2141;border:1px solid #725a94;font-weight:900;flex:0 0 auto}
+textarea{width:100%;min-height:330px;background:#0c0a12;color:#e8e1ef;border:1px solid #45375c;border-radius:12px;padding:12px;font:12px ui-monospace,SFMono-Regular,Consolas,monospace;resize:vertical}.actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.status{min-height:18px;color:var(--muted);font-size:12px}
 </style>
 </head>
 <body>
-<header><div class="top"><a class="btn" href="index.html">← Adventures</a><div class="brand"><h1>💸 Passport Bank Setup</h1><div>One verified payer, one verified recipient, fixed 1,000 L$ payments.</div></div></div></header>
+<header><div class="top"><a class="btn" href="index.html">← Adventures</a><div class="brand"><h1>💬 In-world Payout Reminder</h1><div>A tiny SL object that reminds you when a 1,000 L$ payment is due.</div></div></div></header>
 <main>
 <section class="hero">
-<h2>Much simpler payout rule</h2>
-<p>The first SL username in Settings is the <b>payer</b>. The second SL username is the <b>recipient</b>. Those same usernames label the tabs.</p>
-<p>Adventure prizes accumulate in the recipient's balance. Nothing is payable until the balance reaches <b class="money">1,000 L$</b>. Every payment is exactly <b class="money">1,000 L$</b>. If the balance is 2,350 L$, two separate 1,000 L$ payments can be made and 350 L$ stays in the balance.</p>
-<div class="safe"><b>Real-money warning:</b> once setup is complete, the in-world object has Second Life debit permission. The script is restricted to the verified recipient UUID, exactly 1,000 L$ per request, one pending payment at a time, and an owner approval dialog for every payment.</div>
+<h2>No automatic money transfer</h2>
+<p>This version does exactly one job: it checks the Passport Adventures reward balance and sends the object's owner an IM when at least <b>1,000 L$</b> is ready to pay.</p>
+<div class="safe"><b>Safe and simple:</b> no pairing code, no avatar UUIDs, no debit permission, and no L$ transfer function. You pay your benefactor manually in Second Life, then press <b>Mark 1,000 L$ paid</b> on the website.</div>
 </section>
 
 <section class="card">
-<h3>1. Put the real SL usernames in Settings</h3>
-<div class="step"><div class="num">1</div><div>On <a href="index.html">Adventures</a>, open <b>Settings</b>.</div></div>
-<div class="step"><div class="num">2</div><div>Enter the payer's actual Second Life <b>username</b> in the first field and the recipient's actual SL <b>username</b> in the second field. Do not use display names or nicknames.</div></div>
-<div class="step"><div class="num">3</div><div>Save. Those usernames now become the two tab labels and the identities Passport Bank verifies.</div></div>
-</section>
-
-<section class="card">
-<h3>2. Create Passport Bank in Second Life</h3>
-<div class="step"><div class="num">1</div><div>The <b>payer avatar</b> should rez any simple prim and own it personally. Do not deed it to a group.</div></div>
-<div class="step"><div class="num">2</div><div>Name it something like <b>Passport Bank</b>. Open Contents, create a new script, replace the default code with the script below, and save.</div></div>
-<div class="step"><div class="num">3</div><div>Touch the object. It gives the owner an <b>8-digit pairing code</b>.</div></div>
-<div class="actions"><button class="primary" id="copy-script">📋 Copy Passport Bank script</button><button id="reload-script">↻ Reload script</button></div>
-<div class="status" id="script-status">Loading script…</div>
+<h3>1. Make the reminder object</h3>
+<div class="step"><div class="num">1</div><div>Rez any small prim that you own. Name it something like <b>Passport Pay Reminder</b>.</div></div>
+<div class="step"><div class="num">2</div><div>Open the prim's <b>Contents</b>, create a new script, replace the default script with the reminder script below, and save.</div></div>
+<div class="step"><div class="num">3</div><div>That's it. The object checks once per minute and IMs its owner only when a 1,000 L$ payment is available. Touch it any time to force an immediate check.</div></div>
+<div class="actions"><button class="primary" id="copy-script">📋 Copy reminder script</button><button id="reload-script">↻ Reload script</button></div>
+<div class="status" id="script-status">Loading reminder script…</div>
 <textarea id="script" readonly spellcheck="false"></textarea>
 </section>
 
 <section class="card">
-<h3>3. Pair and verify</h3>
-<p>Back on Adventures, enter the 8-digit code in the Passport Bank box and press <b>Pair Bank</b>.</p>
-<p>The in-world object then checks that its owner really is the first username and resolves the second username to that avatar's UUID. Only after both identities match does it request debit permission from the payer.</p>
-<p class="small">Changing either username later intentionally breaks the identity match. Use <b>Reset Pairing</b> on the in-world object and pair again.</p>
+<h3>2. Test it without completing an adventure</h3>
+<p>On the Adventures page, press <b>🧪 Pretend [recipient] has earned 1,000 L$</b>.</p>
+<p>The website temporarily exposes a 1,000 L$ test balance to the reminder object. Within about a minute, you should receive an in-world IM telling you that a payment is due.</p>
+<p>Nothing is paid, no adventure is completed, and no real reward balance changes. When you're done, press <b>Clear 1,000 L$ test earnings</b>.</p>
 </section>
 
 <section class="card">
-<h3>4. Test without completing adventures</h3>
-<p>Use <b>🧪 Give [recipient] 1,000 L$ test earnings</b> on the Adventures page. This temporarily acts as though the recipient has earned the 1,000 L$ threshold, without changing any adventure or reward history.</p>
-<p><b>Important:</b> only the earnings are fake. If you press <b>Pay 1,000 L$</b> and approve the in-world dialog, the resulting transfer is a <b>real 1,000 L$ payment</b> from payer to recipient. After a successful test transfer, the temporary test earnings return to zero.</p>
+<h3>3. Normal use</h3>
+<p>Adventure rewards accumulate normally. Once the unpaid balance reaches 1,000 L$, the reminder object IMs you. If the balance supports more than one 1,000 L$ payment, the message tells you how many are available.</p>
+<p>After you manually pay 1,000 L$ to the recipient in Second Life, return to the Adventures page and press <b>Mark 1,000 L$ paid</b>. Any remainder stays in the reward balance toward the next payout.</p>
 </section>
 
 <section class="card">
-<h3>5. Normal use</h3>
-<p>Real adventure rewards accumulate until at least 1,000 L$ is unpaid. Press <b>Pay 1,000 L$</b>, approve the matching Second Life dialog, and the app waits for Second Life's transaction result before deducting exactly 1,000 L$ from the reward balance.</p>
-<p>If 1,000 L$ is not yet earned, there is simply no payout to make.</p>
+<h3>Why not a group?</h3>
+<p>A private group can still be fun for the two of you, but it is unnecessary for the payment reminder. A direct object IM is simpler and works without group roles, notices, or bots.</p>
 </section>
 </main>
 <script>
 async function loadScript(){
  const out=document.getElementById('script'),status=document.getElementById('script-status');
- status.textContent='Loading Passport Bank script…';
+ status.textContent='Loading reminder script…';
  try{
-   const r=await fetch('passport-bank.lsl?'+Date.now(),{cache:'no-store'});
+   const r=await fetch('passport-reminder.lsl?'+Date.now(),{cache:'no-store'});
    if(!r.ok)throw new Error('HTTP '+r.status);
    out.value=await r.text();
-   status.textContent='Script loaded.';
+   status.textContent='Reminder script loaded.';
  }catch(e){status.textContent='Could not load the script right now.'}
 }
 document.getElementById('copy-script').addEventListener('click',async()=>{
  const t=document.getElementById('script').value;if(!t)return;
- try{await navigator.clipboard.writeText(t);document.getElementById('script-status').textContent='Script copied — paste it into the Second Life script editor.'}
- catch(e){document.getElementById('script').select();document.execCommand('copy');document.getElementById('script-status').textContent='Script copied.'}
+ try{await navigator.clipboard.writeText(t);document.getElementById('script-status').textContent='Reminder script copied — paste it into the Second Life script editor.'}
+ catch(e){document.getElementById('script').select();document.execCommand('copy');document.getElementById('script-status').textContent='Reminder script copied.'}
 });
 document.getElementById('reload-script').addEventListener('click',loadScript);
 loadScript();
