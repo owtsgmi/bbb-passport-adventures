@@ -164,6 +164,7 @@ async function saveSettings(){
  try{
    await writePrivateSettings();
    await writeSharedDisplaySettings();
+   await loadBankStatus();
    toast('Settings synced across devices 👽');
  }catch(e){
    toast('Settings saved on this device; cloud sync will retry later');
@@ -481,7 +482,8 @@ function render(){
  const campaignDone=currentView==='partner'?partnerDone.size:meDone.size;
  const passportDone=Math.min(TOTAL_PASSPORT_STAMPS,campaignDone+knownPreCampaignStamps(currentView));
  const toGo=Math.max(0,TOTAL_PASSPORT_STAMPS-passportDone);
- $('#scorecard').innerHTML=`<div class="score coin"><b>🎁 ${unpaidLinden()?unpaidLinden()+' L$':'? L$'}</b><span>${unpaidLinden()?rewardOwnerName()+"'s prize due":'Next prize stays hidden'}</span></div><div class="score"><b>${passportDone}/${TOTAL_PASSPORT_STAMPS}</b><span>${currentView==='partner'?tabPartnerName:tabMeName} stamps · ${toGo} to go</span></div>`;
+ const rewardBalance=unpaidLinden(),rewardToGo=rewardBalance>=1000?0:1000-rewardBalance;
+ $('#scorecard').innerHTML=`<div class="score coin"><b>🎁 ${rewardBalance} L$</b><span>${rewardBalance>=1000?'1,000 L$ payout ready':rewardToGo+' L$ to next payout'}</span></div><div class="score"><b>${passportDone}/${TOTAL_PASSPORT_STAMPS}</b><span>${currentView==='partner'?tabPartnerName:tabMeName} stamps · ${toGo} to go</span></div>`;
  const tp=document.getElementById('tab-partner'), tm=document.getElementById('tab-me');
  if(tp){tp.textContent='🗡️ '+tabPartnerName;tp.classList.toggle('active',currentView==='partner')}
  if(tm){tm.textContent='👽 '+tabMeName;tm.classList.toggle('active',currentView==='me')}
