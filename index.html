@@ -463,7 +463,52 @@ init();
 const SUPA_URL='https://tzxlrglgwzinefutledx.supabase.co';
 const SUPA_KEY='sb_publishable_s54v4rmFk_BjHoweE7mliA_w64vK6WR';
 const STATE_URL=SUPA_URL+'/rest/v1/bbb_board_state?id=eq.1&select=*';
+const BANK_API=SUPA_URL+'/functions/v1/passport-bank';
 let cloudBusy=false,lastCloudUpdate='';
+
+async function bankCall(action,payload={}){
+  const r=await fetch(BANK_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...payload})});
+  const data=await r.json().catch(()=>({ok:false,error:'bad_response'}));
+  if(!r.ok||!data.ok)throw new Error(data.error||('HTTP '+r.status));
+  return data;
+}
+async function loadBankStatus(){
+  if(bankBusy)return;
+  bankBusy=true;
+  try{
+    const s=await bankCall('status');
+    bankState={mode:s.mode||'test',paired:!!s.paired,test_verified_at:s.test_verified_at||null,pending:s.pending||null};
+    refreshRewardPanel();
+  }catch(e){}
+  finally{bankBusy=false}
+}
+async function claimBankPairing(){
+  const input=document.getElementById('bank-pair-code');
+  const code=String(input?.value||'').replace(/\D/g,'');
+  if(code.length!==8)return toast('Enter the 8-digit code shown by the in-world TEST object.');
+  try{
+    await bankCall('pair_claim',{code});
+    if(input)input.value='';
+    await loadBankStatus();
+    toast('🧪 Passport Bank test object paired');
+  }catch(e){
+    toast(e.message==='pair_code_expired'?'Pairing code expired — touch the object for a new one.':'Could not pair — check the code.');
+  }
+}
+async function requestBankTest(){
+  const due=unpaidLinden();
+  if(!due)return toast('Nothing is waiting for payout');
+  if(!bankState.paired)return toast('Pair the TEST Passport Bank object first.');
+  if(!confirm('TEST ONLY: simulate paying '+due+' L$ to '+rewardOwnerName()+'?\n\nNo Linden dollars will move and the real unpaid balance will stay due.'))return;
+  try{
+    const out=await bankCall('test_request');
+    bankState.pending=out.request||null;
+    refreshRewardPanel();
+    toast('🧪 Test sent — approve it on the Passport Bank object in Second Life');
+  }catch(e){
+    toast(e.message==='nothing_due'?'Nothing is waiting for payout.':'Could not start the bank test.');
+  }
+}
 
 function syncStatus(text,good=true){
   const e=document.getElementById('sync-status');
@@ -602,7 +647,9 @@ async function pollCloud(){
 }
 firstCloudSync();
 autoLoadPrivateSettings();
+loadBankStatus();
 setInterval(pollCloud,3000);
+setInterval(loadBankStatus,5000);
 setInterval(pollPrivateSettings,10000);
 </script>
 </body></html>
