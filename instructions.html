@@ -53,9 +53,10 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
 <p>Completed adventure prizes accumulate in the second player's reward balance. No payment is made until that balance reaches <b>1,000 L$</b>.</p>
 <p>Every Passport Bank payment is exactly <b>1,000 L$</b>. If the balance is 2,350 L$, two separate 1,000 L$ payments can be made and 350 L$ remains toward the next one.</p>
 <p>The first SL username is the payer and the second SL username is the recipient. Payments themselves are now manual.</p>
-<p>An optional in-world <b>Passport Pay Reminder</b> object checks the reward balance and IMs its owner when a 1,000 L$ payment is due. It has no pairing code, no debit permission, and no L$ transfer function.</p>
-<p>For testing, you can temporarily pretend the recipient has earned <b>1,000 L$</b> without completing adventures. That should trigger the same in-world reminder, but no adventure history or money changes.</p>
-<p><a href="bank.html">💬 In-world payout reminder setup</a></p>
+<p>Optional <b>browser payout alerts</b> can notify the payer when another 1,000 L$ payment becomes available. No Second Life script, bot, group, or automatic money transfer is required.</p>
+<p>Each device opts in once with <b>Enable payout alerts</b>. A service worker receives the alert even when the Passport Adventures page is closed. The server checks the reward balance every five minutes and also immediately after shared-state writes.</p>
+<p>For testing, use <b>Send test alert</b>. It sends the same browser notification without completing an adventure, changing the real reward balance, or moving money.</p>
+<p><a href="bank.html">🔔 Browser payout alert setup</a></p>
 </section>
 
 <section class="card">
@@ -96,8 +97,9 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
       <h3>Shared state & rewards</h3>
       <p>Supabase stores the shared current adventure, each player's campaign progress, revealed reward history, and payout state.</p>
       <p>An adventure completes only when both players have all three stamps. The second player receives one hidden random 20–100 L$ prize per jointly completed adventure, with the first player as sponsor. The prize is persisted once revealed and accumulates in the recipient's reward balance.</p>
-      <p>Payout accounting still uses fixed 1,000 L$ chunks, but payment is manual. The optional in-world reminder object only reads the current balance and IMs its owner when a payment is available.</p>
-      <p>Temporary 1,000 L$ test earnings are stored separately from adventure rewards so the reminder can be tested without fabricating completed adventures.</p>
+      <p>Payout accounting still uses fixed 1,000 L$ chunks, but payment is manual. Browser Push subscriptions are stored privately in Supabase and the <b>payout-push</b> Edge Function sends notifications when the number of available 1,000 L$ payments increases.</p>
+      <p>The background threshold check runs every five minutes through Supabase cron and also after app state writes. Test alerts are per-device and do not alter adventure rewards.</p>
+      <p>An optional one-click Pay shortcut can resolve the saved recipient SL username to an avatar UUID through Linden Lab's official Name-to-Agent-ID API. The user's Linden API key is used only for that lookup and is not stored.</p>
     </section>
     <section class="archcard">
       <h3>Private settings</h3>
@@ -139,7 +141,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
     <section class="archcard">
       <h3>Current boundaries</h3>
       <ul>
-        <li>The app does not automate Linden-dollar transfers. Real payments are made manually in Second Life; the optional in-world reminder only sends an IM when a 1,000 L$ payment is due.</li>
+        <li>The app does not automate Linden-dollar transfers. Real payments are made manually in Second Life; optional browser push notifications only remind the payer when a 1,000 L$ payment is due.</li>
         <li>The public BBB mirror and the private StaFi progress system are separate.</li>
         <li>Feedback submission is public, but curation is owner-only through a separate private Owner Passphrase.</li>
         <li>Nearby-stop ranking is best-effort until complete grid-wide coordinates are available.</li>
