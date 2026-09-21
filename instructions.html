@@ -22,10 +22,10 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
 <section class="card">
 <h3>1. Set up both players</h3>
 <div class="step"><div class="num">1</div><div>Open <b>Settings</b> on the Adventures page.</div></div>
-<div class="step"><div class="num">2</div><div>Give each tab a name, such as <b>AA</b> and <b>KK</b>.</div></div>
+<div class="step"><div class="num">2</div><div>Enter each player's actual <b>Second Life username</b>. The first username is the payer; the second is the reward recipient. Those usernames also become the tab labels.</div></div>
 <div class="step"><div class="num">3</div><div>Add each player's BBB StaFi progress-page link.</div></div>
 <div class="step"><div class="num">4</div><div>Use the <b>same Secret Club Code</b> on both devices.</div></div>
-<p class="small">Tab names and the default tab sync automatically across devices. The Secret Club Code is only needed to unlock encrypted private settings such as StaFi links. On a new trusted device, enter or paste the same Secret Club Code and tap <b>Load from Cloud</b>.</p>
+<p class="small">The two SL usernames and the default tab sync automatically across devices. Use usernames, not display names or nicknames. The Secret Club Code is only needed to unlock encrypted private settings such as StaFi links.</p>
 </section>
 
 <section class="card">
@@ -50,10 +50,11 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
 
 <section class="card">
 <h3>5. Getting paid</h3>
-<p>As soon as an adventure is completed, its revealed L$ prize is added directly to the unpaid prize total. There is no separate points currency or cash-out step.</p>
-<p>AA is the sponsor/payer. Manual payment still works, but the app now also has a <b>Passport Bank TEST mode</b> for building the future automatic payout path safely.</p>
-<p>The TEST flow uses the real website → cloud → in-world object → owner approval → result path, but the test object <b>cannot move L$</b>. It never asks for debit permission and a successful test leaves the real unpaid total unchanged. If no reward is due yet, you can run a synthetic <b>1 L$ dry test</b> immediately.</p>
-<p><a href="bank.html">🧪 Passport Bank TEST setup</a></p>
+<p>Completed adventure prizes accumulate in the second player's reward balance. No payment is made until that balance reaches <b>1,000 L$</b>.</p>
+<p>Every Passport Bank payment is exactly <b>1,000 L$</b>. If the balance is 2,350 L$, two separate 1,000 L$ payments can be made and 350 L$ remains toward the next one.</p>
+<p>The first SL username is the payer and the second SL username is the recipient. The in-world object verifies the payer username against its actual owner, resolves the recipient username to a fixed avatar UUID, and requires an owner approval dialog for every transfer.</p>
+<p>For testing, you can temporarily give the recipient <b>1,000 L$ of test earnings</b> without completing adventures. The earnings are simulated, but if you press Pay and approve in Second Life, the resulting 1,000 L$ transfer is real.</p>
+<p><a href="bank.html">💸 Passport Bank setup</a></p>
 </section>
 
 <section class="card">
@@ -93,12 +94,13 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
     <section class="archcard">
       <h3>Shared state & rewards</h3>
       <p>Supabase stores the shared current adventure, each player's campaign progress, revealed reward history, and payout state.</p>
-      <p>An adventure completes only when both players have all three stamps. The present personal setup awards KK one hidden random 20–100 L$ prize per jointly completed adventure, with AA as sponsor. The L$ value is persisted only after completion so the reveal survives syncing between devices, and it is added directly to the unpaid payout total.</p>
-      <p>Passport Bank test infrastructure uses the Supabase Edge Function <b>passport-bank</b> plus a paired in-world test object. Pairing uses a short-lived 8-digit code, while the object's long random token is retained in Second Life linkset data and is never exposed to the browser. Test requests are stored separately and do not mark real payouts paid.</p>
+      <p>An adventure completes only when both players have all three stamps. The second player receives one hidden random 20–100 L$ prize per jointly completed adventure, with the first player as sponsor. The prize is persisted once revealed and accumulates in the recipient's reward balance.</p>
+      <p>Passport Bank pays only in fixed 1,000 L$ chunks. The paired in-world object verifies the first username as its owner, resolves the second username to a fixed recipient UUID, and sends a transfer only after the owner approves the in-world dialog. The website never supplies an arbitrary recipient or amount.</p>
+      <p>Temporary 1,000 L$ test earnings are stored separately from adventure rewards so the live transfer path can be tested without fabricating completed adventures.</p>
     </section>
     <section class="archcard">
       <h3>Private settings</h3>
-      <p>Only the private StaFi links are encrypted in the browser before being stored in Supabase. The shared <b>Secret Club Code</b> derives the decryption key and is not stored in the database. Player/tab names and the default tab are non-sensitive shared display settings and sync separately.</p>
+      <p>Only the private StaFi links are encrypted in the browser before being stored in Supabase. The shared <b>Secret Club Code</b> derives the decryption key and is not stored in the database. The two actual SL usernames and the default tab are non-sensitive shared display settings and sync separately.</p>
       <p>The current private game architecture supports exactly <b>two players</b>. Non-sensitive display settings (player/tab names and default tab) are stored with shared board state so they sync without a secret. StaFi links remain encrypted and require manually entering the same Secret Club Code on each trusted device.</p>
     </section>
     <section class="archcard">
@@ -136,7 +138,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
     <section class="archcard">
       <h3>Current boundaries</h3>
       <ul>
-        <li>Live Linden-dollar transfer is <b>not enabled yet</b>. The current Passport Bank object is TEST-only and contains no L$ transfer call.</li>
+        <li>Passport Bank can make real Linden-dollar transfers, but only after the in-world payer/recipient identity checks succeed and the payer grants Second Life debit permission. Every request is exactly 1,000 L$ and still requires owner approval in-world.</li>
         <li>The public BBB mirror and the private StaFi progress system are separate.</li>
         <li>Feedback submission is public, but curation is owner-only through a separate private Owner Passphrase.</li>
         <li>Nearby-stop ranking is best-effort until complete grid-wide coordinates are available.</li>
