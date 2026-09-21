@@ -29,11 +29,10 @@ main{max-width:950px;margin:auto;padding:26px 4vw 60px}.hero,.card{background:#1
 </section>
 
 <section class="card">
-<h3>2. Test it immediately</h3>
-<p>First press <b>🖥 Test local popup</b>. Then press <b>🌐 Test server push</b>.</p>
-<p><b>Important:</b> these alerts appear as normal <b>desktop/system notifications</b>, not as a message inside the Passport Adventures browser tab.</p>
-<p class="small"><b>Windows:</b> look for the toast near the lower-right corner or open Notification Center. <b>Linux:</b> look in your desktop notification area; the exact position depends on your desktop environment.</p>
-<p>The test notification pretends the recipient has reached the 1,000 L$ threshold, but it changes no adventure history, no reward balance, and no money.</p>
+<h3>2. Where the alert appears</h3>
+<p>Payout alerts show up as normal <b>desktop/system notifications</b>, not as a message inside the Passport Adventures browser tab.</p>
+<p class="small"><b>Windows:</b> look for the lower-right toast or Notification Center. <b>Linux:</b> look in your desktop notification area.</p>
+<p><a class="btn" href="payout-admin.html">🔧 Admins: diagnose browser popups</a></p>
 </section>
 
 <section class="card">
@@ -44,8 +43,8 @@ main{max-width:950px;margin:auto;padding:26px 4vw 60px}.hero,.card{background:#1
 
 <section class="card">
 <h3>Optional one-click Pay link</h3>
-<p>Second Life's viewer URI can target an avatar's Pay dialog, but it requires the avatar UUID. Linden Lab provides an official username-to-agent-ID API. If you want this shortcut, use the setup shown in the reward panel: obtain a Linden API key, paste it once, and resolve the saved recipient username.</p>
-<p class="small">The Linden API key is sent only for that lookup and is not stored by Passport Adventures. Some external browsers/viewer configurations may still block application-style Second Life links; manual payment by username remains the fallback.</p>
+<p>An admin can set up the recipient's Second Life Pay shortcut from the diagnostics page. Regular users do not need to configure anything here.</p>
+<p><a class="btn" href="payout-admin.html">🔧 Admin payout setup</a></p>
 </section>
 </main>
 </body></html>
