@@ -264,7 +264,7 @@ This file is the persistent source of truth for future edits to this project.
 - Payment threshold and unit remain **1,000 L$**.
 - No automatic L$ transfer is performed by the app.
 - Real payment is made manually in Second Life; after sending it, the admin records exactly one 1,000 L$ payment.
-- `payout-push` Edge Function version 3 includes authenticated `mark_paid`, using the current device's push subscription control token. It allocates exactly 1,000 L$ across payout-log rows and returns the remaining balance. Payout/test notifications now open `admin.html`, not the player-facing Adventures page.
+- `payout-push` Edge Function version 4 includes authenticated `mark_paid` and authenticated `set_treasure_mode`, using the current device's push subscription control token. It allocates exactly 1,000 L$ across payout-log rows, returns the remaining balance, pauses real threshold notifications while Adventure Treasure is off, and routes payout/test notifications to `admin.html` rather than the player-facing Adventures page.
 - Browser payout alerts use standard Web Push:
   - service worker: `sw.js`;
   - Edge Function: `payout-push`;
@@ -282,3 +282,47 @@ This file is the persistent source of truth for future edits to this project.
   - the Linden API key is accepted transiently for that lookup and is not stored;
   - once resolved, Admin can open `secondlife:///app/agent/<uuid>/pay`.
 - Old LSL reminder/payment scripts remain harmless obsolete stubs; no current workflow requires LSL.
+
+
+## Immediate next work
+1. **Finish and test the optional Second Life Pay shortcut**
+   - obtain a Linden Lab API key;
+   - resolve the saved second-player/benefactor username to avatar UUID;
+   - confirm **Pay in Second Life** launches Firestorm;
+   - confirm Firestorm opens the correct avatar's Pay dialog;
+   - browser may require permission to open an external application.
+2. **Run a full Adventure Treasure payout simulation**
+   - turn Adventure Treasure ON from Admin;
+   - simulate/produce enough real test reward balance to cross 1,000 L$ without polluting permanent adventure history;
+   - verify the admin/payer device receives the desktop payout notification;
+   - clicking the notification should open `admin.html`;
+   - verify the 1,000 L$ payment-ready box;
+   - test **Mark 1,000 L$ paid** and confirm the remainder is correct.
+3. **Re-check player experience with the feature switch**
+   - OFF: no L$ score chip, no treasure panel, no Mystery L$ labels, no completed reward amounts;
+   - ON: benefactor sees friendly Adventure Treasure only;
+   - player pages never expose notification/API/payment bookkeeping controls.
+4. **Test the admin notification flow on Windows**
+   - browser site Notifications permission;
+   - Windows toast / Notification Center;
+   - notification click opens Admin;
+   - Firestorm external-app launch.
+5. **Automatic BBB StaFi sync remains the major gameplay integration**
+   - desired end state: BBB stamp accepted → StaFi updates → app imports stamp → shared progress updates → NEXT advances;
+   - do not claim this works until fully connected and tested.
+6. **Later public architecture**
+   - real auth;
+   - club-scoped game state;
+   - per-user StaFi;
+   - explicit admin/payer roles;
+   - per-admin push subscriptions;
+   - Adventure Treasure setting per club;
+   - RLS hardening.
+
+## Naming / UX decisions to preserve
+- Call the optional L$ feature **Adventure Treasure**. Do **not** call it “benefactor mode.”
+- Adventure Treasure defaults **OFF**.
+- Keep setup and payment mechanics on `admin.html`, out of the player experience.
+- The benefactor should see a fun accumulation of money they are going to receive, not operational payout language.
+- Browser payout alerts are desktop/system notifications, not notifications inside the browser tab.
+- Admin setup must clearly say the site needs browser **Notifications** permission; optional Firestorm launching may need an external-app/pop-up permission prompt.
