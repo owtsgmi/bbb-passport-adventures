@@ -46,18 +46,18 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 <div id="toast"></div>
 <section id="settings-page" class="settingspage">
   <div class="settingscard">
-    <div class="advhead"><div><h2 style="margin:0 0 4px">⚙ Passport Settings <span class="alienmark">👽</span></h2><div class="small">Names and encrypted BBB StaFi progress pages.</div></div><button onclick="toggleSettings()">✕ Close</button></div>
+    <div class="advhead"><div><h2 style="margin:0 0 4px">⚙ Passport Settings <span class="alienmark">👽</span></h2><div class="small">Second Life usernames, encrypted BBB StaFi progress pages, and shared settings.</div></div><button onclick="toggleSettings()">✕ Close</button></div>
     <div class="settingsgrid" style="margin-top:16px">
-      <div class="settingsfield"><label>🗡️ First tab name</label><input id="set-partner-name" placeholder="AA"></div>
-      <div class="settingsfield"><label>👽 Second tab name</label><input id="set-me-name" placeholder="KK"></div>
+      <div class="settingsfield"><label>🗡️ Payer SL username (first tab)</label><input id="set-partner-name" placeholder="your.username"></div>
+      <div class="settingsfield"><label>👽 Recipient SL username (second tab)</label><input id="set-me-name" placeholder="partner.username"></div>
       <div class="settingsfield"><label>🗡️ First BBB StaFi progress page</label><input id="set-partner-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
       <div class="settingsfield"><label>👽 Second BBB StaFi progress page</label><input id="set-me-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
       <div class="settingsfield"><label>Open on</label><select id="set-default-view"><option value="partner">First tab</option><option value="me">Second tab</option></select></div>
       <div class="settingsfield"><label>🔐 Secret Club Code</label><input id="set-family-key" type="password" autocomplete="new-password" placeholder="Use the same key on both devices"></div>
     </div>
     <div class="actions" style="margin-top:12px"><label class="small"><input id="set-remember-key" type="checkbox" checked> Remember Secret Club Code on this device</label></div>
-    <div class="actions" style="margin-top:16px"><button class="primary" onclick="saveSettings()">💾 Save & Sync</button><button onclick="unlockPrivateSettings()">🔓 Load from Cloud</button><button onclick="copyFamilyKey()">🔑 Copy Secret Club Code</button><button onclick="testCurrentStaFi()">🔗 Open selected StaFi page</button></div>
-    <div class="settingsnote"><b>Tab names and the default tab sync automatically across devices.</b> BBB StaFi links remain encrypted. On a new trusted device, enter or paste the same Secret Club Code and use <b>Load from Cloud</b>. Automatic stamp importing is still a separate connection.</div>
+    <div class="actions" style="margin-top:16px"><button class="primary" onclick="saveSettings()">💾 Save & Sync</button><button onclick="unlockPrivateSettings()">🔓 Load from Cloud</button><button onclick="copyFamilyKey()">🔑 Copy Secret Club Code</button><button onclick="testCurrentStaFi()">🔗 Open selected StaFi page</button><a class="sl" href="bank.html">💸 Passport Bank Setup</a></div>
+    <div class="settingsnote"><b>The two SL usernames also become the tab names and the Passport Bank identities.</b> The in-world bank verifies that the object owner matches the payer username and resolves the recipient username to a fixed avatar UUID before any payment can occur. BBB StaFi links remain encrypted. On a new trusted device, enter the same Secret Club Code and use <b>Load from Cloud</b>.</div>
   </div>
 </section>
 
@@ -109,7 +109,7 @@ let defaultView=localStorage.getItem('bbb-default-view')||'partner';
 let familyKey=localStorage.getItem('bbb-family-key')||sessionStorage.getItem('bbb-family-key')||'';
 let privateSettingsUpdated='';
 let currentView=localStorage.getItem('bbb-view')||defaultView;
-let bankState={mode:'test',paired:false,test_verified_at:null,pending:null};
+let bankState={mode:'live',paired:false,identity_verified:false,debit_ready:false,payer_username:null,recipient_username:null,test_balance:0,real_balance:0,pending:null};
 let bankBusy=false;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
