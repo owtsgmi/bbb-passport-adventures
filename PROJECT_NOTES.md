@@ -259,7 +259,7 @@ This file is the persistent source of truth for future edits to this project.
 - Payment threshold and unit remain **1,000 L$**.
 - No automatic L$ transfer is performed by the app.
 - Real payment is made manually in Second Life; after sending it, the admin records exactly one 1,000 L$ payment.
-- `payout-push` Edge Function version 2 includes authenticated `mark_paid`, using the current device's push subscription control token. It allocates exactly 1,000 L$ across payout-log rows and returns the remaining balance.
+- `payout-push` Edge Function version 3 includes authenticated `mark_paid`, using the current device's push subscription control token. It allocates exactly 1,000 L$ across payout-log rows and returns the remaining balance. Payout/test notifications now open `admin.html`, not the player-facing Adventures page.
 - Browser payout alerts use standard Web Push:
   - service worker: `sw.js`;
   - Edge Function: `payout-push`;
