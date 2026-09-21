@@ -402,7 +402,7 @@ function bankTestHtml(due){
  }else if(due){
    h+='<div class="bankpair"><button class="primary" onclick="requestBankTest()">🧪 Test Pay '+due+' L$ to '+esc(rewardOwnerName())+'</button><span class="small">The real unpaid total will remain unchanged.</span></div>';
  }else{
-   h+='<div class="small" style="margin-top:9px">Paired and ready. A test payment becomes available when a real reward payout is due.</div>';
+   h+='<div class="bankpair"><button class="primary" onclick="requestBankTest()">🧪 Run 1 L$ Dry Test</button><span class="small">Synthetic test only — no real payout is needed and no L$ can move.</span></div>';
  }
  h+='</div>';
  return h;
@@ -492,21 +492,24 @@ async function claimBankPairing(){
     await loadBankStatus();
     toast('🧪 Passport Bank test object paired');
   }catch(e){
-    toast(e.message==='pair_code_expired'?'Pairing code expired — touch the object for a new one.':'Could not pair — check the code.');
+    if(e.message==='pair_code_expired')toast('Pairing code expired — touch the object for a new one.');
+    else if(e.message==='pair_code_locked')toast('Too many incorrect attempts — touch the object for a new pairing code.');
+    else toast('Could not pair — check the code.');
   }
 }
 async function requestBankTest(){
   const due=unpaidLinden();
-  if(!due)return toast('Nothing is waiting for payout');
   if(!bankState.paired)return toast('Pair the TEST Passport Bank object first.');
-  if(!confirm('TEST ONLY: simulate paying '+due+' L$ to '+rewardOwnerName()+'?\n\nNo Linden dollars will move and the real unpaid balance will stay due.'))return;
+  const amount=due||1;
+  const label=due?('simulate paying '+due+' L$ to '+rewardOwnerName()):'run a synthetic 1 L$ dry test';
+  if(!confirm('TEST ONLY: '+label+'?\n\nNo Linden dollars will move and any real unpaid balance will stay unchanged.'))return;
   try{
     const out=await bankCall('test_request');
     bankState.pending=out.request||null;
     refreshRewardPanel();
     toast('🧪 Test sent — approve it on the Passport Bank object in Second Life');
   }catch(e){
-    toast(e.message==='nothing_due'?'Nothing is waiting for payout.':'Could not start the bank test.');
+    toast('Could not start the bank test.');
   }
 }
 
