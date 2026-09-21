@@ -420,12 +420,15 @@ function bankHtml(due){
  const ready=Math.floor(due/1000),enabled=!!pushState.enabledThisDevice,perm=pushState.permission;
  let status=enabled?'✓ Alerts enabled on this device':(perm==='denied'?'⚠ Browser notifications blocked':'○ Alerts not enabled');
  let h='<div class="banktest"><div class="banktesthead"><div><b>🔔 Payout alerts</b><div class="small">Free browser notifications when '+esc(tabMeName)+' reaches another 1,000 L$ payout.</div></div><div class="'+(enabled?'testok':'small')+'">'+status+'</div></div>';
+ if(perm==='denied'){
+   h+='<div class="payoutdue" style="border-color:#ffd166;background:#2c2414"><div><strong style="color:#ffe08a">Chromium has blocked notifications for this site.</strong><div class="small">Click the site-controls icon (sliders/tune icon) at the left of the address bar → <b>Site settings</b> → set <b>Notifications</b> to <b>Allow</b> → reload this page.</div></div><button onclick="showNotificationHelp()">Show steps</button></div>';
+ }
  if(due>=1000){
    h+='<div class="payoutdue"><div><strong>💸 '+ready+' × 1,000 L$ payment'+(ready===1?'':'s')+' due</strong><div class="small">Pay '+esc(tabMeName)+' manually in Second Life, then record one 1,000 L$ payment here.</div></div><div class="actions">'+(payLink()?'<a class="sl" href="'+payLink()+'">Pay '+esc(tabMeName)+' in SL</a>':'')+'<button onclick="markPaid()">Mark 1,000 L$ paid</button></div></div>';
  }else{
    h+='<div class="small" style="margin-top:9px">'+Math.max(0,1000-due)+' L$ more must be earned before the next payout.</div>';
  }
- h+='<div class="bankpair"><button class="primary" onclick="enablePayoutAlerts()">'+(enabled?'🔔 Re-enable / refresh alerts':'🔔 Enable payout alerts')+'</button>';
+ h+='<div class="bankpair"><button class="primary" onclick="'+(perm==='denied'?'showNotificationHelp()':'enablePayoutAlerts()')+'">'+(enabled?'🔔 Re-enable / refresh alerts':perm==='denied'?'⚠ Notifications blocked — fix':'🔔 Enable payout alerts')+'</button>';
  if(enabled)h+='<button onclick="sendPushTest()">🧪 Send test alert</button>';
  h+='<a class="sl" href="bank.html">How alerts work</a></div>';
  if(enabled&&!pushState.recipient_uuid){
@@ -517,11 +520,15 @@ async function loadPushStatus(){
     refreshRewardPanel();
   }catch(e){}finally{pushBusy=false}
 }
+function showNotificationHelp(){
+  alert('Chromium has blocked notifications for this site.\n\n1. Click the sliders/tune (site controls) icon just left of the address bar.\n2. Open Site settings.\n3. Find Notifications and change it to Allow.\n4. Reload Passport Adventures.\n5. Click Enable payout alerts again.\n\nIf Notifications is already Allow but alerts still do not appear, check Chromium Settings → Privacy and security → Site settings → Notifications, and your Linux desktop notification settings.');
+}
 async function enablePayoutAlerts(){
   if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window))return toast('This browser does not support web push notifications.');
   try{
+    if(Notification.permission==='denied'){pushState.permission='denied';refreshRewardPanel();return showNotificationHelp();}
     const permission=await Notification.requestPermission();
-    if(permission!=='granted'){pushState.permission=permission;refreshRewardPanel();return toast('Notifications were not allowed.');}
+    if(permission!=='granted'){pushState.permission=permission;refreshRewardPanel();return permission==='denied'?showNotificationHelp():toast('Notification permission was not granted.');}
     const status=await pushCall('status');
     const reg=await navigator.serviceWorker.register('sw.js');
     await navigator.serviceWorker.ready;
