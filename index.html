@@ -382,40 +382,83 @@ function rewardOwnerName(){return tabMeName}
 function completedFor(set){return adventures.filter(a=>personComplete(a,set)).length}
 function jointCompletedCount(){return adventures.filter(togetherComplete).length}
 function partnerAheadCount(){return adventures.filter(a=>personComplete(a,partnerDone)&&!personComplete(a,meDone)).length}
-function unpaidLinden(){return payoutLog.filter(r=>!r.paid).reduce((n,r)=>n+Number(r.linden||0),0)}
+function rewardRemaining(r){
+ const total=Math.max(0,Number(r?.linden||0));
+ if(r?.paid)return 0;
+ return Math.max(0,total-Math.max(0,Number(r?.paid_linden||0)));
+}
+function unpaidLinden(){return payoutLog.reduce((n,r)=>n+rewardRemaining(r),0)}
+function paymentBatchesReady(){return Math.floor(unpaidLinden()/1000)}
+function applyPaidBatch(amount,meta={}){
+ let left=Number(amount||0);
+ const order=payoutLog.map((r,i)=>({r,i})).sort((a,b)=>new Date(a.r?.at||0)-new Date(b.r?.at||0));
+ for(const item of order){
+   if(left<=0)break;
+   const r=payoutLog[item.i],rem=rewardRemaining(r);
+   if(rem<=0)continue;
+   const take=Math.min(rem,left),already=r.paid?Number(r.linden||0):Math.max(0,Number(r.paid_linden||0));
+   r.paid_linden=already+take;
+   r.last_payment_at=new Date().toISOString();
+   if(meta.transaction_id)r.last_payment_transaction=meta.transaction_id;
+   if(meta.manual)r.last_payment_manual=true;
+   if(r.paid_linden>=Number(r.linden||0)){r.paid=true;r.paid_at=r.paid_at||new Date().toISOString()}
+   left-=take;
+ }
+ return left===0;
+}
 function markPaid(){
  const due=unpaidLinden();
- if(!due)return toast('Nothing is waiting for payout');
- if(!confirm('Mark '+due+' L$ as paid manually?\n\nUse this only after you actually send the L$ yourself.'))return;
- payoutLog=payoutLog.map(r=>r.paid?r:{...r,paid:true,paid_at:new Date().toISOString()});
+ if(due<1000)return toast((1000-due)+' L$ more must be earned before a payment.');
+ if(!confirm('Mark ONE 1,000 L$ payment to '+rewardOwnerName()+' as paid manually?\n\nUse this only after you actually send exactly L$1000 yourself.'))return;
+ if(!applyPaidBatch(1000,{manual:true}))return toast('Could not apply the 1,000 L$ payment.');
  saveAll();
- toast('💖 Manual payout marked paid');
+ toast('💖 1,000 L$ manual payment recorded');
 }
-function bankTestHtml(due){
- const paired=!!bankState.paired,pending=bankState.pending,verified=!!bankState.test_verified_at;
- let h='<div class="banktest"><div class="banktesthead"><div><b>🧪 Passport Bank</b> <span class="testbadge">TEST MODE</span><div class="small">Full payout workflow, but <b>no L$ can move</b>.</div></div>';
- h+='<div class="'+(verified?'testok':'small')+'">'+(verified?'✓ Test path verified':paired?'● Test object paired':'○ Test object not paired')+'</div></div>';
- if(!paired){
-   h+='<div class="small" style="margin-top:8px">Touch the TEST Passport Bank object in Second Life. It will give you an 8-digit pairing code.</div><div class="bankpair"><a class="sl" href="bank.html">🧪 Setup TEST object</a><input id="bank-pair-code" inputmode="numeric" maxlength="8" placeholder="8-digit pairing code"><button onclick="claimBankPairing()">Pair test object</button></div>';
+function slUserNorm(s){return String(s||'').trim().toLowerCase().replace(/\s+/g,'.')}
+function bankHtml(due){
+ const b=bankState,pending=b.pending,testBalance=Number(b.test_balance||0);
+ const namesEntered=tabPartnerName&&tabMeName&&tabPartnerName!=='AA'&&tabMeName!=='KK';
+ const namesMatch=!b.paired||(slUserNorm(b.payer_username)===slUserNorm(tabPartnerName)&&slUserNorm(b.recipient_username)===slUserNorm(tabMeName));
+ const ready=!!(b.paired&&b.identity_verified&&b.debit_ready&&namesMatch);
+ let status='○ Not paired';
+ if(b.paired&&!namesMatch)status='⚠ Re-pair after username change';
+ else if(b.paired&&!b.identity_verified)status='◌ Verifying SL usernames…';
+ else if(b.paired&&b.identity_verified&&!b.debit_ready)status='◌ Waiting for debit permission in SL…';
+ else if(ready)status='✓ Ready · fixed 1,000 L$ payments';
+ let h='<div class="banktest"><div class="banktesthead"><div><b>💸 Passport Bank</b><div class="small">'+esc(tabPartnerName)+' → '+esc(tabMeName)+' · payments are always <b>1,000 L$</b>.</div></div><div class="'+(ready?'testok':'small')+'">'+status+'</div></div>';
+ if(!namesEntered){
+   h+='<div class="small" style="margin-top:9px">Enter both actual Second Life usernames in Settings first. Those usernames also become the two tab names.</div>';
+ }else if(!b.paired){
+   h+='<div class="small" style="margin-top:9px">Set up the in-world Passport Bank, touch it for an 8-digit code, then pair it here.</div><div class="bankpair"><a class="sl" href="bank.html">💸 Setup Passport Bank</a><input id="bank-pair-code" inputmode="numeric" maxlength="8" placeholder="8-digit pairing code"><button onclick="claimBankPairing()">Pair Bank</button></div>';
+ }else if(!namesMatch){
+   h+='<div class="small" style="margin-top:9px">The bank is locked to <b>'+esc(b.payer_username||'?')+' → '+esc(b.recipient_username||'?')+'</b>. Use <b>Reset Pairing</b> on the in-world object, then pair again with the new usernames.</div>';
  }else if(pending){
-   h+='<div class="small" style="margin-top:9px">⏳ Test payment of <b>'+Number(pending.amount||0)+' L$</b> is waiting for your approval in Second Life.</div>';
- }else if(due){
-   h+='<div class="bankpair"><button class="primary" onclick="requestBankTest()">🧪 Test Pay '+due+' L$ to '+esc(rewardOwnerName())+'</button><span class="small">The real unpaid total will remain unchanged.</span></div>';
- }else{
-   h+='<div class="bankpair"><button class="primary" onclick="requestBankTest()">🧪 Run 1 L$ Dry Test</button><span class="small">Synthetic test only — no real payout is needed and no L$ can move.</span></div>';
+   h+='<div class="small" style="margin-top:9px">⏳ A real <b>1,000 L$</b> payment to <b>'+esc(b.recipient_username||tabMeName)+'</b> is waiting for your approval in Second Life.</div>';
+ }else if(ready&&testBalance>=1000){
+   h+='<div class="payoutdue"><div><strong>🧪 Test earnings: 1,000 L$ ready</strong><div class="small">The earnings are simulated, but approving this will send a <b>real</b> 1,000 L$ payment.</div></div><button class="primary" onclick="requestBankPayment()">Pay 1,000 L$</button></div>';
+ }else if(ready&&due>=1000){
+   h+='<div class="payoutdue"><div><strong>💸 1,000 L$ payout ready</strong><div class="small">'+Math.max(0,due-1000)+' L$ will remain in '+esc(tabMeName)+'\'s earned balance after this payment.</div></div><button class="primary" onclick="requestBankPayment()">Pay 1,000 L$</button></div>';
+ }else if(ready){
+   h+='<div class="small" style="margin-top:9px">'+Math.max(0,1000-due)+' L$ more must be earned before the next real payout.</div>';
  }
+ if(b.paired&&testBalance===0){
+   h+='<div class="bankpair"><button onclick="setBankTestBalance(1000)">🧪 Give '+esc(tabMeName)+' 1,000 L$ test earnings</button><span class="small">Simulates earnings only; it does not alter adventure history.</span></div>';
+ }else if(b.paired&&testBalance>=1000){
+   h+='<div class="bankpair"><button onclick="setBankTestBalance(0)">Clear test earnings</button></div>';
+ }
+ if(due>=1000)h+='<div class="small" style="margin-top:10px">Fallback: <button onclick="markPaid()">Mark one 1,000 L$ payment paid manually</button></div>';
  h+='</div>';
  return h;
 }
 function rewardHtml(){
  syncCompletedRewardsToPayouts();
- const pending=partnerAheadCount(),due=unpaidLinden();
- return `<div class="bankhead"><div><h3>🎁 Mystery L$ Rewards <span class="alienmark">👽</span></h3><div class="small">Finish all 3 stops on both passports and the adventure reveals a random <b>20–100 L$</b> prize for <b>${rewardOwnerName()}</b>.</div></div></div>
- <div class="bankgrid"><div class="bankcard"><span>${due?rewardOwnerName()+"'s unpaid prize total":"Next prize"}</span><strong>${due?due+' L$':'? L$'}</strong><span>${due?'Waiting for AA to mark paid.':'Hidden until both passports finish the current adventure.'}</span></div></div>
- ${pending?`<div class="small" style="margin-top:10px">✨ ${pending} adventure${pending===1?'':'s'} already finished by her — waiting for you. The prize is still hidden.</div>`:''}
- ${due?`<div class="payoutdue"><div><strong>💸 ${due} L$ payout due</strong><div class="small">Completed prizes waiting to be paid. ❤️</div></div><button onclick="markPaid()">Mark paid manually</button></div>`:''}
- ${bankTestHtml(due)}
- <details class="recent"><summary>Past rewards & payouts</summary>${payoutLog.slice(0,8).map(r=>`<div class="recentline">${r.paid?'✓':'•'} ${r.linden} L$ ${r.title?'· '+esc(r.title)+' ':''}${r.paid?'paid':'due'}</div>`).join('')||'<div class="recentline">None yet.</div>'}</details>`;
+ const pending=partnerAheadCount(),due=unpaidLinden(),ready=paymentBatchesReady(),toNext=due>=1000?0:1000-due;
+ const rewardLines=payoutLog.slice(0,10).map(r=>{const rem=rewardRemaining(r);return '<div class="recentline">'+(rem?'•':'✓')+' '+Number(r.linden||0)+' L$ '+(r.title?'· '+esc(r.title)+' ':'')+(rem?(rem+' L$ remaining'):'paid')+'</div>'}).join('')||'<div class="recentline">None yet.</div>';
+ return `<div class="bankhead"><div><h3>🎁 ${esc(rewardOwnerName())} Reward Balance <span class="alienmark">👽</span></h3><div class="small">Each completed adventure adds its revealed 20–100 L$ prize. Payments happen only in fixed <b>1,000 L$</b> chunks.</div></div></div>
+ <div class="bankgrid"><div class="bankcard"><span>Earned and not yet paid</span><strong>${due} L$</strong><span>${ready?ready+' × 1,000 L$ payment'+(ready===1?'':'s')+' available':toNext+' L$ more until the next payout'}</span></div></div>
+ ${pending?`<div class="small" style="margin-top:10px">✨ ${pending} adventure${pending===1?'':'s'} already finished by ${esc(tabPartnerName)} — waiting for ${esc(tabMeName)} before those prizes reveal.</div>`:''}
+ ${bankHtml(due)}
+ <details class="recent"><summary>Adventure reward ledger</summary>${rewardLines}</details>`;
 }
 function refreshRewardPanel(){const e=document.getElementById('rewards');if(e)e.innerHTML=rewardHtml()}
 function render(){
