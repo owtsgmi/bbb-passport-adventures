@@ -16,18 +16,18 @@ This file is the persistent source of truth for future edits to this project.
 - A run only counts when **both players have all 3 stamps**.
 - One player completing the three stamps alone is only "waiting on the other" and earns no payout yet.
 - Each jointly completed 3-stop adventure reveals one **random 20–100 L$ mystery reward**.
-- The reward recipient is **KK** (the second/player-two tab), while **AA** is the sponsor/payer.
+- The reward recipient is the **second/player-two SL username** (👽 tab), while the **first/player-one SL username** (🗡️ tab) is the sponsor/payer.
 - The L$ amount stays hidden until both players complete all 3 stops. A completed adventure gets one persisted random reward in `bbb_board_state.adventure_rewards`; reopening or switching devices must not reroll it.
 - Reward ownership does not change when switching tabs.
-- Both tabs show passport progress, but reward ownership remains with **KK** and the top reward display shows either the unpaid revealed L$ total or a hidden next prize.
+- Both tabs show passport progress. Reward ownership stays with the second SL username; revealed prizes accumulate toward the next fixed 1,000 L$ payout.
 
 ## UI
-- Two configurable player tabs; current intended labels are **AA** and **KK**.
+- Two configurable player tabs use the players' **actual Second Life usernames** as their labels.
 - Button text: **Pick an Adventure**.
 - Current adventure loads collapsed.
 - Adult-playful purple/pink/gold style with subtle alien graphics.
 - Settings page allows:
-  - player/tab names
+  - payer and recipient Second Life usernames (also used as the tab names)
   - each person's BBB StaFi progress-page URL
   - default tab
   - Secret Club Code
@@ -167,7 +167,7 @@ This file is the persistent source of truth for future edits to this project.
 - On first joint completion, generate the value once and persist it in `bbb_board_state.adventure_rewards`, keyed by adventure ID.
 - Completed-adventure UI may reveal the amount; active/pending runs should say **Mystery L$**.
 - Once revealed, the prize is added directly to the unpaid payout total. There is no cash-out or conversion step.
-- AA remains sponsor/payer; KK remains reward recipient.
+- First SL username remains sponsor/payer; second SL username remains reward recipient.
 - Payout log stores the actual L$ amount and adventure ID so a completed run cannot be paid twice.
 - Historical payout entries and the old `unicorn_redeemed` field are legacy migration data only; do not expose them as a current game concept.
 
@@ -202,7 +202,7 @@ This file is the persistent source of truth for future edits to this project.
 ## Cross-device settings sync
 - Non-sensitive display settings now live in `bbb_board_state`: `tab_partner_name`, `tab_me_name`, and `default_view`.
 - These display settings sync across devices without requiring the Secret Club Code.
-- Current shared tab names are seeded as **AA** (first tab) and **KK** (second tab).
+- Legacy defaults may still initially show **AA** / **KK**, but the intended setup is to replace them with the two actual SL usernames. The first username is payer; the second is recipient.
 - Private StaFi URLs remain in encrypted `bbb_private_settings` and still require the same Secret Club Code on each device. The encrypted payload now contains only StaFi URLs; stale encrypted tab names/default-view values must not override shared display settings.
 - The app polls encrypted private settings every 10 seconds when a Secret Club Code is available, so private-setting changes can propagate to another already-open device.
 - There is **no device setup link**. New trusted devices must manually enter or paste the same Secret Club Code and use **Load from Cloud**. This intentionally avoids putting the permanent club secret into a shareable URL.
@@ -228,25 +228,30 @@ This file is the persistent source of truth for future edits to this project.
 - If there is no active incomplete adventure, the lock control is hidden/disabled and choosing an adventure works normally.
 
 
-## Passport Bank test mode
-- Automatic real L$ payment is being introduced behind a mandatory dry-run stage.
-- Current live site exposes **TEST MODE only**. Test mode must never call `llTransferLindenDollars`, request `PERMISSION_DEBIT`, mark real payout rows paid, or reduce the real unpaid total.
-- Test flow is intentionally end-to-end: website → Supabase Edge Function → paired Second Life object → owner approval dialog → result back to Supabase → website status.
+## Passport Bank fixed-1000 payout model
+- Player identity is simplified around the two **actual SL usernames** stored in Settings.
+- First/player-one username (🗡️ tab) = **payer**.
+- Second/player-two username (👽 tab) = **recipient**.
+- These usernames also label the tabs and are used by Passport Bank identity verification.
+- The in-world object must be personally owned by the payer. It verifies the object owner's current username with Second Life and refuses setup if it does not match the first username.
+- The object resolves the second username with Second Life's username→UUID lookup and stores that recipient UUID. Payments never accept an arbitrary recipient from the browser.
+- The paired bank object requests `PERMISSION_DEBIT` only after payer and recipient identities have been verified.
+- Every transfer is exactly **1,000 L$**. No 20–100 L$ individual adventure prize is paid directly.
+- Real adventure rewards accumulate in `payout_log`. A payout becomes available only when at least **1,000 L$** remains unpaid.
+- If the balance is above 1,000 L$, payments still occur one 1,000 L$ transaction at a time. Example: 2,350 L$ → pay 1,000 → 1,350 → pay 1,000 → 350 remains.
+- Partial allocation across adventure-reward rows uses `paid_linden`; legacy boolean `paid` remains honored for older rows.
+- Successful live transfers are recorded only after Second Life's `transaction_result` confirms success. The server then applies exactly 1,000 L$ against the reward ledger.
+- One pending bank request at a time.
+- Browser-created payment requests do not supply the amount or recipient. The Edge Function derives both from verified server state.
+- Object pairing uses a short-lived 8-digit code. The long random object token stays in Second Life linkset data and is tied to the stored owner/object UUID.
+- Pairing code guesses are limited; changing either configured SL username requires resetting/re-pairing the in-world object.
+- The in-world owner still receives a confirmation dialog for **every** real 1,000 L$ transfer.
+- `passport-bank.lsl` is the current live script. `passport-bank-test.lsl` is obsolete/legacy and should not be linked from the UI.
+- `bank.html` is the current setup guide.
+- Testing no longer means a fake transfer. Instead, `bbb_bank_config.test_balance` can temporarily hold exactly **1,000 L$ of simulated earnings**. This lets the real payout workflow be tested without completing adventures.
+- Test earnings do **not** alter adventure history or the real reward ledger. However, pressing Pay against test earnings and approving the object performs a **real 1,000 L$ transfer**; on success the test balance returns to zero.
+- Manual fallback is also fixed at 1,000 L$: it may only record one 1,000 L$ payment when at least 1,000 L$ of real reward balance is due.
 - Supabase tables:
-  - `public.bbb_bank_config` — singleton bank pairing/mode state; direct anon/auth grants revoked.
-  - `public.bbb_bank_requests` — payout test/live request queue; direct anon/auth grants revoked.
-- Edge Function: `passport-bank` (custom request logic; JWT disabled because Second Life objects cannot supply Supabase JWTs).
-- In-world test script: `passport-bank-test.lsl`.
-- Setup page: `bank.html`.
-- Object pairing direction is **object → website**:
-  1. owner touches test object;
-  2. object registers and receives a short-lived 8-digit pairing code plus a long random object token;
-  3. owner enters the 8-digit code on the website;
-  4. object token remains in Second Life linkset data and is used for subsequent polling/results.
-- Once a bank object is paired, unauthenticated replacement registration is refused.
-- Object requests are authenticated with the long bank token plus the stored Second Life owner/object UUIDs.
-- A test payment can only be created when real unpaid reward money exists. The request amount is computed server-side from `bbb_board_state.payout_log`, not trusted from a browser-supplied amount.
-- Test success sets `test_verified_at` and records a synthetic TEST transaction ID, but leaves all real payout rows unpaid.
-- Manual **Mark paid manually** remains available as fallback and warns the user to use it only after actually sending L$ themselves.
-- Do not add live mode until the TEST path has been completed successfully in-world at least once.
-- Planned live-mode safety requirements: fixed verified recipient UUID, owner confirmation for every transfer, one request at a time, bounded amount, transaction_result confirmation, duplicate-request protection, and only then mark payout rows paid.
+  - `public.bbb_bank_config` — singleton pairing, verified identities, debit-ready flag, and optional 1,000 L$ test balance; direct anon/auth grants revoked.
+  - `public.bbb_bank_requests` — fixed-1,000 payment queue with source kind (`rewards` or `test_credit`); direct anon/auth grants revoked.
+- Edge Function: `passport-bank`. JWT is disabled because Second Life objects cannot supply Supabase JWTs; sensitive object actions use the long object token plus the Second Life owner/object UUID headers.
