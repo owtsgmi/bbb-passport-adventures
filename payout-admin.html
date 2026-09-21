@@ -1,0 +1,130 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin · Payout Alert Diagnostics</title>
+<style>
+:root{--ink:#fff9ff;--muted:#bcb0ca;--line:#3b3152;--green:#63e6a5;--gold:#ffd166}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 12% 0%,#342052 0,#171126 30%,#0d0a16 72%);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+header{position:sticky;top:0;background:#100c24ee;border-bottom:1px solid #4a376c;padding:14px 4vw}.top{max-width:950px;margin:auto;display:flex;gap:14px;align-items:center}.brand h1{margin:0;font-size:26px;background:linear-gradient(90deg,#ffe39a,#ff9bd7,#b99cff);-webkit-background-clip:text;color:transparent}.brand div,.small{color:var(--muted);font-size:13px}
+button,a.btn,input{border:1px solid #4b3b61;border-radius:12px;background:#171121;color:var(--ink);padding:10px 12px}button,a.btn{cursor:pointer;text-decoration:none;display:inline-block}.primary{background:linear-gradient(135deg,#8b63e8,#c45ca8);border-color:#d7a4e8;font-weight:800}
+main{max-width:950px;margin:auto;padding:26px 4vw 60px}.card{background:#151020;border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px}.card h2,.card h3{margin:0 0 8px}.card h3{color:#ffe08a}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.status{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.pill{border:1px solid #4b3b61;border-radius:12px;padding:10px;background:#110d1d}.ok{color:var(--green)}.warn{color:var(--gold)}.steps{line-height:1.55;color:#d7cce0}.notice{border:1px solid #6a5689;background:#171225;border-radius:14px;padding:12px;margin-top:12px}.row{display:flex;gap:8px;flex-wrap:wrap}.row input{min-width:280px;flex:1}@media(max-width:650px){.status{grid-template-columns:1fr}.row input{min-width:100%}}
+</style>
+</head>
+<body>
+<header><div class="top"><a class="btn" href="index.html">← Adventures</a><div class="brand"><h1>🔧 Payout Alert Diagnostics</h1><div>Admin tools for browser popups and the optional SL Pay shortcut.</div></div></div></header>
+<main>
+<section class="card">
+<h2>Quick check</h2>
+<p class="small">Payout alerts appear as normal desktop/system notifications — not inside the Passport Adventures browser tab.</p>
+<div id="status" class="status"></div>
+<div class="actions">
+  <button class="primary" id="enable">🔔 Enable / refresh alerts</button>
+  <button id="local-test">🖥 Test local popup</button>
+  <button id="server-test">🌐 Test server push</button>
+</div>
+<div id="msg" class="notice">Loading status…</div>
+</section>
+
+<section class="card">
+<h3>If nothing pops up</h3>
+<div class="steps">
+<b>Chromium/Chrome:</b> click the site-controls icon next to the address bar → Site settings → Notifications → Allow, then reload.<br><br>
+<b>Windows:</b> the alert normally appears as a lower-right toast and is also available in Notification Center. Check Windows Settings → System → Notifications if needed.<br><br>
+<b>Linux:</b> the alert appears through the desktop notification system (KDE/GNOME/etc.). Check your desktop notification settings for Chromium if the local test is silent.
+</div>
+</section>
+
+<section class="card">
+<h3>Optional: one-click Second Life Pay link</h3>
+<p class="small">The site already knows the saved recipient username. Linden Lab's Name-to-Agent-ID API can resolve it to the avatar UUID needed for a viewer Pay link.</p>
+<div id="recipient" class="notice"></div>
+<div id="resolve-row" class="row" style="margin-top:10px">
+  <input id="ll-api-key" type="password" autocomplete="off" placeholder="Linden Lab API key">
+  <button id="resolve">Resolve recipient</button>
+  <a class="btn" href="https://accounts.secondlife.com/manage_api_key" target="_blank" rel="noopener">Get LL API key</a>
+</div>
+<p class="small">The API key is sent only for this lookup and is not stored by Passport Adventures.</p>
+</section>
+</main>
+
+<script>
+const SUPA_URL='https://tzxlrglgwzinefutledx.supabase.co';
+const PUSH_API=SUPA_URL+'/functions/v1/payout-push';
+let state=null;
+
+const $=s=>document.querySelector(s);
+function say(t){$('#msg').textContent=t}
+async function call(action,payload={}){
+ const r=await fetch(PUSH_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...payload})});
+ const d=await r.json().catch(()=>({ok:false,error:'bad_response'}));
+ if(!r.ok||!d.ok)throw new Error(d.error||('HTTP '+r.status));
+ return d;
+}
+function vapidBytes(s){
+ const p='='.repeat((4-s.length%4)%4),b=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));
+ return Uint8Array.from(b,c=>c.charCodeAt(0));
+}
+async function sub(){
+ const reg=await navigator.serviceWorker.getRegistration('./');
+ return reg?await reg.pushManager.getSubscription():null;
+}
+async function refresh(){
+ const s=await call('status');
+ const current=await sub().catch(()=>null);
+ state={...s,current,permission:typeof Notification!=='undefined'?Notification.permission:'unsupported'};
+ $('#status').innerHTML=
+  '<div class="pill">Browser permission<br><b class="'+(state.permission==='granted'?'ok':'warn')+'">'+state.permission+'</b></div>'+
+  '<div class="pill">Push subscription<br><b class="'+(current?'ok':'warn')+'">'+(current?'Present':'Missing')+'</b></div>'+
+  '<div class="pill">Server registration<br><b class="'+(s.subscriptions>0?'ok':'warn')+'">'+s.subscriptions+' device'+(s.subscriptions===1?'':'s')+'</b></div>'+
+  '<div class="pill">Recipient Pay link<br><b class="'+(s.recipient_uuid?'ok':'warn')+'">'+(s.recipient_uuid?'Ready':'Not resolved')+'</b></div>';
+ $('#recipient').innerHTML='<b>Recipient:</b> '+String(s.recipient_username||'not set')+(s.recipient_uuid?'<br><span class="ok">UUID resolved. <a class="btn" style="margin-top:8px" href="secondlife:///app/agent/'+s.recipient_uuid+'/pay">Open Pay in Second Life</a></span>':'');
+ $('#resolve-row').style.display=s.recipient_uuid?'none':'flex';
+ say('Status refreshed.');
+}
+async function enable(){
+ if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window))return say('This browser does not support web push.');
+ if(Notification.permission==='denied')return say('Notifications are blocked for this site. Change the site permission to Allow, reload, and try again.');
+ const p=await Notification.requestPermission();
+ if(p!=='granted')return say('Notification permission was not granted.');
+ const s=await call('status');
+ const reg=await navigator.serviceWorker.register('sw.js');
+ await navigator.serviceWorker.ready;
+ let current=await reg.pushManager.getSubscription();
+ if(!current)current=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:vapidBytes(s.vapid_public)});
+ const out=await call('register',{subscription:current.toJSON(),user_agent:navigator.userAgent});
+ localStorage.setItem('bbb-push-control',out.control_token);
+ say('Alerts enabled on this device.');
+ await refresh();
+}
+async function localTest(){
+ if(Notification.permission!=='granted')return say('Enable notifications first.');
+ let reg=await navigator.serviceWorker.getRegistration('./');
+ if(!reg){reg=await navigator.serviceWorker.register('sw.js');await navigator.serviceWorker.ready;}
+ await reg.showNotification('🖥 Passport Adventures local test',{body:'Local browser/desktop notification is working.',tag:'bbb-local-admin',renotify:true});
+ say('Local popup requested. Look at your desktop/system notification area.');
+}
+async function serverTest(){
+ const current=await sub(),ctl=localStorage.getItem('bbb-push-control')||'';
+ if(!current||!ctl)return say('Enable / refresh alerts on this device first.');
+ await call('test',{endpoint:current.endpoint,control_token:ctl});
+ say('Server push accepted. Look at your desktop/system notification area.');
+}
+async function resolveRecipient(){
+ const key=$('#ll-api-key').value.trim();
+ if(!key)return say('Paste a Linden Lab API key first.');
+ const current=await sub(),ctl=localStorage.getItem('bbb-push-control')||'';
+ if(!current||!ctl)return say('Enable alerts first so this device can authorize the lookup.');
+ await call('resolve_recipient',{endpoint:current.endpoint,control_token:ctl,username:state.recipient_username,api_key:key});
+ $('#ll-api-key').value='';
+ say('Recipient resolved.');
+ await refresh();
+}
+$('#enable').onclick=()=>enable().catch(e=>say('Enable failed: '+e.message));
+$('#local-test').onclick=()=>localTest().catch(e=>say('Local test failed: '+e.message));
+$('#server-test').onclick=()=>serverTest().catch(e=>say(e.message==='test_cooldown'?'Wait about 30 seconds before another server test.':'Server test failed: '+e.message));
+$('#resolve').onclick=()=>resolveRecipient().catch(e=>say('Recipient lookup failed: '+e.message));
+refresh().catch(e=>say('Status check failed: '+e.message));
+</script>
+</body>
+</html>
