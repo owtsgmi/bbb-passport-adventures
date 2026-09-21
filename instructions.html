@@ -39,13 +39,13 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
 <section class="card">
 <h3>3. Both passports must finish</h3>
 <p>One person can get ahead, but the adventure is not complete until <b>both players have all three stamps</b>.</p>
-<p>If KK finishes first, the game should show that she is waiting on AA. No reward is unlocked until AA catches up.</p><p>The <b>NEXT</b> marker points to the first stop that the app has not recorded as complete for both players. Once automatic StaFi importing is fully connected, an accepted BBB stamp should update that state and advance NEXT automatically. At the moment, saving a StaFi link does not yet provide that live stamp import.</p>
+<p>If KK finishes first, the game should show that she is waiting on AA. The adventure does not jointly complete until AA catches up.</p><p>The <b>NEXT</b> marker points to the first stop that the app has not recorded as complete for both players. Once automatic StaFi importing is fully connected, an accepted BBB stamp should update that state and advance NEXT automatically. At the moment, saving a StaFi link does not yet provide that live stamp import.</p>
 </section>
 
 <section class="card">
 <h3>4. Mystery L$ reward</h3>
-<p>Each jointly completed three-stop adventure reveals a random <b>20–100 L$</b> prize for KK.</p>
-<p>The amount stays completely hidden while the run is in progress. It is generated once when both passports finish all three stops, then saved so reopening the app or switching devices cannot reroll it.</p>
+<p>When <b>Adventure Treasure</b> is enabled, each jointly completed three-stop adventure reveals a random <b>20–100 L$</b> prize for the second player.</p>
+<p>The amount stays completely hidden while the adventure is in progress. It is generated once when both passports finish all three stops, then saved so reopening the app or switching devices cannot reroll it.</p>
 </section>
 
 <section class="card">
@@ -95,8 +95,9 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
       <p>Supabase stores the shared current adventure, each player's campaign progress, revealed reward history, and payout state.</p>
       <p>An adventure completes only when both players have all three stamps. The second player receives one hidden random 20–100 L$ prize per jointly completed adventure, with the first player as sponsor. The prize is persisted once revealed and accumulates in the recipient's reward balance.</p>
       <p>The player-facing reward panel never exposes alert setup or payment bookkeeping. It only presents the benefactor's Adventure Treasure in friendly game language.</p>
-      <p>All reward administration lives on <a href="admin.html">Admin</a>: player-name setup checks, browser payout alerts, notification testing, the optional Second Life Pay shortcut, current amount owed, and the fixed 1,000 L$ manual-payment record.</p>
-      <p>The background threshold check runs every five minutes through Supabase cron and also after app state writes. The Linden API key used for the optional username-to-UUID lookup is used only for that lookup and is not stored.</p>
+      <p>All reward administration lives on <a href="admin.html">Admin</a>: the Adventure Treasure on/off switch, player-name setup checks, browser payout alerts, notification testing, the optional Second Life Pay shortcut, current amount owed, and the fixed 1,000 L$ manual-payment record.</p>
+      <p>The browser must allow <b>Notifications</b> for payout alerts to appear. The optional Firestorm Pay shortcut may also require allowing an external-app launch when the browser asks.</p>
+      <p>The background threshold check runs every five minutes through Supabase cron and also after app state writes. Real payout alerts are paused while Adventure Treasure is off. The Linden API key used for the optional username-to-UUID lookup is used only for that lookup and is not stored.</p>
     </section>
     <section class="archcard">
       <h3>Private settings</h3>
