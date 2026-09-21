@@ -1,0 +1,217 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Admin · Passport Adventures</title>
+<style>
+:root{--ink:#fff9ff;--muted:#bcb0ca;--line:#3b3152;--green:#63e6a5;--gold:#ffd166;--red:#ff7f98}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 12% 0%,#342052 0,#171126 30%,#0d0a16 72%);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+header{position:sticky;top:0;background:#100c24ee;border-bottom:1px solid #4a376c;padding:14px 4vw;z-index:5}.top{max-width:980px;margin:auto;display:flex;gap:14px;align-items:center}.brand h1{margin:0;font-size:27px;background:linear-gradient(90deg,#ffe39a,#ff9bd7,#b99cff);-webkit-background-clip:text;color:transparent}.brand div,.small{color:var(--muted);font-size:13px}
+button,a.btn,input{border:1px solid #4b3b61;border-radius:12px;background:#171121;color:var(--ink);padding:10px 12px}button,a.btn{cursor:pointer;text-decoration:none;display:inline-block}.primary{background:linear-gradient(135deg,#8b63e8,#c45ca8);border-color:#d7a4e8;font-weight:800}
+main{max-width:980px;margin:auto;padding:26px 4vw 60px}.card{background:#151020;border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px}.card h2,.card h3{margin:0 0 8px}.card h3{color:#ffe08a}.actions,.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row input{min-width:280px;flex:1}.check{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid #30263f}.check:last-child{border-bottom:0}.checkicon{font-size:20px;text-align:center}.ok{color:var(--green)}.warn{color:var(--gold)}.muted{color:var(--muted)}.statusbox{background:#100d1b;border:1px solid #4a3a61;border-radius:14px;padding:14px;margin-top:12px}.money{font-size:38px;font-weight:900;color:#ffe08a}.due{border-color:#a65b70;background:linear-gradient(135deg,#31151e,#221227)}.due strong{color:#ffc0ce}.notice{min-height:20px;margin-top:10px;color:var(--muted)}.mini{font-size:12px}.hide{display:none}@media(max-width:700px){.check{grid-template-columns:30px 1fr}.check .actions{grid-column:2}.row input{min-width:100%}}
+</style>
+</head>
+<body>
+<header><div class="top"><a class="btn" href="index.html">← Adventures</a><div class="brand"><h1>🔧 Passport Adventures Admin</h1><div>Setup, notifications, and reward payments — kept out of the player experience.</div></div></div></header>
+<main>
+
+<section class="card">
+<h2>Setup checklist</h2>
+<p class="small">Do these once on the payer/admin device. After that, normal gameplay needs no setup screens.</p>
+
+<div class="check">
+  <div class="checkicon" id="names-icon">○</div>
+  <div><b>1. Save both Second Life usernames</b><div class="small" id="names-detail">Checking…</div></div>
+  <div class="actions"><a class="btn" href="index.html?settings=1">Open Settings</a></div>
+</div>
+
+<div class="check">
+  <div class="checkicon" id="alerts-icon">○</div>
+  <div><b>2. Enable payout alerts on this device</b><div class="small" id="alerts-detail">Checking…</div></div>
+  <div class="actions"><button class="primary" id="enable-alerts">Enable alerts</button></div>
+</div>
+
+<div class="check">
+  <div class="checkicon" id="test-icon">○</div>
+  <div><b>3. Send one test notification</b><div class="small">You should see a normal desktop/system notification. Once you see it, this part is done.</div></div>
+  <div class="actions"><button id="test-alert">Send test</button></div>
+</div>
+
+<div class="check">
+  <div class="checkicon" id="paylink-icon">○</div>
+  <div><b>Optional: one-click Second Life Pay link</b><div class="small" id="paylink-detail">You can always pay the benefactor manually by username.</div></div>
+  <div class="actions"><button id="show-pay-setup">Set up</button></div>
+</div>
+
+<div id="admin-message" class="notice">Loading admin status…</div>
+</section>
+
+<section class="card" id="pay-setup" style="display:none">
+<h3>Optional Pay-link setup</h3>
+<p class="small">Linden Lab's Name-to-Agent-ID API can resolve the saved benefactor username to the avatar UUID needed for a viewer Pay link. The API key is used for this lookup only and is not stored.</p>
+<div class="row">
+  <input id="ll-api-key" type="password" autocomplete="off" placeholder="Linden Lab API key">
+  <button id="resolve-recipient">Resolve benefactor</button>
+  <a class="btn" href="https://accounts.secondlife.com/manage_api_key" target="_blank" rel="noopener">Get LL API key</a>
+</div>
+</section>
+
+<section class="card">
+<h2>Reward money</h2>
+<div class="statusbox">
+  <div class="small">Benefactor</div>
+  <div><b id="benefactor-name">—</b></div>
+  <div class="small" style="margin-top:12px">Waiting to be paid</div>
+  <div class="money" id="reward-balance">0 L$</div>
+  <div class="small" id="reward-status">Loading…</div>
+</div>
+
+<div id="payment-box" class="statusbox due" style="display:none">
+  <strong>💸 1,000 L$ payment ready</strong>
+  <div class="small" id="payment-detail" style="margin-top:5px"></div>
+  <div class="actions" style="margin-top:12px">
+    <a class="btn primary" id="sl-pay" href="#" style="display:none">Pay in Second Life</a>
+    <button id="mark-paid">Mark 1,000 L$ paid</button>
+  </div>
+</div>
+
+<div class="small" style="margin-top:12px">When a payment is ready: pay the benefactor manually in Second Life, then click <b>Mark 1,000 L$ paid</b> here. Any remainder stays in the reward pot.</div>
+</section>
+
+<section class="card">
+<h3>Notification troubleshooting</h3>
+<p class="small"><b>Where to look:</b> payout alerts are desktop/system notifications, not messages inside the Passport Adventures browser tab.</p>
+<div class="actions">
+  <button id="local-test">Test local popup</button>
+  <button id="server-test">Test server push</button>
+</div>
+<p class="small"><b>Windows:</b> look for the lower-right toast or Notification Center. <b>Linux:</b> look in your desktop notification area. If Chromium has blocked notifications, use the site-controls icon beside the address bar → Site settings → Notifications → Allow.</p>
+</section>
+
+</main>
+
+<script>
+const SUPA_URL='https://tzxlrglgwzinefutledx.supabase.co';
+const PUSH_API=SUPA_URL+'/functions/v1/payout-push';
+let state=null;
+const $=s=>document.querySelector(s);
+function say(t){$('#admin-message').textContent=t}
+async function call(action,payload={}){
+ const r=await fetch(PUSH_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...payload})});
+ const d=await r.json().catch(()=>({ok:false,error:'bad_response'}));
+ if(!r.ok||!d.ok){const e=new Error(d.error||('HTTP '+r.status));e.data=d;throw e}
+ return d;
+}
+function vapidBytes(s){
+ const p='='.repeat((4-s.length%4)%4),b=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));
+ return Uint8Array.from(b,c=>c.charCodeAt(0));
+}
+async function currentSub(){
+ const reg=await navigator.serviceWorker.getRegistration('./');
+ return reg?await reg.pushManager.getSubscription():null;
+}
+function good(icon,detail,text){
+ icon.textContent='✓';icon.className='checkicon ok';if(detail)detail.textContent=text||'Ready';
+}
+function needs(icon,detail,text){
+ icon.textContent='○';icon.className='checkicon warn';if(detail)detail.textContent=text||'Needs setup';
+}
+async function refresh(){
+ const s=await call('status');
+ const sub=await currentSub().catch(()=>null);
+ const ctl=localStorage.getItem('bbb-push-control')||'';
+ const permission=typeof Notification!=='undefined'?Notification.permission:'unsupported';
+ const tested=localStorage.getItem('bbb-push-tested')==='true';
+ state={...s,sub,ctl,permission,tested};
+
+ const namesOk=!!(s.payer_username&&s.recipient_username&&s.payer_username!=='AA'&&s.recipient_username!=='KK');
+ if(namesOk)good($('#names-icon'),$('#names-detail'),s.payer_username+' → '+s.recipient_username);
+ else needs($('#names-icon'),$('#names-detail'),'Add both actual SL usernames in Settings.');
+
+ const alertsOk=permission==='granted'&&!!sub&&!!ctl;
+ if(alertsOk)good($('#alerts-icon'),$('#alerts-detail'),'Enabled on this device.');
+ else needs($('#alerts-icon'),$('#alerts-detail'),permission==='denied'?'Browser notifications are blocked for this site.':'Enable alerts on the payer/admin device.');
+
+ if(tested)good($('#test-icon'),null);
+ else needs($('#test-icon'),null);
+
+ if(s.recipient_uuid)good($('#paylink-icon'),$('#paylink-detail'),'Benefactor Pay link is ready.');
+ else needs($('#paylink-icon'),$('#paylink-detail'),'Optional — manual payment by username also works.');
+
+ $('#benefactor-name').textContent=s.recipient_username||'Not set';
+ $('#reward-balance').textContent=Number(s.balance||0)+' L$';
+ const ready=Number(s.ready_payments||0);
+ $('#reward-status').textContent=ready?ready+' × 1,000 L$ payment'+(ready===1?' is':'s are')+' ready.':Math.max(0,1000-Number(s.balance||0))+' L$ until the next 1,000 L$ payment.';
+ $('#payment-box').style.display=ready?'block':'none';
+ $('#payment-detail').textContent=ready?((Number(s.balance||0)-1000)+' L$ will remain after one 1,000 L$ payment.'):'';
+
+ const pay=$('#sl-pay');
+ if(s.recipient_uuid){pay.href='secondlife:///app/agent/'+s.recipient_uuid+'/pay';pay.style.display='inline-block'}
+ else pay.style.display='none';
+
+ $('#show-pay-setup').textContent=s.recipient_uuid?'Pay link ready':'Set up';
+ $('#show-pay-setup').disabled=!!s.recipient_uuid;
+ say(namesOk&&alertsOk&&tested?'✓ Required setup is complete.':'Finish the numbered setup items above.');
+}
+async function enableAlerts(){
+ if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window))return say('This browser does not support web push.');
+ if(Notification.permission==='denied')return say('Notifications are blocked. Change this site to Allow in Chromium site settings, reload, and try again.');
+ const p=await Notification.requestPermission();
+ if(p!=='granted')return say('Notification permission was not granted.');
+ const s=await call('status');
+ const reg=await navigator.serviceWorker.register('sw.js');
+ await navigator.serviceWorker.ready;
+ let sub=await reg.pushManager.getSubscription();
+ if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:vapidBytes(s.vapid_public)});
+ const out=await call('register',{subscription:sub.toJSON(),user_agent:navigator.userAgent});
+ localStorage.setItem('bbb-push-control',out.control_token);
+ say('Alerts enabled on this device.');
+ await refresh();
+}
+async function serverTest(){
+ const sub=await currentSub(),ctl=localStorage.getItem('bbb-push-control')||'';
+ if(!sub||!ctl)return say('Enable payout alerts first.');
+ await call('test',{endpoint:sub.endpoint,control_token:ctl});
+ localStorage.setItem('bbb-push-tested','true');
+ say('Test sent. Look for the desktop/system notification.');
+ await refresh();
+}
+async function localTest(){
+ if(Notification.permission!=='granted')return say('Enable notifications first.');
+ let reg=await navigator.serviceWorker.getRegistration('./');
+ if(!reg){reg=await navigator.serviceWorker.register('sw.js');await navigator.serviceWorker.ready;}
+ await reg.showNotification('🖥 Passport Adventures local test',{body:'Local browser/desktop notifications are working.',tag:'bbb-admin-local',renotify:true});
+ say('Local popup requested. Look at your desktop/system notification area.');
+}
+async function resolveRecipient(){
+ const key=$('#ll-api-key').value.trim();
+ if(!key)return say('Paste a Linden Lab API key first.');
+ const sub=await currentSub(),ctl=localStorage.getItem('bbb-push-control')||'';
+ if(!sub||!ctl)return say('Enable payout alerts first so this device can authorize the lookup.');
+ await call('resolve_recipient',{endpoint:sub.endpoint,control_token:ctl,username:state.recipient_username,api_key:key});
+ $('#ll-api-key').value='';
+ $('#pay-setup').style.display='none';
+ say('Benefactor resolved. Pay link is ready.');
+ await refresh();
+}
+async function markPaid(){
+ if(!confirm('Record ONE 1,000 L$ payment to '+(state?.recipient_username||'the benefactor')+' as paid?\n\nDo this only after you actually send the L$ in Second Life.'))return;
+ const sub=await currentSub(),ctl=localStorage.getItem('bbb-push-control')||'';
+ if(!sub||!ctl)return say('Enable payout alerts on this admin device first.');
+ const out=await call('mark_paid',{endpoint:sub.endpoint,control_token:ctl});
+ say('✓ 1,000 L$ recorded as paid. '+out.remaining_balance+' L$ remains.');
+ await call('check').catch(()=>{});
+ await refresh();
+}
+$('#enable-alerts').onclick=()=>enableAlerts().catch(e=>say('Could not enable alerts: '+e.message));
+$('#test-alert').onclick=()=>serverTest().catch(e=>say(e.message==='test_cooldown'?'Wait about 30 seconds before another test.':'Test failed: '+e.message));
+$('#server-test').onclick=()=>serverTest().catch(e=>say(e.message==='test_cooldown'?'Wait about 30 seconds before another test.':'Server test failed: '+e.message));
+$('#local-test').onclick=()=>localTest().catch(e=>say('Local test failed: '+e.message));
+$('#show-pay-setup').onclick=()=>{$('#pay-setup').style.display='block';$('#ll-api-key').focus()};
+$('#resolve-recipient').onclick=()=>resolveRecipient().catch(e=>say('Benefactor lookup failed: '+e.message));
+$('#mark-paid').onclick=()=>markPaid().catch(e=>say(e.message==='threshold_not_met'?'The balance is below 1,000 L$.':'Could not record payment: '+e.message));
+refresh().catch(e=>say('Admin status could not load: '+e.message));
+</script>
+</body>
+</html>
