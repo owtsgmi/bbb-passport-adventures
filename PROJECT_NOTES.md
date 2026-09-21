@@ -230,6 +230,11 @@ This file is the persistent source of truth for future edits to this project.
 
 ## Player reward experience + admin payout workflow
 - The **player-facing Adventures page must not show payout-alert setup, notification diagnostics, API-key forms, Pay-link setup, or manual-payment bookkeeping**.
+- The optional reward feature is named **Adventure Treasure** (do not call it benefactor mode).
+- `bbb_board_state.adventure_treasure_enabled` controls whether the player-facing treasure experience is visible. Default is **false/off**.
+- When Adventure Treasure is off, hide the treasure balance, mystery-L$ labels, completed-adventure reward amounts, and the L$ scorecard chip. Existing reward/accounting data is preserved rather than deleted.
+- `payout-push` must pause real threshold notifications while Adventure Treasure is off. Admin test notifications may still be used for setup/diagnostics.
+- Admin toggles Adventure Treasure through authenticated `set_treasure_mode` on the `payout-push` Edge Function.
 - The benefactor/second-player view should feel like a game reward screen:
   - friendly **Adventure Treasure** wording;
   - current L$ waiting for them;
