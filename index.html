@@ -413,9 +413,11 @@ function rewardHtml(){
  return `<div class="bankhead"><div><h3>🎁 Mystery L$ Rewards <span class="alienmark">👽</span></h3><div class="small">Finish all 3 stops on both passports and the adventure reveals a random <b>20–100 L$</b> prize for <b>${rewardOwnerName()}</b>.</div></div></div>
  <div class="bankgrid"><div class="bankcard"><span>${due?rewardOwnerName()+"'s unpaid prize total":"Next prize"}</span><strong>${due?due+' L$':'? L$'}</strong><span>${due?'Waiting for AA to mark paid.':'Hidden until both passports finish the current adventure.'}</span></div></div>
  ${pending?`<div class="small" style="margin-top:10px">✨ ${pending} adventure${pending===1?'':'s'} already finished by her — waiting for you. The prize is still hidden.</div>`:''}
- ${due?`<div class="payoutdue"><div><strong>💸 ${due} L$ payout due</strong><div class="small">Completed prizes waiting to be paid. ❤️</div></div><button onclick="markPaid()">Mark paid</button></div>`:''}
+ ${due?`<div class="payoutdue"><div><strong>💸 ${due} L$ payout due</strong><div class="small">Completed prizes waiting to be paid. ❤️</div></div><button onclick="markPaid()">Mark paid manually</button></div>`:''}
+ ${bankTestHtml(due)}
  <details class="recent"><summary>Past rewards & payouts</summary>${payoutLog.slice(0,8).map(r=>`<div class="recentline">${r.paid?'✓':'•'} ${r.linden} L$ ${r.title?'· '+esc(r.title)+' ':''}${r.paid?'paid':'due'}</div>`).join('')||'<div class="recentline">None yet.</div>'}</details>`;
 }
+function refreshRewardPanel(){const e=document.getElementById('rewards');if(e)e.innerHTML=rewardHtml()}
 function render(){
  syncCompletedRewardsToPayouts();
  const q=$('#q').value.toLowerCase(),z=$('#zone').value;
