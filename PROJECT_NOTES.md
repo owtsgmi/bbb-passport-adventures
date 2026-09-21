@@ -228,41 +228,51 @@ This file is the persistent source of truth for future edits to this project.
 - If there is no active incomplete adventure, the lock control is hidden/disabled and choosing an adventure works normally.
 
 
-## Manual fixed-1000 payout + browser push alerts
-- Adventure rewards still reveal random **20–100 L$** values and accumulate in the second/player-two recipient's unpaid balance.
-- Payout threshold and unit remain **1,000 L$**.
+## Player reward experience + admin payout workflow
+- The **player-facing Adventures page must not show payout-alert setup, notification diagnostics, API-key forms, Pay-link setup, or manual-payment bookkeeping**.
+- The benefactor/second-player view should feel like a game reward screen:
+  - friendly **Adventure Treasure** wording;
+  - current L$ waiting for them;
+  - lifetime adventure-prize total;
+  - recent prize list;
+  - progress toward the next **1,000 L$ milestone**.
+- The first-player view may show the same treasure pot for context, but should remain non-technical and contain no payout/admin controls.
+- Settings uses neutral player wording:
+  - first SL username;
+  - benefactor SL username;
+  - a generic **Admin** link.
+- Unified admin page: `admin.html`.
+- Legacy `bank.html` and `payout-admin.html` redirect to `admin.html`.
+- Admin page contains the complete setup checklist:
+  1. save both actual SL usernames;
+  2. enable payout alerts on the payer/admin device;
+  3. send one test notification and confirm the desktop/system popup;
+  4. optional one-click Second Life Pay-link setup.
+- Admin page also shows:
+  - benefactor username;
+  - current unpaid reward balance;
+  - how many fixed 1,000 L$ payments are ready;
+  - optional Second Life Pay link;
+  - **Mark 1,000 L$ paid** bookkeeping action;
+  - local/server notification diagnostics.
+- Adventure rewards still reveal random **20–100 L$** values and accumulate in the second/player-two benefactor's unpaid balance.
+- Payment threshold and unit remain **1,000 L$**.
 - No automatic L$ transfer is performed by the app.
-- The payer manually pays the recipient in Second Life, then records **one 1,000 L$ payment** on the Adventures page.
-- Partial allocation across adventure reward rows uses `paid_linden`; balances above 1,000 L$ can be paid in multiple 1,000 L$ chunks and any remainder stays toward the next payout.
-- Actual SL usernames remain the intended player/tab labels:
-  - first/player-one username (🗡️) = payer
-  - second/player-two username (👽) = recipient / benefactor
-- Payout notification delivery uses standard browser **Web Push**, not an SL script/bot/group.
-- GitHub Pages service worker: `sw.js`.
-- Supabase Edge Function: `payout-push`.
-- Push tables:
-  - `bbb_push_config` — singleton VAPID keypair, optional resolved recipient UUID, and last seen 1,000-L$ bucket. Direct anon/auth grants revoked.
-  - `bbb_push_subscriptions` — browser push endpoints/keys plus hashed per-device control tokens. Direct anon/auth grants revoked.
-- The VAPID private key is server-only in a service-role-readable table and must never be returned to the browser or committed to public GitHub source.
-- Each browser/device opts in independently by pressing **Enable payout alerts** and granting notification permission.
-- Keep the normal Reward Balance panel non-technical. It should show only alert on/off status, the enable/fix action when needed, payout actions, and a small **Admins: diagnose browser popups** link.
-- User-facing copy must make clear that alerts appear as **desktop/system notifications**, not inside the Passport Adventures browser tab. Windows typically shows a lower-right toast/Notification Center; Linux placement depends on the desktop environment.
-- All technical notification checks live on `payout-admin.html`: **Test local popup** first to verify browser/OS notification display, then **Test server push** to verify the full Supabase/Web Push path.
-- The optional Linden username→UUID Pay-link setup also lives on `payout-admin.html`; do not expose the API-key form on the normal Reward Balance panel.
-- The browser stores only its per-device push control token in localStorage. The PushSubscription endpoint and encryption keys are stored server-side.
-- `payout-push` actions:
-  - `status` — public VAPID key, current payout balance, recipient resolution status.
-  - `register` / `unregister` — manage one browser subscription.
-  - `test` — send a rate-limited test notification only to the authenticated current subscription; does not alter game state.
-  - `check` — compare the unpaid reward balance's floor(balance/1000) bucket to the prior bucket and notify all enabled subscriptions only when that count increases.
-  - `resolve_recipient` — authenticated per-device action that transiently accepts a Linden Lab API key, validates the requested username against the current second-player username, calls Linden Lab's official Name-to-Agent-ID API, stores only the resulting avatar UUID, and never stores the API key.
-- A Supabase pg_cron job named `bbb-payout-push-check` calls `payout-push` every five minutes. The app also calls `check` after successful shared-state writes for faster alerts during active use.
-- When a 1,000 L$ payment is manually marked paid, the real balance bucket drops; a later rise back into that bucket can trigger the next notification.
-- `bank.html` is now a browser payout-alert explanation/setup page.
-- `passport-reminder.lsl` and `passport-bank.lsl` are obsolete harmless stubs. No current workflow requires any LSL.
+- Real payment is made manually in Second Life; after sending it, the admin records exactly one 1,000 L$ payment.
+- `payout-push` Edge Function version 2 includes authenticated `mark_paid`, using the current device's push subscription control token. It allocates exactly 1,000 L$ across payout-log rows and returns the remaining balance.
+- Browser payout alerts use standard Web Push:
+  - service worker: `sw.js`;
+  - Edge Function: `payout-push`;
+  - subscriptions are stored server-side;
+  - the payer/admin device opts in once.
+- The background `bbb-payout-push-check` cron job runs every five minutes, and the Adventures page also calls `check` after successful shared-state writes.
+- Alert delivery is intentionally admin-only. The benefactor does not need to configure or understand notifications.
+- Alerts appear as **desktop/system notifications**, not inside the Passport Adventures browser tab.
+- Admin diagnostics order:
+  - **Test local popup** verifies browser/OS display;
+  - **Test server push** verifies the full Supabase/Web Push path.
 - Optional Pay shortcut:
-  - Linden Lab's official Name-to-Agent-ID API resolves the saved recipient username to a stable avatar UUID.
-  - The API requires a Linden-issued API key; the user must obtain that while logged into their Second Life account.
-  - The app sends that key only to the Edge Function for one lookup and does not persist it.
-  - Once resolved, the UI can expose `secondlife:///app/agent/<uuid>/pay`.
-  - External browser/viewer handling of application-style SL URIs may vary, so manual payment by username remains the fallback.
+  - Linden Lab's Name-to-Agent-ID API resolves the saved benefactor username to an avatar UUID;
+  - the Linden API key is accepted transiently for that lookup and is not stored;
+  - once resolved, Admin can open `secondlife:///app/agent/<uuid>/pay`.
+- Old LSL reminder/payment scripts remain harmless obsolete stubs; no current workflow requires LSL.
