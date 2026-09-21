@@ -386,10 +386,26 @@ function unpaidLinden(){return payoutLog.filter(r=>!r.paid).reduce((n,r)=>n+Numb
 function markPaid(){
  const due=unpaidLinden();
  if(!due)return toast('Nothing is waiting for payout');
- if(!confirm('Mark '+due+' L$ as paid?'))return;
+ if(!confirm('Mark '+due+' L$ as paid manually?\n\nUse this only after you actually send the L$ yourself.'))return;
  payoutLog=payoutLog.map(r=>r.paid?r:{...r,paid:true,paid_at:new Date().toISOString()});
  saveAll();
- toast('💖 Payout marked paid');
+ toast('💖 Manual payout marked paid');
+}
+function bankTestHtml(due){
+ const paired=!!bankState.paired,pending=bankState.pending,verified=!!bankState.test_verified_at;
+ let h='<div class="banktest"><div class="banktesthead"><div><b>🧪 Passport Bank</b> <span class="testbadge">TEST MODE</span><div class="small">Full payout workflow, but <b>no L$ can move</b>.</div></div>';
+ h+='<div class="'+(verified?'testok':'small')+'">'+(verified?'✓ Test path verified':paired?'● Test object paired':'○ Test object not paired')+'</div></div>';
+ if(!paired){
+   h+='<div class="small" style="margin-top:8px">Touch the TEST Passport Bank object in Second Life. It will give you an 8-digit pairing code.</div><div class="bankpair"><input id="bank-pair-code" inputmode="numeric" maxlength="8" placeholder="8-digit pairing code"><button onclick="claimBankPairing()">Pair test object</button></div>';
+ }else if(pending){
+   h+='<div class="small" style="margin-top:9px">⏳ Test payment of <b>'+Number(pending.amount||0)+' L$</b> is waiting for your approval in Second Life.</div>';
+ }else if(due){
+   h+='<div class="bankpair"><button class="primary" onclick="requestBankTest()">🧪 Test Pay '+due+' L$ to '+esc(rewardOwnerName())+'</button><span class="small">The real unpaid total will remain unchanged.</span></div>';
+ }else{
+   h+='<div class="small" style="margin-top:9px">Paired and ready. A test payment becomes available when a real reward payout is due.</div>';
+ }
+ h+='</div>';
+ return h;
 }
 function rewardHtml(){
  syncCompletedRewardsToPayouts();
