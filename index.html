@@ -56,8 +56,8 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
       <div class="settingsfield"><label>🔐 Secret Club Code</label><input id="set-family-key" type="password" autocomplete="new-password" placeholder="Use the same key on both devices"></div>
     </div>
     <div class="actions" style="margin-top:12px"><label class="small"><input id="set-remember-key" type="checkbox" checked> Remember Secret Club Code on this device</label></div>
-    <div class="actions" style="margin-top:16px"><button class="primary" onclick="saveSettings()">💾 Save & Sync</button><button onclick="unlockPrivateSettings()">🔓 Load from Cloud</button><button onclick="copyFamilyKey()">🔑 Copy Secret Club Code</button><button onclick="testCurrentStaFi()">🔗 Open selected StaFi page</button><a class="sl" href="bank.html">💸 Passport Bank Setup</a></div>
-    <div class="settingsnote"><b>The two SL usernames also become the tab names and the Passport Bank identities.</b> The in-world bank verifies that the object owner matches the payer username and resolves the recipient username to a fixed avatar UUID before any payment can occur. BBB StaFi links remain encrypted. On a new trusted device, enter the same Secret Club Code and use <b>Load from Cloud</b>.</div>
+    <div class="actions" style="margin-top:16px"><button class="primary" onclick="saveSettings()">💾 Save & Sync</button><button onclick="unlockPrivateSettings()">🔓 Load from Cloud</button><button onclick="copyFamilyKey()">🔑 Copy Secret Club Code</button><button onclick="testCurrentStaFi()">🔗 Open selected StaFi page</button><a class="sl" href="bank.html">💬 In-world Reminder Setup</a></div>
+    <div class="settingsnote"><b>The two SL usernames also become the tab names.</b> The optional in-world reminder uses them only to say who should pay whom; it never moves L$. BBB StaFi links remain encrypted. On a new trusted device, enter the same Secret Club Code and use <b>Load from Cloud</b>.</div>
   </div>
 </section>
 
@@ -109,7 +109,7 @@ let defaultView=localStorage.getItem('bbb-default-view')||'partner';
 let familyKey=localStorage.getItem('bbb-family-key')||sessionStorage.getItem('bbb-family-key')||'';
 let privateSettingsUpdated='';
 let currentView=localStorage.getItem('bbb-view')||defaultView;
-let bankState={mode:'live',paired:false,identity_verified:false,debit_ready:false,payer_username:null,recipient_username:null,test_balance:0,real_balance:0,pending:null};
+let bankState={mode:'reminder',payer_username:null,recipient_username:null,test_balance:0,real_balance:0,effective_balance:0,ready_payments:0,source:'rewards'};
 let bankBusy=false;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -415,40 +415,21 @@ function markPaid(){
  saveAll();
  toast('💖 1,000 L$ manual payment recorded');
 }
-function slUserNorm(s){return String(s||'').trim().toLowerCase().replace(/\s+/g,'.')}
 function bankHtml(due){
- const b=bankState,pending=b.pending,testBalance=Number(b.test_balance||0);
- const namesEntered=tabPartnerName&&tabMeName&&tabPartnerName!=='AA'&&tabMeName!=='KK';
- const namesMatch=!b.paired||(slUserNorm(b.payer_username)===slUserNorm(tabPartnerName)&&slUserNorm(b.recipient_username)===slUserNorm(tabMeName));
- const ready=!!(b.paired&&b.identity_verified&&b.debit_ready&&namesMatch);
- let status='○ Not paired';
- if(b.paired&&!namesMatch)status='⚠ Re-pair after username change';
- else if(b.paired&&!b.identity_verified)status='◌ Verifying SL usernames…';
- else if(b.paired&&b.identity_verified&&!b.debit_ready)status='◌ Waiting for debit permission in SL…';
- else if(ready)status='✓ Ready · fixed 1,000 L$ payments';
- let h='<div class="banktest"><div class="banktesthead"><div><b>💸 Passport Bank</b><div class="small">'+esc(tabPartnerName)+' → '+esc(tabMeName)+' · payments are always <b>1,000 L$</b>.</div></div><div class="'+(ready?'testok':'small')+'">'+status+'</div></div>';
- if(!namesEntered){
-   h+='<div class="small" style="margin-top:9px">Enter both actual Second Life usernames in Settings first. Those usernames also become the two tab names.</div>';
- }else if(!b.paired){
-   h+='<div class="small" style="margin-top:9px">Set up the in-world Passport Bank, touch it for an 8-digit code, then pair it here.</div><div class="bankpair"><a class="sl" href="bank.html">💸 Setup Passport Bank</a><input id="bank-pair-code" inputmode="numeric" maxlength="8" placeholder="8-digit pairing code"><button onclick="claimBankPairing()">Pair Bank</button></div>';
- }else if(!namesMatch){
-   h+='<div class="small" style="margin-top:9px">The bank is locked to <b>'+esc(b.payer_username||'?')+' → '+esc(b.recipient_username||'?')+'</b>. Use <b>Reset Pairing</b> on the in-world object, then pair again with the new usernames.</div>';
- }else if(pending){
-   h+='<div class="small" style="margin-top:9px">⏳ A real <b>1,000 L$</b> payment to <b>'+esc(b.recipient_username||tabMeName)+'</b> is waiting for your approval in Second Life.</div>';
- }else if(ready&&testBalance>=1000){
-   h+='<div class="payoutdue"><div><strong>🧪 Test earnings: 1,000 L$ ready</strong><div class="small">The earnings are simulated, but approving this will send a <b>real</b> 1,000 L$ payment.</div></div><button class="primary" onclick="requestBankPayment()">Pay 1,000 L$</button></div>';
- }else if(ready&&due>=1000){
-   h+='<div class="payoutdue"><div><strong>💸 1,000 L$ payout ready</strong><div class="small">'+Math.max(0,due-1000)+' L$ will remain in '+esc(tabMeName)+'\'s earned balance after this payment.</div></div><button class="primary" onclick="requestBankPayment()">Pay 1,000 L$</button></div>';
- }else if(ready){
-   h+='<div class="small" style="margin-top:9px">'+Math.max(0,1000-due)+' L$ more must be earned before the next real payout.</div>';
+ const b=bankState,testBalance=Number(b.test_balance||0),ready=Math.floor(due/1000);
+ let h='<div class="banktest"><div class="banktesthead"><div><b>💬 In-world payout reminder</b><div class="small">Optional reminder object IMs the payer when a 1,000 L$ payment is due. It <b>cannot move money</b>.</div></div><div class="testok">No debit permission · no pairing</div></div>';
+ if(due>=1000){
+   h+='<div class="payoutdue"><div><strong>💸 '+ready+' × 1,000 L$ payment'+(ready===1?'':'s')+' due</strong><div class="small">Pay '+esc(tabMeName)+' manually in Second Life, then record one 1,000 L$ payment here.</div></div><button onclick="markPaid()">Mark 1,000 L$ paid</button></div>';
+ }else{
+   h+='<div class="small" style="margin-top:9px">'+Math.max(0,1000-due)+' L$ more must be earned before the next payment reminder.</div>';
  }
- if(b.paired&&testBalance===0){
-   h+='<div class="bankpair"><button onclick="setBankTestBalance(1000)">🧪 Give '+esc(tabMeName)+' 1,000 L$ test earnings</button><span class="small">Simulates earnings only; it does not alter adventure history.</span></div>';
- }else if(b.paired&&testBalance>=1000){
-   h+='<div class="bankpair"><button onclick="setBankTestBalance(0)">Clear test earnings</button></div>';
+ h+='<div class="bankpair"><a class="sl" href="bank.html">💬 Setup in-world reminder</a>';
+ if(testBalance>=1000){
+   h+='<button onclick="setBankTestBalance(0)">Clear 1,000 L$ test earnings</button><span class="small">TEST reminder is active.</span>';
+ }else{
+   h+='<button onclick="setBankTestBalance(1000)">🧪 Pretend '+esc(tabMeName)+' has earned 1,000 L$</button><span class="small">Tests the notification only; no adventure history or money changes.</span>';
  }
- if(due>=1000)h+='<div class="small" style="margin-top:10px">Fallback: <button onclick="markPaid()">Mark one 1,000 L$ payment paid manually</button></div>';
- h+='</div>';
+ h+='</div></div>';
  return h;
 }
 function rewardHtml(){
@@ -523,66 +504,27 @@ async function loadBankStatus(){
   try{
     const s=await bankCall('status');
     bankState={
-      mode:'live',
-      paired:!!s.paired,
-      identity_verified:!!s.identity_verified,
-      debit_ready:!!s.debit_ready,
+      mode:'reminder',
       payer_username:s.payer_username||null,
       recipient_username:s.recipient_username||null,
       test_balance:Number(s.test_balance||0),
       real_balance:Number(s.real_balance||0),
-      pending:s.pending||null
+      effective_balance:Number(s.effective_balance||0),
+      ready_payments:Number(s.ready_payments||0),
+      source:s.source||'rewards'
     };
     refreshRewardPanel();
   }catch(e){}
   finally{bankBusy=false}
 }
-async function claimBankPairing(){
-  const input=document.getElementById('bank-pair-code');
-  const code=String(input?.value||'').replace(/\D/g,'');
-  if(tabPartnerName==='AA'||tabMeName==='KK'||!tabPartnerName||!tabMeName)return toast('Enter both actual SL usernames in Settings first.');
-  if(code.length!==8)return toast('Enter the 8-digit code shown by the in-world Passport Bank.');
-  try{
-    await bankCall('pair_claim',{code,payer_username:tabPartnerName,recipient_username:tabMeName});
-    if(input)input.value='';
-    await loadBankStatus();
-    toast('💸 Passport Bank paired — verifying the two SL usernames in-world');
-  }catch(e){
-    if(e.message==='pair_code_expired')toast('Pairing code expired — touch the object for a new one.');
-    else if(e.message==='pair_code_locked')toast('Too many incorrect attempts — touch the object for a new pairing code.');
-    else if(e.message==='bad_usernames')toast('Check both SL usernames in Settings.');
-    else toast('Could not pair — check the code.');
-  }
-}
 async function setBankTestBalance(value){
-  if(!bankState.paired)return toast('Pair Passport Bank first.');
   const v=Number(value)===1000?1000:0;
-  if(v===1000&&!confirm('Give '+rewardOwnerName()+' 1,000 L$ of TEST earnings?\n\nThis does not change adventure history. If you then press Pay and approve in Second Life, the transfer itself WILL be a real 1,000 L$ payment.'))return;
+  if(v===1000&&!confirm('Pretend '+rewardOwnerName()+' has earned 1,000 L$ for reminder testing?\n\nThis changes no adventure history and cannot move any money.'))return;
   try{
     await bankCall('set_test_balance',{value:v});
     await loadBankStatus();
-    toast(v?'🧪 1,000 L$ test earnings loaded':'Test earnings cleared');
-  }catch(e){toast('Could not change test earnings.')}
-}
-async function requestBankPayment(){
-  if(!bankState.paired)return toast('Pair Passport Bank first.');
-  if(!bankState.identity_verified)return toast('Passport Bank is still verifying the SL usernames.');
-  if(!bankState.debit_ready)return toast('Grant debit permission on the in-world Passport Bank first.');
-  const usingTest=Number(bankState.test_balance||0)>=1000;
-  const due=unpaidLinden();
-  if(!usingTest&&due<1000)return toast((1000-due)+' L$ more must be earned before a payout.');
-  const source=usingTest?'TEST earnings':'earned reward balance';
-  if(!confirm('Send REAL L$1,000 from '+tabPartnerName+' to '+tabMeName+'?\n\nSource: '+source+'\n\nYou will still have to approve the payment in Second Life.'))return;
-  try{
-    const out=await bankCall('create_payment');
-    bankState.pending=out.request||null;
-    refreshRewardPanel();
-    toast('💸 Payment request sent — approve L$1,000 on the in-world Passport Bank');
-  }catch(e){
-    if(e.message==='threshold_not_met')toast('1,000 L$ must be earned before a payout.');
-    else if(e.message==='debit_not_ready')toast('Passport Bank does not have debit permission yet.');
-    else toast('Could not create the payment request.');
-  }
+    toast(v?'🧪 Test balance set to 1,000 L$ — the in-world reminder should IM you shortly':'Test balance cleared');
+  }catch(e){toast('Could not change the test balance.')}
 }
 function syncStatus(text,good=true){
   const e=document.getElementById('sync-status');
