@@ -429,8 +429,9 @@ function bankHtml(due){
    h+='<div class="small" style="margin-top:9px">'+Math.max(0,1000-due)+' L$ more must be earned before the next payout.</div>';
  }
  h+='<div class="bankpair"><button class="primary" onclick="'+(perm==='denied'?'showNotificationHelp()':'enablePayoutAlerts()')+'">'+(enabled?'🔔 Re-enable / refresh alerts':perm==='denied'?'⚠ Notifications blocked — fix':'🔔 Enable payout alerts')+'</button>';
- if(enabled)h+='<button onclick="sendPushTest()">🧪 Send test alert</button>';
+ if(enabled)h+='<button onclick="testLocalNotification()">🖥 Test local popup</button><button onclick="sendPushTest()">🌐 Test server push</button>';
  h+='<a class="sl" href="bank.html">How alerts work</a></div>';
+ if(enabled)h+='<div class="small" style="margin-top:8px">Diagnostic: permission <b>'+esc(String(pushState.permission))+'</b> · push subscription <b>present</b> · test local popup first, then test server push.</div>';
  if(enabled&&!pushState.recipient_uuid){
    h+='<details class="recent"><summary>Optional: add one-click Second Life Pay link</summary><div class="small" style="margin:8px 0">Linden Lab requires an API key to translate the saved SL username into its avatar UUID. The key is used once and is not stored.</div><div class="bankpair"><input id="ll-api-key" type="password" placeholder="Linden Lab API key" autocomplete="off"><button onclick="resolvePayRecipient()">Resolve '+esc(tabMeName)+'</button><a class="sl" href="https://accounts.secondlife.com/manage_api_key" target="_blank" rel="noopener">Get LL API key</a></div></details>';
  }else if(enabled&&pushState.recipient_uuid){
@@ -540,12 +541,28 @@ async function enablePayoutAlerts(){
     toast('🔔 Payout alerts enabled on this device');
   }catch(e){toast('Could not enable payout alerts: '+e.message)}
 }
+async function testLocalNotification(){
+  try{
+    if(Notification.permission!=='granted')return toast('Notifications are not allowed for this site.');
+    let reg=await navigator.serviceWorker.getRegistration('./');
+    if(!reg){
+      reg=await navigator.serviceWorker.register('sw.js');
+      await navigator.serviceWorker.ready;
+    }
+    await reg.showNotification('🖥 Passport Adventures local test',{
+      body:'If you can see this, Chromium/KDE can display notifications. Next test the server push.',
+      tag:'bbb-local-test',
+      renotify:true
+    });
+    toast('🖥 Local notification requested');
+  }catch(e){toast('Local popup test failed: '+e.message)}
+}
 async function sendPushTest(){
   try{
     const sub=await currentPushSubscription(),ctl=localStorage.getItem('bbb-push-control')||'';
     if(!sub||!ctl)return enablePayoutAlerts();
     await pushCall('test',{endpoint:sub.endpoint,control_token:ctl});
-    toast('🧪 Test alert sent — it should appear as a browser notification');
+    toast('🌐 Server push accepted — if local popup works but this does not, the push transport is the problem.');
   }catch(e){toast(e.message==='test_cooldown'?'Wait about 30 seconds before another test.':'Could not send the test alert.')}
 }
 async function resolvePayRecipient(){
@@ -698,7 +715,7 @@ async function pollCloud(){
 }
 firstCloudSync();
 autoLoadPrivateSettings();
-loadBankStatus();
+loadPushStatus();
 setInterval(pollCloud,3000);
 setInterval(loadPushStatus,15000);
 setInterval(pollPrivateSettings,10000);
