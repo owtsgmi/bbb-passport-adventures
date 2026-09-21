@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Passport Bank Test Setup</title>
+<style>
+:root{--bg:#090816;--panel:#151229;--panel2:#1d1737;--ink:#fff9ff;--muted:#bcb0ca;--gold:#ffd166;--green:#63e6a5;--purple:#9d7bff;--line:#3b3152}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 12% 0%,#342052 0,#171126 30%,#0d0a16 72%);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+header{position:sticky;top:0;background:#100c24ee;backdrop-filter:blur(12px);border-bottom:1px solid #4a376c;padding:14px 4vw;z-index:10}
+.top{max-width:950px;margin:auto;display:flex;gap:14px;align-items:center;position:relative}.brand h1{margin:0;font-size:27px;background:linear-gradient(90deg,#ffe39a,#ff9bd7,#b99cff);-webkit-background-clip:text;color:transparent}.brand div{color:var(--muted);font-size:13px}
+button,a.btn{border:1px solid #4b3b61;border-radius:12px;background:#171121;color:var(--ink);padding:10px 12px;cursor:pointer;text-decoration:none;display:inline-block}.primary{background:linear-gradient(135deg,#8b63e8,#c45ca8);border-color:#d7a4e8;font-weight:800}
+main{max-width:950px;margin:auto;padding:26px 4vw 60px}.hero,.card{background:#151020;border:1px solid var(--line);border-radius:20px;padding:20px;margin-bottom:16px}.hero{background:linear-gradient(135deg,#25163a,#171121);border-color:#6d548d}.hero h2,.card h3{margin:0 0 8px}.card h3{color:#ffe08a}.small{font-size:12px;color:var(--muted);line-height:1.5}.safe{border:1px solid #4f8a70;background:#10271f;border-radius:14px;padding:13px 14px;color:#baf3d8}.steps{counter-reset:s}.step{display:flex;gap:12px;margin:13px 0;align-items:flex-start}.num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#2c2141;border:1px solid #725a94;font-weight:900;flex:0 0 auto}
+textarea{width:100%;min-height:290px;background:#0c0a12;color:#e8e1ef;border:1px solid #45375c;border-radius:12px;padding:12px;font:12px ui-monospace,SFMono-Regular,Consolas,monospace;resize:vertical}.actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.status{min-height:18px;color:var(--muted);font-size:12px}
+@media(max-width:700px){.top{display:block}}
+</style>
+</head>
+<body>
+<header><div class="top"><a class="btn" href="index.html">← Adventures</a><div class="brand"><h1>🧪 Passport Bank Test Setup</h1><div>Dry-run the entire payout path before any real L$ permission exists.</div></div></div></header>
+<main>
+<section class="hero">
+<h2>Test first, money later</h2>
+<p>This TEST object uses the same website → cloud → Second Life → owner approval → result flow we will use for live payouts.</p>
+<div class="safe"><b>Safe by design:</b> this script never requests debit permission and contains no L$ transfer call. A successful test cannot move Linden dollars.</div>
+</section>
+
+<section class="card">
+<h3>1. Make the in-world TEST object</h3>
+<div class="step"><div class="num">1</div><div>In Second Life, rez any simple prim that <b>you own personally</b>. Give it a name such as <b>Passport Bank TEST</b>.</div></div>
+<div class="step"><div class="num">2</div><div>Open the prim's <b>Contents</b>, create a new script, replace the default script with the test script below, then save it.</div></div>
+<div class="step"><div class="num">3</div><div>Touch the object. It will print an <b>8-digit pairing code</b> only to you in owner chat.</div></div>
+<div class="actions"><button class="primary" id="copy-script">📋 Copy TEST script</button><button id="reload-script">↻ Reload script text</button></div>
+<div class="status" id="script-status">Loading test script…</div>
+<textarea id="script" readonly spellcheck="false"></textarea>
+</section>
+
+<section class="card">
+<h3>2. Pair it with the website</h3>
+<div class="step"><div class="num">1</div><div>Return to <a href="index.html">Adventures</a> and open the <b>Passport Bank</b> section under Mystery L$ Rewards.</div></div>
+<div class="step"><div class="num">2</div><div>Enter the 8-digit code and choose <b>Pair test object</b>. The code expires after 10 minutes.</div></div>
+<div class="step"><div class="num">3</div><div>The object stores its pairing token in Second Life linkset data so ordinary script resets do not lose the pairing.</div></div>
+</section>
+
+<section class="card">
+<h3>3. Run a dry payment</h3>
+<p>When KK has an unpaid reward, the website will show <b>🧪 Test Pay</b>. Press it, then approve the matching dialog on the in-world object.</p>
+<p>A successful test will show <b>✓ Test path verified</b> on the website. The real unpaid L$ total stays exactly where it was because test mode never marks a real payment as paid.</p>
+<p class="small">After we verify this end-to-end once, the next version can add live mode. Live mode will separately request debit permission and will still require your in-world approval for every transfer.</p>
+</section>
+</main>
+<script>
+async function loadScript(){
+ const out=document.getElementById('script'),status=document.getElementById('script-status');
+ status.textContent='Loading test script…';
+ try{
+   const r=await fetch('passport-bank-test.lsl?'+Date.now(),{cache:'no-store'});
+   if(!r.ok)throw new Error('HTTP '+r.status);
+   out.value=await r.text();
+   status.textContent='TEST script loaded.';
+ }catch(e){
+   status.textContent='Could not load the script right now.';
+ }
+}
+document.getElementById('copy-script').addEventListener('click',async()=>{
+ const t=document.getElementById('script').value;
+ if(!t)return;
+ try{await navigator.clipboard.writeText(t);document.getElementById('script-status').textContent='TEST script copied — paste it into the Second Life script editor.'}
+ catch(e){document.getElementById('script').select();document.execCommand('copy');document.getElementById('script-status').textContent='TEST script copied.'}
+});
+document.getElementById('reload-script').addEventListener('click',loadScript);
+loadScript();
+</script>
+</body>
+</html>
