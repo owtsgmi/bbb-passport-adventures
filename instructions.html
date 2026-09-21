@@ -49,15 +49,10 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
 </section>
 
 <section class="card">
-<h3>5. Getting paid</h3>
-<p>Completed adventure prizes accumulate in the second player's reward balance. No payment is made until that balance reaches <b>1,000 L$</b>.</p>
-<p>Every Passport Bank payment is exactly <b>1,000 L$</b>. If the balance is 2,350 L$, two separate 1,000 L$ payments can be made and 350 L$ remains toward the next one.</p>
-<p>The first SL username is the payer and the second SL username is the recipient. Payments themselves are now manual.</p>
-<p>Optional <b>browser payout alerts</b> can notify the payer when another 1,000 L$ payment becomes available. No Second Life script, bot, group, or automatic money transfer is required.</p>
-<p>Each device opts in once with <b>Enable payout alerts</b>. A service worker receives the alert even when the Passport Adventures page is closed. The server checks the reward balance every five minutes and also immediately after shared-state writes.</p>
-<p>The normal reward screen stays simple: enable payout alerts once, then let them run in the background. Alerts appear as normal desktop/system notifications rather than inside the browser tab.</p>
-<p>Browser-popup tests, permission details, and the optional Second Life Pay-link setup are kept on a separate <a href="payout-admin.html">admin diagnostics page</a> so regular users do not have to see technical controls.</p>
-<p><a href="bank.html">🔔 Browser payout alert setup</a></p>
+<h3>5. L$ adventure treasure</h3>
+<p>Each jointly completed adventure adds a hidden <b>20–100 L$</b> prize to the benefactor's Adventure Treasure.</p>
+<p>The normal Adventures page keeps this fun and simple: the benefactor sees how much L$ is waiting for them, recent prizes, and progress toward the next <b>1,000 L$ milestone</b>.</p>
+<p>Payment reminders, browser notification setup, Pay shortcuts, and payment bookkeeping are intentionally kept off the player screen. Those live on the separate <a href="admin.html">Admin page</a>.</p>
 </section>
 
 <section class="card">
@@ -98,9 +93,9 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
       <h3>Shared state & rewards</h3>
       <p>Supabase stores the shared current adventure, each player's campaign progress, revealed reward history, and payout state.</p>
       <p>An adventure completes only when both players have all three stamps. The second player receives one hidden random 20–100 L$ prize per jointly completed adventure, with the first player as sponsor. The prize is persisted once revealed and accumulates in the recipient's reward balance.</p>
-      <p>Payout accounting still uses fixed 1,000 L$ chunks, but payment is manual. Browser Push subscriptions are stored privately in Supabase and the <b>payout-push</b> Edge Function sends notifications when the number of available 1,000 L$ payments increases.</p>
-      <p>The background threshold check runs every five minutes through Supabase cron and also after app state writes.</p>
-      <p>Technical notification tests and the optional one-click Pay shortcut live on <a href="payout-admin.html">Payout Alert Diagnostics</a>. The Linden API key used for the optional username-to-UUID lookup is used only for that lookup and is not stored.</p>
+      <p>The player-facing reward panel never exposes alert setup or payment bookkeeping. It only presents the benefactor's Adventure Treasure in friendly game language.</p>
+      <p>All reward administration lives on <a href="admin.html">Admin</a>: player-name setup checks, browser payout alerts, notification testing, the optional Second Life Pay shortcut, current amount owed, and the fixed 1,000 L$ manual-payment record.</p>
+      <p>The background threshold check runs every five minutes through Supabase cron and also after app state writes. The Linden API key used for the optional username-to-UUID lookup is used only for that lookup and is not stored.</p>
     </section>
     <section class="archcard">
       <h3>Private settings</h3>
@@ -142,7 +137,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
     <section class="archcard">
       <h3>Current boundaries</h3>
       <ul>
-        <li>The app does not automate Linden-dollar transfers. Real payments are made manually in Second Life; optional browser push notifications only remind the payer when a 1,000 L$ payment is due.</li>
+        <li>The app does not automate Linden-dollar transfers. Real payments are made manually in Second Life, and all payout controls live on the Admin page rather than the player-facing Adventures screen.</li>
         <li>The public BBB mirror and the private StaFi progress system are separate.</li>
         <li>Feedback submission is public, but curation is owner-only through a separate private Owner Passphrase.</li>
         <li>Nearby-stop ranking is best-effort until complete grid-wide coordinates are available.</li>
