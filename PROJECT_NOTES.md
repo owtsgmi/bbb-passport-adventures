@@ -23,14 +23,21 @@ This file is the persistent source of truth for future edits to this project.
 
 ## UI
 - Two configurable player tabs use the players' **actual Second Life usernames** as their labels.
+- Player-facing header should stay intentionally simple:
+  - title: **Passport Adventures**;
+  - short subtitle: **Pick a 3-stop adventure, collect BBB stamps together, and explore Second Life.**
+  - primary actions: **Pick an Adventure** and **Settings**;
+  - no cloud-sync text, StaFi-link count, payout status, notification diagnostics, or other technical/admin status in the header.
 - Button text: **Pick an Adventure**.
 - Current adventure loads collapsed.
 - Adult-playful purple/pink/gold style with subtle alien graphics.
-- Settings page allows:
-  - payer and recipient Second Life usernames (also used as the tab names)
+- Settings is player-oriented and allows:
+  - first and second player Second Life usernames (also used as tab names)
   - each person's BBB StaFi progress-page URL
   - default tab
   - Secret Club Code
+  - a generic **Admin** link
+- Keep reward-role/payout wording out of Settings; those details belong on Admin.
 
 ## Private settings
 - BBB personalized progress pages are called **StaFi progress pages**.
@@ -323,6 +330,9 @@ This file is the persistent source of truth for future edits to this project.
 - Call the optional L$ feature **Adventure Treasure**. Do **not** call it “benefactor mode.”
 - Adventure Treasure defaults **OFF**.
 - Keep setup and payment mechanics on `admin.html`, out of the player experience.
+- Keep the top of `index.html` clean and game-oriented. Technical connection/sync/StaFi status belongs off the main header; Admin is the home for operational setup and diagnostics.
+- Settings should use neutral **first player / second player** language. Do not label the second player as “benefactor” in general Settings.
+- The player page should not advertise L$ rewards in its subtitle because Adventure Treasure may be OFF.
 - The benefactor should see a fun accumulation of money they are going to receive, not operational payout language.
 - Browser payout alerts are desktop/system notifications, not notifications inside the browser tab.
 - Admin setup must clearly say the site needs browser **Notifications** permission; optional Firestorm launching may need an external-app/pop-up permission prompt.
