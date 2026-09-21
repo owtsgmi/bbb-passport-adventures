@@ -396,7 +396,7 @@ function bankTestHtml(due){
  let h='<div class="banktest"><div class="banktesthead"><div><b>🧪 Passport Bank</b> <span class="testbadge">TEST MODE</span><div class="small">Full payout workflow, but <b>no L$ can move</b>.</div></div>';
  h+='<div class="'+(verified?'testok':'small')+'">'+(verified?'✓ Test path verified':paired?'● Test object paired':'○ Test object not paired')+'</div></div>';
  if(!paired){
-   h+='<div class="small" style="margin-top:8px">Touch the TEST Passport Bank object in Second Life. It will give you an 8-digit pairing code.</div><div class="bankpair"><input id="bank-pair-code" inputmode="numeric" maxlength="8" placeholder="8-digit pairing code"><button onclick="claimBankPairing()">Pair test object</button></div>';
+   h+='<div class="small" style="margin-top:8px">Touch the TEST Passport Bank object in Second Life. It will give you an 8-digit pairing code.</div><div class="bankpair"><a class="sl" href="bank.html">🧪 Setup TEST object</a><input id="bank-pair-code" inputmode="numeric" maxlength="8" placeholder="8-digit pairing code"><button onclick="claimBankPairing()">Pair test object</button></div>';
  }else if(pending){
    h+='<div class="small" style="margin-top:9px">⏳ Test payment of <b>'+Number(pending.amount||0)+' L$</b> is waiting for your approval in Second Life.</div>';
  }else if(due){
