@@ -9,12 +9,25 @@
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 12% 0%,#342052 0,#171126 30%,#0d0a16 72%);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
 header{position:sticky;top:0;background:#100c24ee;border-bottom:1px solid #4a376c;padding:14px 4vw;z-index:5}.top{max-width:980px;margin:auto;display:flex;gap:14px;align-items:center}.brand h1{margin:0;font-size:27px;background:linear-gradient(90deg,#ffe39a,#ff9bd7,#b99cff);-webkit-background-clip:text;color:transparent}.brand div,.small{color:var(--muted);font-size:13px}
 button,a.btn,input{border:1px solid #4b3b61;border-radius:12px;background:#171121;color:var(--ink);padding:10px 12px}button,a.btn{cursor:pointer;text-decoration:none;display:inline-block}.primary{background:linear-gradient(135deg,#8b63e8,#c45ca8);border-color:#d7a4e8;font-weight:800}
-main{max-width:980px;margin:auto;padding:26px 4vw 60px}.card{background:#151020;border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px}.card h2,.card h3{margin:0 0 8px}.card h3{color:#ffe08a}.actions,.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row input{min-width:280px;flex:1}.check{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid #30263f}.check:last-child{border-bottom:0}.checkicon{font-size:20px;text-align:center}.ok{color:var(--green)}.warn{color:var(--gold)}.muted{color:var(--muted)}.statusbox{background:#100d1b;border:1px solid #4a3a61;border-radius:14px;padding:14px;margin-top:12px}.money{font-size:38px;font-weight:900;color:#ffe08a}.due{border-color:#a65b70;background:linear-gradient(135deg,#31151e,#221227)}.due strong{color:#ffc0ce}.notice{min-height:20px;margin-top:10px;color:var(--muted)}.mini{font-size:12px}.hide{display:none}@media(max-width:700px){.check{grid-template-columns:30px 1fr}.check .actions{grid-column:2}.row input{min-width:100%}}
+main{max-width:980px;margin:auto;padding:26px 4vw 60px}.card{background:#151020;border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px}.card h2,.card h3{margin:0 0 8px}.card h3{color:#ffe08a}.actions,.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row input{min-width:280px;flex:1}.check{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid #30263f}.check:last-child{border-bottom:0}.checkicon{font-size:20px;text-align:center}.ok{color:var(--green)}.warn{color:var(--gold)}.muted{color:var(--muted)}.statusbox{background:#100d1b;border:1px solid #4a3a61;border-radius:14px;padding:14px;margin-top:12px}.money{font-size:38px;font-weight:900;color:#ffe08a}.due{border-color:#a65b70;background:linear-gradient(135deg,#31151e,#221227)}.due strong{color:#ffc0ce}.notice{min-height:20px;margin-top:10px;color:var(--muted)}.mini{font-size:12px}.hide{display:none}.modebar{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap}.modepill{display:inline-block;border:1px solid #5b486f;border-radius:999px;padding:6px 10px;font-weight:900}.modepill.on{color:var(--green);border-color:#4f8a70;background:#10271f}.modepill.off{color:var(--gold);border-color:#7a632e;background:#2b2414}@media(max-width:700px){.check{grid-template-columns:30px 1fr}.check .actions{grid-column:2}.row input{min-width:100%}}
 </style>
 </head>
 <body>
 <header><div class="top"><a class="btn" href="index.html">← Adventures</a><div class="brand"><h1>🔧 Passport Adventures Admin</h1><div>Setup, notifications, and reward payments — kept out of the player experience.</div></div></div></header>
 <main>
+
+<section class="card">
+<div class="modebar">
+  <div>
+    <h2 style="margin:0 0 5px">🎁 Adventure Treasure</h2>
+    <div class="small">Optional L$ treasure experience for players. <b>Off by default.</b> When off, players see no treasure balance, mystery-L$ labels, or reward milestone display.</div>
+  </div>
+  <div class="actions">
+    <span id="treasure-state" class="modepill off">OFF</span>
+    <button id="treasure-toggle">Turn on</button>
+  </div>
+</div>
+</section>
 
 <section class="card">
 <h2>Setup checklist</h2>
@@ -126,6 +139,11 @@ async function refresh(){
  const tested=localStorage.getItem('bbb-push-tested')==='true';
  state={...s,sub,ctl,permission,tested};
 
+ const treasureOn=!!s.treasure_enabled;
+ $('#treasure-state').textContent=treasureOn?'ON':'OFF';
+ $('#treasure-state').className='modepill '+(treasureOn?'on':'off');
+ $('#treasure-toggle').textContent=treasureOn?'Turn off':'Turn on';
+
  const namesOk=!!(s.payer_username&&s.recipient_username&&s.payer_username!=='AA'&&s.recipient_username!=='KK');
  if(namesOk)good($('#names-icon'),$('#names-detail'),s.payer_username+' → '+s.recipient_username);
  else needs($('#names-icon'),$('#names-detail'),'Add both actual SL usernames in Settings.');
@@ -159,6 +177,19 @@ async function refresh(){
  $('#show-pay-setup').textContent=s.recipient_uuid?'Pay link ready':'Set up';
  $('#show-pay-setup').disabled=!!s.recipient_uuid;
  say(namesOk&&alertsOk&&tested?'✓ Required setup is complete.':'Finish the numbered setup items above.');
+}
+async function setTreasureMode(){
+ const sub=await currentSub(),ctl=localStorage.getItem('bbb-push-control')||'';
+ if(!sub||!ctl)return say('Enable payout alerts on this admin device first, then you can turn Adventure Treasure on or off.');
+ const next=!state?.treasure_enabled;
+ $('#treasure-toggle').disabled=true;
+ try{
+   await call('set_treasure_mode',{endpoint:sub.endpoint,control_token:ctl,enabled:next});
+   say(next?'🎁 Adventure Treasure is ON. Players will now see the treasure experience.':'Adventure Treasure is OFF. Player reward displays are hidden and payout alerts are paused.');
+   await refresh();
+ }finally{
+   $('#treasure-toggle').disabled=false;
+ }
 }
 async function enableAlerts(){
  if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window))return say('This browser does not support web push.');
@@ -226,6 +257,7 @@ async function markPaid(){
  await call('check').catch(()=>{});
  await refresh();
 }
+$('#treasure-toggle').onclick=()=>setTreasureMode().catch(e=>say('Could not change Adventure Treasure: '+e.message));
 $('#enable-alerts').onclick=()=>enableAlerts().catch(e=>say('Could not enable alerts: '+e.message));
 $('#test-alert').onclick=()=>serverTest(true).catch(()=>{});
 $('#server-test').onclick=()=>serverTest(false).catch(()=>{});
