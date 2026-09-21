@@ -93,6 +93,7 @@ function knownPreCampaignStamps(view){return Number(PRE_CAMPAIGN_BASELINE[view]|
 let started=new Set(JSON.parse(localStorage.getItem('bbb-started')||'[]').map(Number));
 let lastAdventure=Number(localStorage.getItem('bbb-last-adventure')||0);
 let adventureLocked=localStorage.getItem('bbb-adventure-locked')!=='false';
+let adventureTreasureEnabled=false;
 let meDone=new Set(JSON.parse(localStorage.getItem('bbb-done-me')||'[]').map(Number));
 let partnerDone=new Set(JSON.parse(localStorage.getItem('bbb-done-partner')||'[]').map(Number));
 let meSpent=Number(localStorage.getItem('bbb-me-spent')||0);
@@ -369,11 +370,13 @@ async function selectAdventureStop(advId,index){
 function pinnedHtml(a){
  const mine=progressFor(a,meDone),hers=progressFor(a,partnerDone),together=a.stamps.filter(s=>meDone.has(s.id)&&partnerDone.has(s.id)).length;
  const shown=currentView==='partner'?hers:mine;
- return `<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>${esc(a.title)} <span class="badge mystery">🎁 Mystery L$</span></h3><div class="meta">${esc(a.zone)} · about ${a.minutes} min · 3 stops</div><div class="progress"><div class="bar" style="width:${Math.round((shown/a.stamps.length)*100)}%"></div></div><div class="small">${currentView==='partner'?tabPartnerName:tabMeName} passport: ${shown}/${a.stamps.length} · Together: ${together}/${a.stamps.length} · L$ amount reveals only when both finish</div></div></div>${missionSetup(a)}<div style="padding:0 17px 17px">${missionRows(a,true)}</div><div class="runmap"><div class="small" style="margin:0 0 8px 2px">Click any stop above (or its 🎯 Focus button) to reset the map and zoom directly to that stop.</div><div id="run-map"></div></div></div>`;
+ const treasureBadge=adventureTreasureEnabled?' <span class="badge mystery">🎁 Mystery L$</span>':'';
+ const treasureNote=adventureTreasureEnabled?' · L$ amount reveals only when both finish':'';
+ return `<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>${esc(a.title)}${treasureBadge}</h3><div class="meta">${esc(a.zone)} · about ${a.minutes} min · 3 stops</div><div class="progress"><div class="bar" style="width:${Math.round((shown/a.stamps.length)*100)}%"></div></div><div class="small">${currentView==='partner'?tabPartnerName:tabMeName} passport: ${shown}/${a.stamps.length} · Together: ${together}/${a.stamps.length}${treasureNote}</div></div></div>${missionSetup(a)}<div style="padding:0 17px 17px">${missionRows(a,true)}</div><div class="runmap"><div class="small" style="margin:0 0 8px 2px">Click any stop above (or its 🎯 Focus button) to reset the map and zoom directly to that stop.</div><div id="run-map"></div></div></div>`;
 }
 function collapsedTrip(a,completed=false){
  const r=completed?rewardFor(a):0;
- const rewardText=completed&&r?`🎁 ${r} L$`:'🎁 mystery';
+ const rewardText=adventureTreasureEnabled?(completed&&r?`🎁 ${r} L$`:'🎁 mystery'):'';
  return `<details class="trip ${completed?'completed-row':''}"><summary><div class="summary-main"><span class="light ${completed?'red':'green'}"></span><strong>${esc(a.title)}</strong> <span class="small">· 3 stops · ~${a.minutes} min</span></div><div class="summary-right">${rewardText}</div></summary><div class="tripbody">${missionSetup(a)}${missionRows(a)}<div class="actions" style="margin-top:10px">${completed?'':`<button class="primary" onclick="startAdventure(${a.id})">Make this our adventure</button>`}</div></div></details>`;
 }
 function rewardOwnerName(){return tabMeName}
@@ -387,6 +390,7 @@ function rewardRemaining(r){
 }
 function unpaidLinden(){return payoutLog.reduce((n,r)=>n+rewardRemaining(r),0)}
 function rewardHtml(){
+ if(!adventureTreasureEnabled)return '';
  syncCompletedRewardsToPayouts();
  const pending=partnerAheadCount(),due=unpaidLinden();
  const lifetime=payoutLog.reduce((n,r)=>n+Math.max(0,Number(r?.linden||0)),0);
@@ -429,14 +433,15 @@ function render(){
  const passportDone=Math.min(TOTAL_PASSPORT_STAMPS,campaignDone+knownPreCampaignStamps(currentView));
  const toGo=Math.max(0,TOTAL_PASSPORT_STAMPS-passportDone);
  const rewardBalance=unpaidLinden(),rewardToGo=rewardBalance>=1000?0:1000-rewardBalance;
- $('#scorecard').innerHTML=`<div class="score coin"><b>🎁 ${rewardBalance} L$</b><span>${rewardBalance>=1000?'1,000 L$ milestone reached':rewardToGo+' L$ to next milestone'}</span></div><div class="score"><b>${passportDone}/${TOTAL_PASSPORT_STAMPS}</b><span>${currentView==='partner'?tabPartnerName:tabMeName} stamps · ${toGo} to go</span></div>`;
+ const treasureScore=adventureTreasureEnabled?`<div class="score coin"><b>🎁 ${rewardBalance} L$</b><span>${rewardBalance>=1000?'1,000 L$ milestone reached':rewardToGo+' L$ to next milestone'}</span></div>`:'';
+ $('#scorecard').innerHTML=treasureScore+`<div class="score"><b>${passportDone}/${TOTAL_PASSPORT_STAMPS}</b><span>${currentView==='partner'?tabPartnerName:tabMeName} stamps · ${toGo} to go</span></div>`;
  const tp=document.getElementById('tab-partner'), tm=document.getElementById('tab-me');
  if(tp){tp.textContent='🗡️ '+tabPartnerName;tp.classList.toggle('active',currentView==='partner')}
  if(tm){tm.textContent='👽 '+tabMeName;tm.classList.toggle('active',currentView==='me')}
  const linked=(partnerStaFiUrl?1:0)+(meStaFiUrl?1:0);
  const st=document.getElementById('bbb-link-status');
  if(st)st.textContent='• BBB StaFi links: '+linked+'/2'+(familyKey?' · 🔐 saved':' · 🔒 not saved')+' · stamp import pending';
- $('#rewards').innerHTML=rewardHtml();$('#pending-count').textContent='('+pending.length+')';$('#completed-count').textContent='('+completed.length+')';
+ const rewardsEl=$('#rewards');if(rewardsEl){rewardsEl.style.display=adventureTreasureEnabled?'block':'none';rewardsEl.innerHTML=adventureTreasureEnabled?rewardHtml():''}$('#pending-count').textContent='('+pending.length+')';$('#completed-count').textContent='('+completed.length+')';
 }
 function init(){
  [...new Set(adventures.map(a=>a.zone))].sort().forEach(z=>$('#zone').insertAdjacentHTML('beforeend',`<option>${esc(z)}</option>`));
@@ -532,6 +537,7 @@ function adoptCloud(row){
   payoutLog=Array.isArray(row.payout_log)?row.payout_log:[];
   adventureRewards=(row.adventure_rewards&&typeof row.adventure_rewards==='object')?row.adventure_rewards:{};
   adventureLocked=typeof row.adventure_locked==='boolean'?row.adventure_locked:adventureLocked;
+  adventureTreasureEnabled=!!row.adventure_treasure_enabled;
   localStorage.setItem('bbb-adventure-locked',adventureLocked?'true':'false');
   if(row.tab_partner_name)tabPartnerName=String(row.tab_partner_name);
   if(row.tab_me_name)tabMeName=String(row.tab_me_name);
@@ -567,6 +573,7 @@ async function firstCloudSync(){
     payoutLog=Array.isArray(row.payout_log)&&row.payout_log.length?row.payout_log:payoutLog;
     if(row.adventure_rewards&&typeof row.adventure_rewards==='object')adventureRewards={...adventureRewards,...row.adventure_rewards};
     adventureLocked=typeof row.adventure_locked==='boolean'?row.adventure_locked:adventureLocked;
+    adventureTreasureEnabled=!!row.adventure_treasure_enabled;
     localStorage.setItem('bbb-adventure-locked',adventureLocked?'true':'false');
     if(row.tab_partner_name)tabPartnerName=String(row.tab_partner_name);
     if(row.tab_me_name)tabMeName=String(row.tab_me_name);
