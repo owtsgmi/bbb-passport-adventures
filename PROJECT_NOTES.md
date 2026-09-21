@@ -226,3 +226,27 @@ This file is the persistent source of truth for future edits to this project.
 - Existing stamp progress in the old adventure is preserved if the user intentionally switches.
 - Every newly selected adventure automatically re-locks itself.
 - If there is no active incomplete adventure, the lock control is hidden/disabled and choosing an adventure works normally.
+
+
+## Passport Bank test mode
+- Automatic real L$ payment is being introduced behind a mandatory dry-run stage.
+- Current live site exposes **TEST MODE only**. Test mode must never call `llTransferLindenDollars`, request `PERMISSION_DEBIT`, mark real payout rows paid, or reduce the real unpaid total.
+- Test flow is intentionally end-to-end: website → Supabase Edge Function → paired Second Life object → owner approval dialog → result back to Supabase → website status.
+- Supabase tables:
+  - `public.bbb_bank_config` — singleton bank pairing/mode state; direct anon/auth grants revoked.
+  - `public.bbb_bank_requests` — payout test/live request queue; direct anon/auth grants revoked.
+- Edge Function: `passport-bank` (custom request logic; JWT disabled because Second Life objects cannot supply Supabase JWTs).
+- In-world test script: `passport-bank-test.lsl`.
+- Setup page: `bank.html`.
+- Object pairing direction is **object → website**:
+  1. owner touches test object;
+  2. object registers and receives a short-lived 8-digit pairing code plus a long random object token;
+  3. owner enters the 8-digit code on the website;
+  4. object token remains in Second Life linkset data and is used for subsequent polling/results.
+- Once a bank object is paired, unauthenticated replacement registration is refused.
+- Object requests are authenticated with the long bank token plus the stored Second Life owner/object UUIDs.
+- A test payment can only be created when real unpaid reward money exists. The request amount is computed server-side from `bbb_board_state.payout_log`, not trusted from a browser-supplied amount.
+- Test success sets `test_verified_at` and records a synthetic TEST transaction ID, but leaves all real payout rows unpaid.
+- Manual **Mark paid manually** remains available as fallback and warns the user to use it only after actually sending L$ themselves.
+- Do not add live mode until the TEST path has been completed successfully in-world at least once.
+- Planned live-mode safety requirements: fixed verified recipient UUID, owner confirmation for every transfer, one request at a time, bounded amount, transaction_result confirmation, duplicate-request protection, and only then mark payout rows paid.
