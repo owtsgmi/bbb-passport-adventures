@@ -48,16 +48,16 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
   <div class="settingscard">
     <div class="advhead"><div><h2 style="margin:0 0 4px">⚙ Passport Settings <span class="alienmark">👽</span></h2><div class="small">Second Life usernames, encrypted BBB StaFi progress pages, and shared settings.</div></div><button onclick="toggleSettings()">✕ Close</button></div>
     <div class="settingsgrid" style="margin-top:16px">
-      <div class="settingsfield"><label>🗡️ Payer SL username (first tab)</label><input id="set-partner-name" placeholder="your.username"></div>
-      <div class="settingsfield"><label>👽 Recipient SL username (second tab)</label><input id="set-me-name" placeholder="partner.username"></div>
+      <div class="settingsfield"><label>🗡️ First player SL username</label><input id="set-partner-name" placeholder="your.username"></div>
+      <div class="settingsfield"><label>👽 Benefactor SL username</label><input id="set-me-name" placeholder="partner.username"></div>
       <div class="settingsfield"><label>🗡️ First BBB StaFi progress page</label><input id="set-partner-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
       <div class="settingsfield"><label>👽 Second BBB StaFi progress page</label><input id="set-me-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
       <div class="settingsfield"><label>Open on</label><select id="set-default-view"><option value="partner">First tab</option><option value="me">Second tab</option></select></div>
       <div class="settingsfield"><label>🔐 Secret Club Code</label><input id="set-family-key" type="password" autocomplete="new-password" placeholder="Use the same key on both devices"></div>
     </div>
     <div class="actions" style="margin-top:12px"><label class="small"><input id="set-remember-key" type="checkbox" checked> Remember Secret Club Code on this device</label></div>
-    <div class="actions" style="margin-top:16px"><button class="primary" onclick="saveSettings()">💾 Save & Sync</button><button onclick="unlockPrivateSettings()">🔓 Load from Cloud</button><button onclick="copyFamilyKey()">🔑 Copy Secret Club Code</button><button onclick="testCurrentStaFi()">🔗 Open selected StaFi page</button><a class="sl" href="bank.html">🔔 Payout Alert Setup</a></div>
-    <div class="settingsnote"><b>The two SL usernames also become the tab names.</b> Payout alerts use normal browser notifications; there is no SL script, bot, group, or automatic money transfer. BBB StaFi links remain encrypted. On a new trusted device, enter the same Secret Club Code and use <b>Load from Cloud</b>.</div>
+    <div class="actions" style="margin-top:16px"><button class="primary" onclick="saveSettings()">💾 Save & Sync</button><button onclick="unlockPrivateSettings()">🔓 Load from Cloud</button><button onclick="copyFamilyKey()">🔑 Copy Secret Club Code</button><button onclick="testCurrentStaFi()">🔗 Open selected StaFi page</button><a class="sl" href="admin.html">🔧 Admin</a></div>
+    <div class="settingsnote"><b>The two SL usernames also become the tab names.</b> The benefactor receives the revealed L$ adventure rewards. BBB StaFi links remain encrypted. On a new trusted device, enter the same Secret Club Code and use <b>Load from Cloud</b>.</div>
   </div>
 </section>
 
@@ -109,8 +109,6 @@ let defaultView=localStorage.getItem('bbb-default-view')||'partner';
 let familyKey=localStorage.getItem('bbb-family-key')||sessionStorage.getItem('bbb-family-key')||'';
 let privateSettingsUpdated='';
 let currentView=localStorage.getItem('bbb-view')||defaultView;
-let pushState={vapid_public:'',subscriptions:0,recipient_username:null,recipient_uuid:null,balance:0,ready_payments:0,enabledThisDevice:false,permission:(typeof Notification!=='undefined'?Notification.permission:'unsupported')};
-let pushBusy=false;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function toggleSettings(){
@@ -164,7 +162,6 @@ async function saveSettings(){
  try{
    await writePrivateSettings();
    await writeSharedDisplaySettings();
-   await loadPushStatus();
    toast('Settings synced across devices 👽');
  }catch(e){
    toast('Settings saved on this device; cloud sync will retry later');
@@ -389,56 +386,26 @@ function rewardRemaining(r){
  return Math.max(0,total-Math.max(0,Number(r?.paid_linden||0)));
 }
 function unpaidLinden(){return payoutLog.reduce((n,r)=>n+rewardRemaining(r),0)}
-function paymentBatchesReady(){return Math.floor(unpaidLinden()/1000)}
-function applyPaidBatch(amount,meta={}){
- let left=Number(amount||0);
- const order=payoutLog.map((r,i)=>({r,i})).sort((a,b)=>new Date(a.r?.at||0)-new Date(b.r?.at||0));
- for(const item of order){
-   if(left<=0)break;
-   const r=payoutLog[item.i],rem=rewardRemaining(r);
-   if(rem<=0)continue;
-   const take=Math.min(rem,left),already=r.paid?Number(r.linden||0):Math.max(0,Number(r.paid_linden||0));
-   r.paid_linden=already+take;
-   r.last_payment_at=new Date().toISOString();
-   if(meta.transaction_id)r.last_payment_transaction=meta.transaction_id;
-   if(meta.manual)r.last_payment_manual=true;
-   if(r.paid_linden>=Number(r.linden||0)){r.paid=true;r.paid_at=r.paid_at||new Date().toISOString()}
-   left-=take;
- }
- return left===0;
-}
-function markPaid(){
- const due=unpaidLinden();
- if(due<1000)return toast((1000-due)+' L$ more must be earned before a payment.');
- if(!confirm('Mark ONE 1,000 L$ payment to '+rewardOwnerName()+' as paid manually?\n\nUse this only after you actually send exactly L$1000 yourself.'))return;
- if(!applyPaidBatch(1000,{manual:true}))return toast('Could not apply the 1,000 L$ payment.');
- saveAll();
- toast('💖 1,000 L$ manual payment recorded');
-}
-function payLink(){return pushState.recipient_uuid?'secondlife:///app/agent/'+pushState.recipient_uuid+'/pay':''}
-function bankHtml(due){
- const ready=Math.floor(due/1000),enabled=!!pushState.enabledThisDevice,perm=pushState.permission;
- let h='<div class="banktest"><div class="banktesthead"><div><b>🔔 Payout alerts</b><div class="small">Get a desktop notification when '+esc(tabMeName)+' reaches a 1,000 L$ payout.</div></div><div class="'+(enabled?'testok':'small')+'">'+(enabled?'✓ On this device':perm==='denied'?'⚠ Needs attention':'○ Off on this device')+'</div></div>';
- if(due>=1000){
-   h+='<div class="payoutdue"><div><strong>💸 '+ready+' × 1,000 L$ payment'+(ready===1?'':'s')+' due</strong><div class="small">Pay '+esc(tabMeName)+' in Second Life, then mark one payment paid.</div></div><div class="actions">'+(payLink()?'<a class="sl" href="'+payLink()+'">Pay '+esc(tabMeName)+' in SL</a>':'')+'<button onclick="markPaid()">Mark 1,000 L$ paid</button></div></div>';
- }else{
-   h+='<div class="small" style="margin-top:9px">'+Math.max(0,1000-due)+' L$ to the next payout.</div>';
- }
- if(!enabled&&perm!=='denied')h+='<div class="bankpair"><button class="primary" onclick="enablePayoutAlerts()">🔔 Enable payout alerts</button></div>';
- if(perm==='denied')h+='<div class="bankpair"><a class="sl" href="payout-admin.html">Fix payout alerts</a></div>';
- h+='<div class="small" style="margin-top:9px"><a href="payout-admin.html">🔧 Admins: diagnose browser popups</a></div>';
- h+='</div>';
- return h;
-}
 function rewardHtml(){
  syncCompletedRewardsToPayouts();
- const pending=partnerAheadCount(),due=unpaidLinden(),ready=paymentBatchesReady(),toNext=due>=1000?0:1000-due;
- const rewardLines=payoutLog.slice(0,10).map(r=>{const rem=rewardRemaining(r);return '<div class="recentline">'+(rem?'•':'✓')+' '+Number(r.linden||0)+' L$ '+(r.title?'· '+esc(r.title)+' ':'')+(rem?(rem+' L$ remaining'):'paid')+'</div>'}).join('')||'<div class="recentline">None yet.</div>';
- return `<div class="bankhead"><div><h3>🎁 ${esc(rewardOwnerName())} Reward Balance <span class="alienmark">👽</span></h3><div class="small">Each completed adventure adds its revealed 20–100 L$ prize. Payments happen only in fixed <b>1,000 L$</b> chunks.</div></div></div>
- <div class="bankgrid"><div class="bankcard"><span>Earned and not yet paid</span><strong>${due} L$</strong><span>${ready?ready+' × 1,000 L$ payment'+(ready===1?'':'s')+' available':toNext+' L$ more until the next payout'}</span></div></div>
- ${pending?`<div class="small" style="margin-top:10px">✨ ${pending} adventure${pending===1?'':'s'} already finished by ${esc(tabPartnerName)} — waiting for ${esc(tabMeName)} before those prizes reveal.</div>`:''}
- ${bankHtml(due)}
- <details class="recent"><summary>Adventure reward ledger</summary>${rewardLines}</details>`;
+ const pending=partnerAheadCount(),due=unpaidLinden();
+ const lifetime=payoutLog.reduce((n,r)=>n+Math.max(0,Number(r?.linden||0)),0);
+ const toMilestone=due>=1000?0:1000-due;
+ const activeRewards=payoutLog.filter(r=>rewardRemaining(r)>0).slice(0,10);
+ const rewardLines=activeRewards.map(r=>'<div class="recentline">🎁 '+Number(r.linden||0)+' L$'+(r.title?' · '+esc(r.title):'')+'</div>').join('')||'<div class="recentline">Your next completed adventure will start filling this treasure pot.</div>';
+ const benefactor=currentView==='me';
+ const title=benefactor?'💖 Your Adventure Treasure':'🎁 '+esc(tabMeName)+'\'s Adventure Treasure';
+ const intro=benefactor
+   ?'Every adventure you finish together can add another <b>20–100 L$</b> surprise here.'
+   :esc(tabMeName)+' earns a hidden <b>20–100 L$</b> surprise whenever you both finish an adventure.';
+ const milestone=due>=1000
+   ?'🎉 You have reached a 1,000 L$ milestone!'
+   :toMilestone+' L$ until the next 1,000 L$ milestone.';
+ return `<div class="bankhead"><div><h3>${title} <span class="alienmark">👽</span></h3><div class="small">${intro}</div></div></div>
+ <div class="bankgrid"><div class="bankcard"><span>${benefactor?'Waiting for you':'Current treasure pot'}</span><strong>${due} L$</strong><span>${milestone}</span></div></div>
+ <div class="small" style="margin-top:10px">✨ Lifetime adventure prizes: <b>${lifetime} L$</b></div>
+ ${pending&&benefactor?`<div class="small" style="margin-top:10px">🦄 ${pending} adventure${pending===1?' is':'s are'} already finished by ${esc(tabPartnerName)} and waiting for you to catch up.</div>`:''}
+ <details class="recent"><summary>${benefactor?'Your recent prizes':'Recent prizes'}</summary>${rewardLines}</details>`;
 }
 function refreshRewardPanel(){const e=document.getElementById('rewards');if(e)e.innerHTML=rewardHtml()}
 function render(){
@@ -462,7 +429,7 @@ function render(){
  const passportDone=Math.min(TOTAL_PASSPORT_STAMPS,campaignDone+knownPreCampaignStamps(currentView));
  const toGo=Math.max(0,TOTAL_PASSPORT_STAMPS-passportDone);
  const rewardBalance=unpaidLinden(),rewardToGo=rewardBalance>=1000?0:1000-rewardBalance;
- $('#scorecard').innerHTML=`<div class="score coin"><b>🎁 ${rewardBalance} L$</b><span>${rewardBalance>=1000?'1,000 L$ payout ready':rewardToGo+' L$ to next payout'}</span></div><div class="score"><b>${passportDone}/${TOTAL_PASSPORT_STAMPS}</b><span>${currentView==='partner'?tabPartnerName:tabMeName} stamps · ${toGo} to go</span></div>`;
+ $('#scorecard').innerHTML=`<div class="score coin"><b>🎁 ${rewardBalance} L$</b><span>${rewardBalance>=1000?'1,000 L$ milestone reached':rewardToGo+' L$ to next milestone'}</span></div><div class="score"><b>${passportDone}/${TOTAL_PASSPORT_STAMPS}</b><span>${currentView==='partner'?tabPartnerName:tabMeName} stamps · ${toGo} to go</span></div>`;
  const tp=document.getElementById('tab-partner'), tm=document.getElementById('tab-me');
  if(tp){tp.textContent='🗡️ '+tabPartnerName;tp.classList.toggle('active',currentView==='partner')}
  if(tm){tm.textContent='👽 '+tabMeName;tm.classList.toggle('active',currentView==='me')}
@@ -476,6 +443,7 @@ function init(){
  ['q','zone'].forEach(id=>$('#'+id).addEventListener(id==='q'?'input':'change',render));
  const m=location.hash.match(/trip-(\d+)(?:-stop-(\d+))?/);if(m){lastAdventure=Number(m[1]);started.add(lastAdventure);localStorage.setItem('bbb-last-adventure',lastAdventure);localStorage.setItem('bbb-started',JSON.stringify([...started]))}
  render();
+ if(new URLSearchParams(location.search).get('settings')==='1')setTimeout(()=>toggleSettings(),80);
  if(m)setTimeout(()=>document.getElementById(m[2]?`trip-${m[1]}-stop-${m[2]}`:'pinned-card')?.scrollIntoView({behavior:'smooth',block:'center'}),120);
 }
 init();
@@ -495,38 +463,6 @@ async function pushCall(action,payload={}){
   const data=await r.json().catch(()=>({ok:false,error:'bad_response'}));
   if(!r.ok||!data.ok)throw new Error(data.error||('HTTP '+r.status));
   return data;
-}
-function vapidBytes(s){const p='='.repeat((4-s.length%4)%4),b=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(b,c=>c.charCodeAt(0))}
-async function currentPushSubscription(){
-  if(!('serviceWorker'in navigator)&&!('PushManager'in window))return null;
-  const reg=await navigator.serviceWorker.getRegistration('./');
-  return reg?await reg.pushManager.getSubscription():null;
-}
-async function loadPushStatus(){
-  if(pushBusy)return;pushBusy=true;
-  try{
-    const s=await pushCall('status');
-    const sub=await currentPushSubscription().catch(()=>null);
-    pushState={vapid_public:s.vapid_public||'',subscriptions:Number(s.subscriptions||0),recipient_username:s.recipient_username||null,recipient_uuid:s.recipient_uuid||null,balance:Number(s.balance||0),ready_payments:Number(s.ready_payments||0),enabledThisDevice:!!(sub&&localStorage.getItem('bbb-push-control')),permission:(typeof Notification!=='undefined'?Notification.permission:'unsupported')};
-    refreshRewardPanel();
-  }catch(e){}finally{pushBusy=false}
-}
-async function enablePayoutAlerts(){
-  if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window))return toast('This browser does not support web push notifications.');
-  try{
-    if(Notification.permission==='denied'){pushState.permission='denied';refreshRewardPanel();location.href='payout-admin.html';return;}
-    const permission=await Notification.requestPermission();
-    if(permission!=='granted'){pushState.permission=permission;refreshRewardPanel();if(permission==='denied')location.href='payout-admin.html';else toast('Notification permission was not granted.');return;}
-    const status=await pushCall('status');
-    const reg=await navigator.serviceWorker.register('sw.js');
-    await navigator.serviceWorker.ready;
-    let sub=await reg.pushManager.getSubscription();
-    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:vapidBytes(status.vapid_public)});
-    const out=await pushCall('register',{subscription:sub.toJSON(),user_agent:navigator.userAgent});
-    localStorage.setItem('bbb-push-control',out.control_token);
-    await loadPushStatus();
-    toast('🔔 Payout alerts enabled on this device');
-  }catch(e){toast('Could not enable payout alerts: '+e.message)}
 }
 function syncStatus(text,good=true){
   const e=document.getElementById('sync-status');
@@ -666,9 +602,7 @@ async function pollCloud(){
 }
 firstCloudSync();
 autoLoadPrivateSettings();
-loadPushStatus();
 setInterval(pollCloud,3000);
-setInterval(loadPushStatus,15000);
 setInterval(pollPrivateSettings,10000);
 </script>
 </body></html>
