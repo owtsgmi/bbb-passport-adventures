@@ -19,6 +19,7 @@ main{max-width:980px;margin:auto;padding:26px 4vw 60px}.card{background:#151020;
 <section class="card">
 <h2>Setup checklist</h2>
 <p class="small">Do these once on the payer/admin device. After that, normal gameplay needs no setup screens.</p>
+<div class="statusbox"><b>Browser requirement:</b> allow <b>Notifications</b> for this site so payout alerts can appear. For the optional Second Life Pay shortcut, also allow any <b>pop-up / external-app prompt</b> your browser shows when opening Firestorm.</div>
 
 <div class="check">
   <div class="checkicon" id="names-icon">○</div>
@@ -28,7 +29,7 @@ main{max-width:980px;margin:auto;padding:26px 4vw 60px}.card{background:#151020;
 
 <div class="check">
   <div class="checkicon" id="alerts-icon">○</div>
-  <div><b>2. Enable payout alerts on this device</b><div class="small" id="alerts-detail">Checking…</div></div>
+  <div><b>2. Enable payout alerts on this device</b><div class="small" id="alerts-detail">Checking…</div><div class="small">Your browser must allow <b>Notifications</b> for this site.</div></div>
   <div class="actions"><button class="primary" id="enable-alerts">Enable alerts</button></div>
 </div>
 
@@ -86,7 +87,7 @@ main{max-width:980px;margin:auto;padding:26px 4vw 60px}.card{background:#151020;
   <button id="local-test">Test local popup</button>
   <button id="server-test">Test server push</button>
 </div>
-<p class="small"><b>Windows:</b> look for the lower-right toast or Notification Center. <b>Linux:</b> look in your desktop notification area. If Chromium has blocked notifications, use the site-controls icon beside the address bar → Site settings → Notifications → Allow.</p>
+<p class="small"><b>Windows:</b> look for the lower-right toast or Notification Center. <b>Linux:</b> look in your desktop notification area. If Chromium/Chrome has blocked the site, use the site-controls icon beside the address bar → <b>Site settings</b> → set <b>Notifications</b> to <b>Allow</b>. For the optional Firestorm Pay shortcut, also allow a pop-up/external-app launch if the browser asks.</p>
 </section>
 
 </main>
