@@ -268,6 +268,7 @@ This file is the persistent source of truth for future edits to this project.
 - The background `bbb-payout-push-check` cron job runs every five minutes, and the Adventures page also calls `check` after successful shared-state writes.
 - Alert delivery is intentionally admin-only. The benefactor does not need to configure or understand notifications.
 - Alerts appear as **desktop/system notifications**, not inside the Passport Adventures browser tab.
+- Admin setup must state clearly that the browser must allow **Notifications** for the site. The optional Firestorm Pay shortcut may also require allowing a **pop-up / external-app launch prompt** when the browser asks.
 - Admin diagnostics order:
   - **Test local popup** verifies browser/OS display;
   - **Test server push** verifies the full Supabase/Web Push path.
