@@ -34,7 +34,7 @@ main{max-width:980px;margin:auto;padding:26px 4vw 60px}.card{background:#151020;
 
 <div class="check">
   <div class="checkicon" id="test-icon">○</div>
-  <div><b>3. Send one test notification</b><div class="small">You should see a normal desktop/system notification. Once you see it, this part is done.</div></div>
+  <div><b>3. Send one test notification</b><div class="small" id="test-detail">You should see a normal desktop/system notification. Once you see it, this part is done.</div></div>
   <div class="actions"><button id="test-alert">Send test</button></div>
 </div>
 
@@ -133,8 +133,13 @@ async function refresh(){
  if(alertsOk)good($('#alerts-icon'),$('#alerts-detail'),'Enabled on this device.');
  else needs($('#alerts-icon'),$('#alerts-detail'),permission==='denied'?'Browser notifications are blocked for this site.':'Enable alerts on the payer/admin device.');
 
- if(tested)good($('#test-icon'),null);
- else needs($('#test-icon'),null);
+ if(tested){
+   good($('#test-icon'),$('#test-detail'),'✓ Server test completed on this device.');
+   $('#test-alert').textContent='Send another test';
+ }else{
+   needs($('#test-icon'),$('#test-detail'),'Send one server test and look for the desktop/system popup.');
+   $('#test-alert').textContent='Send test';
+ }
 
  if(s.recipient_uuid)good($('#paylink-icon'),$('#paylink-detail'),'Benefactor Pay link is ready.');
  else needs($('#paylink-icon'),$('#paylink-detail'),'Optional — manual payment by username also works.');
@@ -169,13 +174,29 @@ async function enableAlerts(){
  say('Alerts enabled on this device.');
  await refresh();
 }
-async function serverTest(){
+async function serverTest(fromChecklist=false){
  const sub=await currentSub(),ctl=localStorage.getItem('bbb-push-control')||'';
- if(!sub||!ctl)return say('Enable payout alerts first.');
- await call('test',{endpoint:sub.endpoint,control_token:ctl});
- localStorage.setItem('bbb-push-tested','true');
- say('Test sent. Look for the desktop/system notification.');
- await refresh();
+ if(!sub||!ctl){
+   if(fromChecklist)$('#test-detail').textContent='Enable payout alerts first.';
+   return say('Enable payout alerts first.');
+ }
+ const btn=fromChecklist?$('#test-alert'):$('#server-test');
+ if(btn){btn.disabled=true;btn.textContent='Sending…';}
+ try{
+   await call('test',{endpoint:sub.endpoint,control_token:ctl});
+   localStorage.setItem('bbb-push-tested','true');
+   if(fromChecklist)$('#test-detail').textContent='Test sent — look for the desktop/system popup.';
+   say('Test sent. Look for the desktop/system notification.');
+   await refresh();
+ }catch(e){
+   const msg=e.message==='test_cooldown'?'A test was just sent. Wait about 30 seconds, then try again.':'Test failed: '+e.message;
+   if(fromChecklist)$('#test-detail').textContent=msg;
+   say(msg);
+   throw e;
+ }finally{
+   if(btn)btn.disabled=false;
+   if(fromChecklist&&!localStorage.getItem('bbb-push-tested'))btn.textContent='Send test';
+ }
 }
 async function localTest(){
  if(Notification.permission!=='granted')return say('Enable notifications first.');
@@ -205,8 +226,8 @@ async function markPaid(){
  await refresh();
 }
 $('#enable-alerts').onclick=()=>enableAlerts().catch(e=>say('Could not enable alerts: '+e.message));
-$('#test-alert').onclick=()=>serverTest().catch(e=>say(e.message==='test_cooldown'?'Wait about 30 seconds before another test.':'Test failed: '+e.message));
-$('#server-test').onclick=()=>serverTest().catch(e=>say(e.message==='test_cooldown'?'Wait about 30 seconds before another test.':'Server test failed: '+e.message));
+$('#test-alert').onclick=()=>serverTest(true).catch(()=>{});
+$('#server-test').onclick=()=>serverTest(false).catch(()=>{});
 $('#local-test').onclick=()=>localTest().catch(e=>say('Local test failed: '+e.message));
 $('#show-pay-setup').onclick=()=>{$('#pay-setup').style.display='block';$('#ll-api-key').focus()};
 $('#resolve-recipient').onclick=()=>resolveRecipient().catch(e=>say('Benefactor lookup failed: '+e.message));
