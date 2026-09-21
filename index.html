@@ -520,7 +520,17 @@ async function loadBankStatus(){
   bankBusy=true;
   try{
     const s=await bankCall('status');
-    bankState={mode:s.mode||'test',paired:!!s.paired,test_verified_at:s.test_verified_at||null,pending:s.pending||null};
+    bankState={
+      mode:'live',
+      paired:!!s.paired,
+      identity_verified:!!s.identity_verified,
+      debit_ready:!!s.debit_ready,
+      payer_username:s.payer_username||null,
+      recipient_username:s.recipient_username||null,
+      test_balance:Number(s.test_balance||0),
+      real_balance:Number(s.real_balance||0),
+      pending:s.pending||null
+    };
     refreshRewardPanel();
   }catch(e){}
   finally{bankBusy=false}
@@ -528,34 +538,50 @@ async function loadBankStatus(){
 async function claimBankPairing(){
   const input=document.getElementById('bank-pair-code');
   const code=String(input?.value||'').replace(/\D/g,'');
-  if(code.length!==8)return toast('Enter the 8-digit code shown by the in-world TEST object.');
+  if(tabPartnerName==='AA'||tabMeName==='KK'||!tabPartnerName||!tabMeName)return toast('Enter both actual SL usernames in Settings first.');
+  if(code.length!==8)return toast('Enter the 8-digit code shown by the in-world Passport Bank.');
   try{
-    await bankCall('pair_claim',{code});
+    await bankCall('pair_claim',{code,payer_username:tabPartnerName,recipient_username:tabMeName});
     if(input)input.value='';
     await loadBankStatus();
-    toast('🧪 Passport Bank test object paired');
+    toast('💸 Passport Bank paired — verifying the two SL usernames in-world');
   }catch(e){
     if(e.message==='pair_code_expired')toast('Pairing code expired — touch the object for a new one.');
     else if(e.message==='pair_code_locked')toast('Too many incorrect attempts — touch the object for a new pairing code.');
+    else if(e.message==='bad_usernames')toast('Check both SL usernames in Settings.');
     else toast('Could not pair — check the code.');
   }
 }
-async function requestBankTest(){
-  const due=unpaidLinden();
-  if(!bankState.paired)return toast('Pair the TEST Passport Bank object first.');
-  const amount=due||1;
-  const label=due?('simulate paying '+due+' L$ to '+rewardOwnerName()):'run a synthetic 1 L$ dry test';
-  if(!confirm('TEST ONLY: '+label+'?\n\nNo Linden dollars will move and any real unpaid balance will stay unchanged.'))return;
+async function setBankTestBalance(value){
+  if(!bankState.paired)return toast('Pair Passport Bank first.');
+  const v=Number(value)===1000?1000:0;
+  if(v===1000&&!confirm('Give '+rewardOwnerName()+' 1,000 L$ of TEST earnings?\n\nThis does not change adventure history. If you then press Pay and approve in Second Life, the transfer itself WILL be a real 1,000 L$ payment.'))return;
   try{
-    const out=await bankCall('test_request');
+    await bankCall('set_test_balance',{value:v});
+    await loadBankStatus();
+    toast(v?'🧪 1,000 L$ test earnings loaded':'Test earnings cleared');
+  }catch(e){toast('Could not change test earnings.')}
+}
+async function requestBankPayment(){
+  if(!bankState.paired)return toast('Pair Passport Bank first.');
+  if(!bankState.identity_verified)return toast('Passport Bank is still verifying the SL usernames.');
+  if(!bankState.debit_ready)return toast('Grant debit permission on the in-world Passport Bank first.');
+  const usingTest=Number(bankState.test_balance||0)>=1000;
+  const due=unpaidLinden();
+  if(!usingTest&&due<1000)return toast((1000-due)+' L$ more must be earned before a payout.');
+  const source=usingTest?'TEST earnings':'earned reward balance';
+  if(!confirm('Send REAL L$1,000 from '+tabPartnerName+' to '+tabMeName+'?\n\nSource: '+source+'\n\nYou will still have to approve the payment in Second Life.'))return;
+  try{
+    const out=await bankCall('create_payment');
     bankState.pending=out.request||null;
     refreshRewardPanel();
-    toast('🧪 Test sent — approve it on the Passport Bank object in Second Life');
+    toast('💸 Payment request sent — approve L$1,000 on the in-world Passport Bank');
   }catch(e){
-    toast('Could not start the bank test.');
+    if(e.message==='threshold_not_met')toast('1,000 L$ must be earned before a payout.');
+    else if(e.message==='debit_not_ready')toast('Passport Bank does not have debit permission yet.');
+    else toast('Could not create the payment request.');
   }
 }
-
 function syncStatus(text,good=true){
   const e=document.getElementById('sync-status');
   if(e){e.textContent=(good?'☁ ':'⚠ ')+text;e.style.color=good?'#9fb4c8':'#ffd166'}
