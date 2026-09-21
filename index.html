@@ -1,6 +1,6 @@
 <!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Second Life Passport Adventures</title>
+<title>Passport Adventures</title>
 <style>
 :root{--bg:#090816;--panel:#151229;--panel2:#1d1737;--ink:#fff9ff;--muted:#bcb0ca;--blue:#69d8ff;--gold:#ffd166;--green:#63e6a5;--red:#ff6b81;--pink:#ff78c8;--purple:#9d7bff;--line:#332a4c}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 12% 0%,#342052 0,#171126 30%,#0d0a16 72%);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,sans-serif}body:before{content:"";position:fixed;inset:0;pointer-events:none;background-image:radial-gradient(circle,#ffffff22 1px,transparent 1px);background-size:34px 34px;opacity:.2}
@@ -27,13 +27,12 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 <header>
 <div class="headrow">
   <div class="navwrap" id="main-nav"><button class="navbtn" title="Menu" aria-label="Menu" onclick="document.getElementById('main-nav').classList.toggle('open')">☰</button><div class="navmenu"><a class="here" href="index.html">🎮 Adventures</a><a href="instructions.html">📖 Instructions</a><a href="bbb.html">📍 BBB Passport Stops</a><a href="feedback.html">💬 Comments & Bugs</a></div></div>
-  <div class="brand"><h1>🦄👽 Second Life Passport Adventures</h1><div class="sub">Hunt BBB passport stamps across the Second Life universe in quick 3-stop adventures. Both passports must finish all 3 to reveal the mystery L$ prize.</div></div>
+  <div class="brand"><h1>🦄👽 Passport Adventures</h1><div class="sub">Pick a 3-stop adventure, collect BBB stamps together, and explore Second Life.</div></div>
   <div class="scorecard" id="scorecard"></div>
 </div>
 <div class="controls">
   <button class="primary" onclick="surpriseUs()">✨ Pick an Adventure</button>
-  <span id="sync-status" class="small">☁ Connecting…</span><span id="bbb-link-status" class="small"></span><button onclick="toggleSettings()">⚙ Settings</button>
-    
+  <button onclick="toggleSettings()">⚙ Settings</button>
 </div>
 <div class="viewtabs">
   <button id="tab-partner" class="viewtab" onclick="setView('partner')">🗡️ AA</button>
@@ -46,18 +45,18 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 <div id="toast"></div>
 <section id="settings-page" class="settingspage">
   <div class="settingscard">
-    <div class="advhead"><div><h2 style="margin:0 0 4px">⚙ Passport Settings <span class="alienmark">👽</span></h2><div class="small">Second Life usernames, encrypted BBB StaFi progress pages, and shared settings.</div></div><button onclick="toggleSettings()">✕ Close</button></div>
+    <div class="advhead"><div><h2 style="margin:0 0 4px">⚙ Settings <span class="alienmark">👽</span></h2><div class="small">Player names, BBB progress pages, and shared game preferences.</div></div><button onclick="toggleSettings()">✕ Close</button></div>
     <div class="settingsgrid" style="margin-top:16px">
       <div class="settingsfield"><label>🗡️ First player SL username</label><input id="set-partner-name" placeholder="your.username"></div>
-      <div class="settingsfield"><label>👽 Benefactor SL username</label><input id="set-me-name" placeholder="partner.username"></div>
-      <div class="settingsfield"><label>🗡️ First BBB StaFi progress page</label><input id="set-partner-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
-      <div class="settingsfield"><label>👽 Second BBB StaFi progress page</label><input id="set-me-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
+      <div class="settingsfield"><label>👽 Second player SL username</label><input id="set-me-name" placeholder="partner.username"></div>
+      <div class="settingsfield"><label>🗡️ First player BBB StaFi page</label><input id="set-partner-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
+      <div class="settingsfield"><label>👽 Second player BBB StaFi page</label><input id="set-me-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
       <div class="settingsfield"><label>Open on</label><select id="set-default-view"><option value="partner">First tab</option><option value="me">Second tab</option></select></div>
       <div class="settingsfield"><label>🔐 Secret Club Code</label><input id="set-family-key" type="password" autocomplete="new-password" placeholder="Use the same key on both devices"></div>
     </div>
     <div class="actions" style="margin-top:12px"><label class="small"><input id="set-remember-key" type="checkbox" checked> Remember Secret Club Code on this device</label></div>
-    <div class="actions" style="margin-top:16px"><button class="primary" onclick="saveSettings()">💾 Save & Sync</button><button onclick="unlockPrivateSettings()">🔓 Load from Cloud</button><button onclick="copyFamilyKey()">🔑 Copy Secret Club Code</button><button onclick="testCurrentStaFi()">🔗 Open selected StaFi page</button><a class="sl" href="admin.html">🔧 Admin</a></div>
-    <div class="settingsnote"><b>The two SL usernames also become the tab names.</b> The benefactor receives the revealed L$ adventure rewards. BBB StaFi links remain encrypted. On a new trusted device, enter the same Secret Club Code and use <b>Load from Cloud</b>.</div>
+    <div class="actions" style="margin-top:16px"><button class="primary" onclick="saveSettings()">💾 Save</button><button onclick="unlockPrivateSettings()">☁ Load on this device</button><button onclick="copyFamilyKey()">🔑 Copy Club Code</button><button onclick="testCurrentStaFi()">🔗 Open selected StaFi page</button><a class="sl" href="admin.html">🔧 Admin</a></div>
+    <div class="settingsnote"><b>The SL usernames become the two player tabs.</b> Use the same Secret Club Code on trusted devices to load the private BBB StaFi links.</div>
   </div>
 </section>
 
@@ -79,7 +78,7 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
   <div class="inside"><div id="completed"></div></div>
 </details>
 
-<p class="small">Shared board: owtsgmi.github.io/bbb-passport-adventures</p>
+
 </main>
 
 <script src="data1.js"></script><script src="data2.js"></script><script src="data3.js"></script><script src="data4.js"></script><script src="data5.js"></script><script src="data6.js"></script><script src="data7.js"></script><script src="slmap.js?v=4"></script>
