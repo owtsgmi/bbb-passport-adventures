@@ -228,7 +228,7 @@ This file is the persistent source of truth for future edits to this project.
 - If there is no active incomplete adventure, the lock control is hidden/disabled and choosing an adventure works normally.
 
 
-## Manual fixed-1000 payout + in-world reminder model
+## Manual fixed-1000 payout + browser push alerts
 - Adventure rewards still reveal random **20–100 L$** values and accumulate in the second/player-two recipient's unpaid balance.
 - Payout threshold and unit remain **1,000 L$**.
 - No automatic L$ transfer is performed by the app.
@@ -237,19 +237,28 @@ This file is the persistent source of truth for future edits to this project.
 - Actual SL usernames remain the intended player/tab labels:
   - first/player-one username (🗡️) = payer
   - second/player-two username (👽) = recipient / benefactor
-- The optional in-world script is `passport-reminder.lsl`.
-- The reminder script:
-  - never requests `PERMISSION_DEBIT`;
-  - never calls `llTransferLindenDollars` or `llGiveMoney`;
-  - polls the reminder endpoint about once per minute;
-  - IMs only the object's owner when one or more 1,000 L$ payments are available;
-  - stores the last ready-payment count/source in linkset data to avoid repetitive spam;
-  - can be touched by the owner for an immediate status check.
-- No pairing code, avatar UUID exchange, debit permission, or group is required for the reminder.
-- `bank.html` is now the in-world reminder setup page.
-- The old debit-enabled `passport-bank.lsl` file is intentionally replaced with a harmless disabled stub so it cannot be used accidentally.
-- The Supabase Edge Function slug remains `passport-bank` for compatibility, but version 4 is reminder-only. It exposes only:
-  - `status`: payer/recipient display usernames, real unpaid balance, optional test balance, effective balance, number of 1,000 L$ payments ready, and source;
-  - `set_test_balance`: set/clear exactly 1,000 L$ of simulated earnings.
-- Reminder test mode means **simulated earnings only**. Setting test balance to 1,000 L$ should trigger the same in-world IM as a real threshold, without completing adventures or moving money.
-- A private two-person SL group is optional for social use, but it is not part of payout/reminder infrastructure.
+- Payout notification delivery uses standard browser **Web Push**, not an SL script/bot/group.
+- GitHub Pages service worker: `sw.js`.
+- Supabase Edge Function: `payout-push`.
+- Push tables:
+  - `bbb_push_config` — singleton VAPID keypair, optional resolved recipient UUID, and last seen 1,000-L$ bucket. Direct anon/auth grants revoked.
+  - `bbb_push_subscriptions` — browser push endpoints/keys plus hashed per-device control tokens. Direct anon/auth grants revoked.
+- The VAPID private key is server-only in a service-role-readable table and must never be returned to the browser or committed to public GitHub source.
+- Each browser/device opts in independently by pressing **Enable payout alerts** and granting notification permission.
+- The browser stores only its per-device push control token in localStorage. The PushSubscription endpoint and encryption keys are stored server-side.
+- `payout-push` actions:
+  - `status` — public VAPID key, current payout balance, recipient resolution status.
+  - `register` / `unregister` — manage one browser subscription.
+  - `test` — send a rate-limited test notification only to the authenticated current subscription; does not alter game state.
+  - `check` — compare the unpaid reward balance's floor(balance/1000) bucket to the prior bucket and notify all enabled subscriptions only when that count increases.
+  - `resolve_recipient` — authenticated per-device action that transiently accepts a Linden Lab API key, validates the requested username against the current second-player username, calls Linden Lab's official Name-to-Agent-ID API, stores only the resulting avatar UUID, and never stores the API key.
+- A Supabase pg_cron job named `bbb-payout-push-check` calls `payout-push` every five minutes. The app also calls `check` after successful shared-state writes for faster alerts during active use.
+- When a 1,000 L$ payment is manually marked paid, the real balance bucket drops; a later rise back into that bucket can trigger the next notification.
+- `bank.html` is now a browser payout-alert explanation/setup page.
+- `passport-reminder.lsl` and `passport-bank.lsl` are obsolete harmless stubs. No current workflow requires any LSL.
+- Optional Pay shortcut:
+  - Linden Lab's official Name-to-Agent-ID API resolves the saved recipient username to a stable avatar UUID.
+  - The API requires a Linden-issued API key; the user must obtain that while logged into their Second Life account.
+  - The app sends that key only to the Edge Function for one lookup and does not persist it.
+  - Once resolved, the UI can expose `secondlife:///app/agent/<uuid>/pay`.
+  - External browser/viewer handling of application-style SL URIs may vary, so manual payment by username remains the fallback.
