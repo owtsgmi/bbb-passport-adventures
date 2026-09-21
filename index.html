@@ -56,8 +56,8 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
       <div class="settingsfield"><label>🔐 Secret Club Code</label><input id="set-family-key" type="password" autocomplete="new-password" placeholder="Use the same key on both devices"></div>
     </div>
     <div class="actions" style="margin-top:12px"><label class="small"><input id="set-remember-key" type="checkbox" checked> Remember Secret Club Code on this device</label></div>
-    <div class="actions" style="margin-top:16px"><button class="primary" onclick="saveSettings()">💾 Save & Sync</button><button onclick="unlockPrivateSettings()">🔓 Load from Cloud</button><button onclick="copyFamilyKey()">🔑 Copy Secret Club Code</button><button onclick="testCurrentStaFi()">🔗 Open selected StaFi page</button><a class="sl" href="bank.html">💬 In-world Reminder Setup</a></div>
-    <div class="settingsnote"><b>The two SL usernames also become the tab names.</b> The optional in-world reminder uses them only to say who should pay whom; it never moves L$. BBB StaFi links remain encrypted. On a new trusted device, enter the same Secret Club Code and use <b>Load from Cloud</b>.</div>
+    <div class="actions" style="margin-top:16px"><button class="primary" onclick="saveSettings()">💾 Save & Sync</button><button onclick="unlockPrivateSettings()">🔓 Load from Cloud</button><button onclick="copyFamilyKey()">🔑 Copy Secret Club Code</button><button onclick="testCurrentStaFi()">🔗 Open selected StaFi page</button><a class="sl" href="bank.html">🔔 Payout Alert Setup</a></div>
+    <div class="settingsnote"><b>The two SL usernames also become the tab names.</b> Payout alerts use normal browser notifications; there is no SL script, bot, group, or automatic money transfer. BBB StaFi links remain encrypted. On a new trusted device, enter the same Secret Club Code and use <b>Load from Cloud</b>.</div>
   </div>
 </section>
 
@@ -109,8 +109,8 @@ let defaultView=localStorage.getItem('bbb-default-view')||'partner';
 let familyKey=localStorage.getItem('bbb-family-key')||sessionStorage.getItem('bbb-family-key')||'';
 let privateSettingsUpdated='';
 let currentView=localStorage.getItem('bbb-view')||defaultView;
-let bankState={mode:'reminder',payer_username:null,recipient_username:null,test_balance:0,real_balance:0,effective_balance:0,ready_payments:0,source:'rewards'};
-let bankBusy=false;
+let pushState={vapid_public:'',subscriptions:0,recipient_username:null,recipient_uuid:null,balance:0,ready_payments:0,enabledThisDevice:false,permission:(typeof Notification!=='undefined'?Notification.permission:'unsupported')};
+let pushBusy=false;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function toggleSettings(){
@@ -164,7 +164,7 @@ async function saveSettings(){
  try{
    await writePrivateSettings();
    await writeSharedDisplaySettings();
-   await loadBankStatus();
+   await loadPushStatus();
    toast('Settings synced across devices 👽');
  }catch(e){
    toast('Settings saved on this device; cloud sync will retry later');
@@ -415,21 +415,25 @@ function markPaid(){
  saveAll();
  toast('💖 1,000 L$ manual payment recorded');
 }
+function payLink(){return pushState.recipient_uuid?'secondlife:///app/agent/'+pushState.recipient_uuid+'/pay':''}
 function bankHtml(due){
- const b=bankState,testBalance=Number(b.test_balance||0),ready=Math.floor(due/1000);
- let h='<div class="banktest"><div class="banktesthead"><div><b>💬 In-world payout reminder</b><div class="small">Optional reminder object IMs the payer when a 1,000 L$ payment is due. It <b>cannot move money</b>.</div></div><div class="testok">No debit permission · no pairing</div></div>';
+ const ready=Math.floor(due/1000),enabled=!!pushState.enabledThisDevice,perm=pushState.permission;
+ let status=enabled?'✓ Alerts enabled on this device':(perm==='denied'?'⚠ Browser notifications blocked':'○ Alerts not enabled');
+ let h='<div class="banktest"><div class="banktesthead"><div><b>🔔 Payout alerts</b><div class="small">Free browser notifications when '+esc(tabMeName)+' reaches another 1,000 L$ payout.</div></div><div class="'+(enabled?'testok':'small')+'">'+status+'</div></div>';
  if(due>=1000){
-   h+='<div class="payoutdue"><div><strong>💸 '+ready+' × 1,000 L$ payment'+(ready===1?'':'s')+' due</strong><div class="small">Pay '+esc(tabMeName)+' manually in Second Life, then record one 1,000 L$ payment here.</div></div><button onclick="markPaid()">Mark 1,000 L$ paid</button></div>';
+   h+='<div class="payoutdue"><div><strong>💸 '+ready+' × 1,000 L$ payment'+(ready===1?'':'s')+' due</strong><div class="small">Pay '+esc(tabMeName)+' manually in Second Life, then record one 1,000 L$ payment here.</div></div><div class="actions">'+(payLink()?'<a class="sl" href="'+payLink()+'">Pay '+esc(tabMeName)+' in SL</a>':'')+'<button onclick="markPaid()">Mark 1,000 L$ paid</button></div></div>';
  }else{
-   h+='<div class="small" style="margin-top:9px">'+Math.max(0,1000-due)+' L$ more must be earned before the next payment reminder.</div>';
+   h+='<div class="small" style="margin-top:9px">'+Math.max(0,1000-due)+' L$ more must be earned before the next payout.</div>';
  }
- h+='<div class="bankpair"><a class="sl" href="bank.html">💬 Setup in-world reminder</a>';
- if(testBalance>=1000){
-   h+='<button onclick="setBankTestBalance(0)">Clear 1,000 L$ test earnings</button><span class="small">TEST reminder is active.</span>';
- }else{
-   h+='<button onclick="setBankTestBalance(1000)">🧪 Pretend '+esc(tabMeName)+' has earned 1,000 L$</button><span class="small">Tests the notification only; no adventure history or money changes.</span>';
+ h+='<div class="bankpair"><button class="primary" onclick="enablePayoutAlerts()">'+(enabled?'🔔 Re-enable / refresh alerts':'🔔 Enable payout alerts')+'</button>';
+ if(enabled)h+='<button onclick="sendPushTest()">🧪 Send test alert</button>';
+ h+='<a class="sl" href="bank.html">How alerts work</a></div>';
+ if(enabled&&!pushState.recipient_uuid){
+   h+='<details class="recent"><summary>Optional: add one-click Second Life Pay link</summary><div class="small" style="margin:8px 0">Linden Lab requires an API key to translate the saved SL username into its avatar UUID. The key is used once and is not stored.</div><div class="bankpair"><input id="ll-api-key" type="password" placeholder="Linden Lab API key" autocomplete="off"><button onclick="resolvePayRecipient()">Resolve '+esc(tabMeName)+'</button><a class="sl" href="https://accounts.secondlife.com/manage_api_key" target="_blank" rel="noopener">Get LL API key</a></div></details>';
+ }else if(enabled&&pushState.recipient_uuid){
+   h+='<div class="small" style="margin-top:9px">✓ '+esc(tabMeName)+' Pay link is ready. If your browser does not pass the link to Firestorm, pay the username manually.</div>';
  }
- h+='</div></div>';
+ h+='</div>';
  return h;
 }
 function rewardHtml(){
@@ -489,42 +493,65 @@ init();
 const SUPA_URL='https://tzxlrglgwzinefutledx.supabase.co';
 const SUPA_KEY='sb_publishable_s54v4rmFk_BjHoweE7mliA_w64vK6WR';
 const STATE_URL=SUPA_URL+'/rest/v1/bbb_board_state?id=eq.1&select=*';
-const BANK_API=SUPA_URL+'/functions/v1/passport-bank';
+const PUSH_API=SUPA_URL+'/functions/v1/payout-push';
 let cloudBusy=false,lastCloudUpdate='';
 
-async function bankCall(action,payload={}){
-  const r=await fetch(BANK_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...payload})});
+async function pushCall(action,payload={}){
+  const r=await fetch(PUSH_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...payload})});
   const data=await r.json().catch(()=>({ok:false,error:'bad_response'}));
   if(!r.ok||!data.ok)throw new Error(data.error||('HTTP '+r.status));
   return data;
 }
-async function loadBankStatus(){
-  if(bankBusy)return;
-  bankBusy=true;
-  try{
-    const s=await bankCall('status');
-    bankState={
-      mode:'reminder',
-      payer_username:s.payer_username||null,
-      recipient_username:s.recipient_username||null,
-      test_balance:Number(s.test_balance||0),
-      real_balance:Number(s.real_balance||0),
-      effective_balance:Number(s.effective_balance||0),
-      ready_payments:Number(s.ready_payments||0),
-      source:s.source||'rewards'
-    };
-    refreshRewardPanel();
-  }catch(e){}
-  finally{bankBusy=false}
+function vapidBytes(s){const p='='.repeat((4-s.length%4)%4),b=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(b,c=>c.charCodeAt(0))}
+async function currentPushSubscription(){
+  if(!('serviceWorker'in navigator)&&!('PushManager'in window))return null;
+  const reg=await navigator.serviceWorker.getRegistration('./');
+  return reg?await reg.pushManager.getSubscription():null;
 }
-async function setBankTestBalance(value){
-  const v=Number(value)===1000?1000:0;
-  if(v===1000&&!confirm('Pretend '+rewardOwnerName()+' has earned 1,000 L$ for reminder testing?\n\nThis changes no adventure history and cannot move any money.'))return;
+async function loadPushStatus(){
+  if(pushBusy)return;pushBusy=true;
   try{
-    await bankCall('set_test_balance',{value:v});
-    await loadBankStatus();
-    toast(v?'🧪 Test balance set to 1,000 L$ — the in-world reminder should IM you shortly':'Test balance cleared');
-  }catch(e){toast('Could not change the test balance.')}
+    const s=await pushCall('status');
+    const sub=await currentPushSubscription().catch(()=>null);
+    pushState={vapid_public:s.vapid_public||'',subscriptions:Number(s.subscriptions||0),recipient_username:s.recipient_username||null,recipient_uuid:s.recipient_uuid||null,balance:Number(s.balance||0),ready_payments:Number(s.ready_payments||0),enabledThisDevice:!!(sub&&localStorage.getItem('bbb-push-control')),permission:(typeof Notification!=='undefined'?Notification.permission:'unsupported')};
+    refreshRewardPanel();
+  }catch(e){}finally{pushBusy=false}
+}
+async function enablePayoutAlerts(){
+  if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window))return toast('This browser does not support web push notifications.');
+  try{
+    const permission=await Notification.requestPermission();
+    if(permission!=='granted'){pushState.permission=permission;refreshRewardPanel();return toast('Notifications were not allowed.');}
+    const status=await pushCall('status');
+    const reg=await navigator.serviceWorker.register('sw.js');
+    await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:vapidBytes(status.vapid_public)});
+    const out=await pushCall('register',{subscription:sub.toJSON(),user_agent:navigator.userAgent});
+    localStorage.setItem('bbb-push-control',out.control_token);
+    await loadPushStatus();
+    toast('🔔 Payout alerts enabled on this device');
+  }catch(e){toast('Could not enable payout alerts: '+e.message)}
+}
+async function sendPushTest(){
+  try{
+    const sub=await currentPushSubscription(),ctl=localStorage.getItem('bbb-push-control')||'';
+    if(!sub||!ctl)return enablePayoutAlerts();
+    await pushCall('test',{endpoint:sub.endpoint,control_token:ctl});
+    toast('🧪 Test alert sent — it should appear as a browser notification');
+  }catch(e){toast(e.message==='test_cooldown'?'Wait about 30 seconds before another test.':'Could not send the test alert.')}
+}
+async function resolvePayRecipient(){
+  const key=document.getElementById('ll-api-key')?.value.trim()||'';
+  if(!key)return toast('Paste your Linden Lab API key first.');
+  try{
+    const sub=await currentPushSubscription(),ctl=localStorage.getItem('bbb-push-control')||'';
+    if(!sub||!ctl)return toast('Enable payout alerts first.');
+    await pushCall('resolve_recipient',{endpoint:sub.endpoint,control_token:ctl,username:tabMeName,api_key:key});
+    const input=document.getElementById('ll-api-key');if(input)input.value='';
+    await loadPushStatus();
+    toast('✓ '+tabMeName+' resolved — Second Life Pay link is ready');
+  }catch(e){toast('Could not resolve the SL username. Check the username and Linden API key.')}
 }
 function syncStatus(text,good=true){
   const e=document.getElementById('sync-status');
@@ -578,6 +605,7 @@ async function writeCloud(){
     const rows=await r.json();
     if(rows[0]?.updated_at)lastCloudUpdate=rows[0].updated_at;
     syncStatus('Synced');
+    pushCall('check').catch(()=>{});
   }catch(e){syncStatus('Offline — local progress saved',false)}
   finally{cloudBusy=false}
 }
@@ -665,7 +693,7 @@ firstCloudSync();
 autoLoadPrivateSettings();
 loadBankStatus();
 setInterval(pollCloud,3000);
-setInterval(loadBankStatus,5000);
+setInterval(loadPushStatus,15000);
 setInterval(pollPrivateSettings,10000);
 </script>
 </body></html>
