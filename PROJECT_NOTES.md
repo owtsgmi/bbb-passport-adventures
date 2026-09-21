@@ -245,6 +245,8 @@ This file is the persistent source of truth for future edits to this project.
   - `bbb_push_subscriptions` — browser push endpoints/keys plus hashed per-device control tokens. Direct anon/auth grants revoked.
 - The VAPID private key is server-only in a service-role-readable table and must never be returned to the browser or committed to public GitHub source.
 - Each browser/device opts in independently by pressing **Enable payout alerts** and granting notification permission.
+- User-facing copy must make clear that alerts appear as **desktop/system notifications**, not inside the Passport Adventures browser tab. Windows typically shows a lower-right toast/Notification Center; Linux placement depends on the desktop environment.
+- Diagnostic order: **Test local popup** first to verify browser/OS notification display, then **Test server push** to verify the full Supabase/Web Push path.
 - The browser stores only its per-device push control token in localStorage. The PushSubscription endpoint and encryption keys are stored server-side.
 - `payout-push` actions:
   - `status` — public VAPID key, current payout balance, recipient resolution status.
