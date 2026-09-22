@@ -31,6 +31,8 @@ This file is the persistent source of truth for future edits to this project.
   - keep a prominent top-right passport completion counter for the selected player, e.g. **1 / 382**, with the remaining stamp count below it. This is the primary game goal and should remain visually prominent;
   - no cloud-sync text, StaFi-link count, payout status, notification diagnostics, or other technical/admin status in the header.
 - Random selection button text: **Pick Random Adventure**. It appears only inside the expanded **Choose Another Adventure** section.
+- The random button must be visually obvious at the top of the expanded chooser, above the pending adventure cards.
+- Keep adventure stop lists clean: do **not** render the old `missionSetup` Travel / Next stop / Copy destination strip above stop rows. Per-stop Copy buttons are enough.
 - Current adventure loads collapsed.
 - Adult-playful purple/pink/gold style with subtle alien graphics.
 - Settings is available from the hamburger menu on the supporting pages too.
@@ -229,6 +231,7 @@ This file is the persistent source of truth for future edits to this project.
 ## Header and player icon conventions
 - Desktop navigation hamburger is an icon-only **☰** in the left gutter, vertically aligned with the page title/alien line rather than sitting on its own row.
 - At narrower browser widths the hamburger must move inside the header grid rather than remain in the left gutter, so it is never clipped off-screen.
+- Important CSS caution: responsive `.navwrap` overrides must appear after the base `.navwrap` rule, otherwise the base absolute positioning wins and clips the hamburger again.
 - First/player-one tab icon: **🗡️**.
 - Second/player-two tab icon: **👽**.
 - Use these same icons for the matching Settings labels and StaFi fields.
