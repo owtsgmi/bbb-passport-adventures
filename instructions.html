@@ -111,7 +111,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
     <section class="archcard">
       <h3>BBB catalog mirror</h3>
       <p>The BBB Stops page checks the public BBB catalog whenever that page opens. A Supabase Edge Function fetches and parses the BBB source, returning current stop locations and available images.</p>
-      <p>Matching stops refresh their public location/image information. Those same BBB images are also reused as thumbnails beside locations on the Adventures page. Newly discovered stops can appear as <b>BBB Live</b> catalog entries without changing the 127 existing adventures.</p>
+      <p>Matching stops refresh their public location/image information. Those same original BBB location photos are reused beside stops on both the Adventures page and the BBB Passport Stops page, including selected/nearby stop views. The backend keeps a shared catalog cache so pages do not have to wait on the slower BBB site every time they open. Newly discovered stops can appear as <b>BBB Live</b> catalog entries without changing the 127 existing adventures.</p>
       <p>Both the stop page and the current-adventure page use a shared Second Life grid-map component. It loads Linden Lab map tiles at multiple zoom levels, supports drag/zoom, and can move from local region detail to a broad world view. Mouse-wheel zoom is debounced to avoid request bursts, and unavailable tiles are retried once before falling back to a clean placeholder instead of a broken-image box.</p>
     </section>
     <section class="archcard">
