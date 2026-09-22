@@ -27,7 +27,7 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 <header>
 <div class="headrow">
   <div class="navwrap" id="main-nav"><button class="navbtn" title="Menu" aria-label="Menu" onclick="document.getElementById('main-nav').classList.toggle('open')">☰</button><div class="navmenu"><a class="here" href="index.html">🎮 Adventures</a><a href="instructions.html">📖 Instructions</a><a href="bbb.html">📍 BBB Passport Stops</a><a href="feedback.html">💬 Comments & Bugs</a></div></div>
-  <div class="brand"><h1>🦄👽 Passport Adventures</h1><div class="sub">Pick a 3-stop adventure, collect BBB stamps together, and explore Second Life.</div></div>
+  <div class="brand"><h1>👽 Passport Adventures</h1><div class="sub">Pick a 3-stop adventure, collect BBB stamps together, and explore Second Life.</div></div>
   <div class="scorecard" id="scorecard"></div>
 </div>
 <div class="controls">
@@ -407,7 +407,7 @@ function rewardHtml(){
  return `<div class="bankhead"><div><h3>${title} <span class="alienmark">👽</span></h3><div class="small">${intro}</div></div></div>
  <div class="bankgrid"><div class="bankcard"><span>${benefactor?'Waiting for you':'Current treasure pot'}</span><strong>${due} L$</strong><span>${milestone}</span></div></div>
  <div class="small" style="margin-top:10px">✨ Lifetime adventure prizes: <b>${lifetime} L$</b></div>
- ${pending&&benefactor?`<div class="small" style="margin-top:10px">🦄 ${pending} adventure${pending===1?' is':'s are'} already finished by ${esc(tabPartnerName)} and waiting for you to catch up.</div>`:''}
+ ${pending&&benefactor?`<div class="small" style="margin-top:10px">✨ ${pending} adventure${pending===1?' is':'s are'} already finished by ${esc(tabPartnerName)} and waiting for you to catch up.</div>`:''}
  <details class="recent"><summary>${benefactor?'Your recent prizes':'Recent prizes'}</summary>${rewardLines}</details>`;
 }
 function refreshRewardPanel(){const e=document.getElementById('rewards');if(e)e.innerHTML=rewardHtml()}
