@@ -217,7 +217,7 @@ This file is the persistent source of truth for future edits to this project.
 
 
 ## Header and player icon conventions
-- Desktop navigation hamburger is an icon-only **☰** in the left gutter, vertically aligned with the page title/unicorn line rather than sitting on its own row.
+- Desktop navigation hamburger is an icon-only **☰** in the left gutter, vertically aligned with the page title/alien line rather than sitting on its own row.
 - On narrow/mobile screens the hamburger falls back into normal flow above the title so it remains reachable.
 - First/player-one tab icon: **🗡️**.
 - Second/player-two tab icon: **👽**.
@@ -328,6 +328,7 @@ This file is the persistent source of truth for future edits to this project.
 
 ## Naming / UX decisions to preserve
 - Call the optional L$ feature **Adventure Treasure**. Do **not** call it “benefactor mode.”
+- Site branding is now **alien-only**: use 👽 for Passport Adventures branding and do not reintroduce unicorn icons/branding in player-facing UI.
 - Adventure Treasure defaults **OFF**.
 - Keep setup and payment mechanics on `admin.html`, out of the player experience.
 - Keep the top of `index.html` clean and game-oriented. Technical connection/sync/StaFi status belongs off the main header; Admin is the home for operational setup and diagnostics.
