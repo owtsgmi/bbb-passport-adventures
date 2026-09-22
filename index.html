@@ -22,13 +22,13 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 @media(max-width:820px){.navwrap{position:relative;right:auto;top:auto;margin:0 0 8px 0}.headrow{display:block}.scorecard{margin-top:10px}}@media(max-width:520px){.bankgrid{grid-template-columns:1fr}.brand h1{font-size:23px}}
 
 .navwrap{position:absolute;right:100%;top:1px;margin-right:8px;z-index:31}.navbtn{font-weight:900;width:40px;height:40px;padding:0;font-size:20px;display:grid;place-items:center}.navmenu{display:none;position:absolute;left:0;right:auto;top:44px;min-width:210px;background:#171121;border:1px solid #5c4775;border-radius:14px;padding:8px;box-shadow:0 16px 36px #0008;z-index:30}.navwrap.open .navmenu{display:block}.navmenu a{display:block;color:var(--ink);text-decoration:none;padding:10px 12px;border-radius:10px}.navmenu a:hover{background:#2a1e3d}.navmenu .here{color:#ffd166}
-</style><link rel="icon" type="image/svg+xml" href="favicon.svg">\n</head>
+</style><link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
 <body>
 <header>
 <div class="headrow">
   <div class="navwrap" id="main-nav"><button class="navbtn" title="Menu" aria-label="Menu" onclick="document.getElementById('main-nav').classList.toggle('open')">☰</button><div class="navmenu"><a class="here" href="index.html">🎮 Adventures</a><a href="instructions.html">📖 Instructions</a><a href="bbb.html">📍 BBB Passport Stops</a><a href="feedback.html">💬 Comments & Bugs</a></div></div>
   <div class="brand"><h1>👽 Passport Adventures</h1><div class="sub">Pick a 3-stop adventure, collect BBB stamps together, and explore Second Life.</div></div>
-  <div class="scorecard" id="scorecard"></div>
 </div>
 <div class="controls">
   <button class="primary" onclick="surpriseUs()">✨ Pick an Adventure</button>
@@ -37,6 +37,7 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 <div class="viewtabs">
   <button id="tab-partner" class="viewtab" onclick="setView('partner')">🗡️ AA</button>
   <button id="tab-me" class="viewtab" onclick="setView('me')">👽 KK</button>
+  <span id="passport-progress" class="small" style="align-self:center;margin-left:6px"></span>
 </div>
 <details class="filterdetails"><summary>Search & options</summary>
   <div class="filters"><input id="q" placeholder="Find an adventure…"><select id="zone"><option value="">All areas</option></select></div>
@@ -431,9 +432,8 @@ function render(){
  const campaignDone=currentView==='partner'?partnerDone.size:meDone.size;
  const passportDone=Math.min(TOTAL_PASSPORT_STAMPS,campaignDone+knownPreCampaignStamps(currentView));
  const toGo=Math.max(0,TOTAL_PASSPORT_STAMPS-passportDone);
- const rewardBalance=unpaidLinden(),rewardToGo=rewardBalance>=1000?0:1000-rewardBalance;
- const treasureScore=adventureTreasureEnabled?`<div class="score coin"><b>🎁 ${rewardBalance} L$</b><span>${rewardBalance>=1000?'1,000 L$ milestone reached':rewardToGo+' L$ to next milestone'}</span></div>`:'';
- $('#scorecard').innerHTML=treasureScore+`<div class="score"><b>${passportDone}/${TOTAL_PASSPORT_STAMPS}</b><span>${currentView==='partner'?tabPartnerName:tabMeName} stamps · ${toGo} to go</span></div>`;
+ const progressEl=$('#passport-progress');
+ if(progressEl)progressEl.textContent=passportDone+'/'+TOTAL_PASSPORT_STAMPS+' stamps · '+toGo+' to go';
  const tp=document.getElementById('tab-partner'), tm=document.getElementById('tab-me');
  if(tp){tp.textContent='🗡️ '+tabPartnerName;tp.classList.toggle('active',currentView==='partner')}
  if(tm){tm.textContent='👽 '+tabMeName;tm.classList.toggle('active',currentView==='me')}
