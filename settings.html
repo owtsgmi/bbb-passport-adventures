@@ -271,7 +271,7 @@ async function loadAccount(){
  const active=accountData.clubs.some(c=>c.id===remembered)?remembered:(accountData.clubs[0]?.id||'');select.value=active;PassportCloud.setActiveClub(active);
  await loadClubTools(active);
  const pending=new URLSearchParams(location.search).get('join')||localStorage.getItem('bbb-pending-join')||'';
- if(pending&&!accountData.clubs.length){$('#join-code').value=pending;accountStatus('Invite ready — choose Join club.');}
+ if(pending){$('#join-code').value=pending;accountStatus('Invite ready — choose Join club.');}
 }
 async function createClub(){
  const name=$('#new-club-name').value.trim();if(!name)return accountStatus('Enter a club name.');
