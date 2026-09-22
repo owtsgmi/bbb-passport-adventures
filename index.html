@@ -19,7 +19,8 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 .nextrow td{box-shadow:inset 0 0 0 1px #ffd16677}.nexttag{color:var(--gold);font-size:11px;font-weight:800;margin-left:6px}.mapselectable{cursor:pointer}.mapselectable:hover td{background:linear-gradient(90deg,#261d43,#30234e)}.mapselected td{box-shadow:inset 0 0 0 2px #ff78c8aa!important}.maptag{color:#ffc3e8;font-size:11px;font-weight:900;margin-left:6px}.mapbtn{margin-left:6px;background:#2a1c45;border-color:#76599a}.sl{text-decoration:none;background:#12668f;color:white;padding:7px 9px;border-radius:8px;font-weight:700;display:inline-block}
 #toast{display:none;position:fixed;right:18px;bottom:18px;z-index:50;background:#10243a;border:1px solid var(--blue);border-radius:10px;padding:12px 15px;max-width:480px}
 @media(max-width:820px){.settingsgrid{grid-template-columns:1fr}.headrow{display:block}.scorecard{min-width:0;margin-top:10px;display:flex;flex-wrap:wrap}.bankgrid{display:block}.score b{font-size:15px}.mission-setup{grid-template-columns:1fr}.summary-right{display:none}.mission-table thead{display:none}.mission-table,.mission-table tbody,.mission-table tr,.mission-table td{display:block;width:100%}.mission-table tr{margin-bottom:8px;background:var(--panel2);border-radius:10px;padding:7px}.mission-table td{background:transparent;padding:4px 6px}.mission-table td:first-child,.mission-table td:last-child{border-radius:0}.mission-table .who,.mission-table .act{text-align:left;width:auto}.mission-table .who::before{font-size:12px;color:var(--muted);margin-right:6px}.mission-table .mine::before{content:"My passport:"}.mission-table .theirs::before{content:"Partner:"}.stopinfo{grid-template-columns:82px minmax(0,1fr)}.adventurethumb{width:82px;height:62px}}
-@media(max-width:820px){.navwrap{position:relative;right:auto;top:auto;margin:0 0 8px 0}.headrow{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start}.brand{min-width:0}.goalstack{width:145px}.passportgoal{padding:8px 11px}.passportgoal strong{font-size:27px}.treasuremini>summary{font-size:11px;padding:6px 8px}.scorecard{margin-top:10px}}@media(max-width:520px){.bankgrid{grid-template-columns:1fr}.brand h1{font-size:23px}}
+@media(max-width:1100px){.navwrap{position:static;right:auto;top:auto;margin:0 0 8px 0}.headrow{display:grid;grid-template-columns:46px minmax(0,1fr) auto;align-items:start}.navwrap{grid-column:1}.brand{grid-column:2;min-width:0}.goalstack{grid-column:3}.navmenu{left:0;top:50px}.scorecard{margin-top:10px}}
+@media(max-width:820px){.headrow{grid-template-columns:46px minmax(0,1fr) auto}.goalstack{width:145px}.passportgoal{padding:8px 11px}.passportgoal strong{font-size:27px}.treasuremini>summary{font-size:11px;padding:6px 8px}}@media(max-width:620px){.headrow{grid-template-columns:46px minmax(0,1fr)}.goalstack{grid-column:1/-1;width:100%;display:grid;grid-template-columns:minmax(145px,190px);justify-content:end;margin-top:6px}.brand h1{font-size:23px}.brandmark{width:34px;height:40px}.bankgrid{grid-template-columns:1fr}}
 
 .navwrap{position:absolute;right:100%;top:1px;margin-right:12px;z-index:31}.navbtn{font-weight:900;width:46px;height:46px;padding:4px;font-size:23px;display:grid;place-items:center}.navmenu{display:none;position:absolute;left:0;right:auto;top:44px;min-width:210px;background:#171121;border:1px solid #5c4775;border-radius:14px;padding:8px;box-shadow:0 16px 36px #0008;z-index:30}.navwrap.open .navmenu{display:block}.navmenu a{display:block;color:var(--ink);text-decoration:none;padding:10px 12px;border-radius:10px}.navmenu a:hover{background:#2a1e3d}.navmenu .here{color:#ffd166}
 </style><link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -27,16 +28,12 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 <body>
 <header>
 <div class="headrow">
-  <div class="navwrap" id="main-nav"><button class="navbtn" title="Menu" aria-label="Menu" onclick="document.getElementById('main-nav').classList.toggle('open')">☰</button><div class="navmenu"><a class="here" href="index.html">🎮 Adventures</a><a href="instructions.html">📖 Instructions</a><a href="bbb.html">📍 BBB Passport Stops</a><a href="feedback.html">💬 Comments & Bugs</a></div></div>
+  <div class="navwrap" id="main-nav"><button class="navbtn" title="Menu" aria-label="Menu" onclick="document.getElementById('main-nav').classList.toggle('open')">☰</button><div class="navmenu"><a class="here" href="index.html">🎮 Adventures</a><a href="index.html?settings=1">⚙ Settings</a><a href="instructions.html">📖 Instructions</a><a href="bbb.html">📍 BBB Passport Stops</a><a href="feedback.html">💬 Comments & Bugs</a></div></div>
   <div class="brand"><h1><img class="brandmark" src="passport-icon.svg" alt="">Bellisseria Passport Adventures</h1><div class="sub">Pick a 3-stop adventure, collect BBB stamps together, and explore Second Life.</div></div>
   <div class="goalstack">
     <div class="passportgoal" aria-label="Passport stamp progress"><strong id="passport-progress">0 / 382</strong><span>Passport stamps</span><em id="passport-remaining">382 to go</em></div>
     <div id="treasure-mini"></div>
   </div>
-</div>
-<div class="controls">
-  <button class="primary" onclick="surpriseUs()">✨ Pick an Adventure</button>
-  <button onclick="toggleSettings()">⚙ Settings</button>
 </div>
 <div class="viewtabs">
   <button id="tab-partner" class="viewtab" onclick="setView('partner')">🗡️ AA</button>
@@ -73,7 +70,10 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 
 <details class="compactdetails">
   <summary><span class="light green"></span>Choose Another Adventure <span class="small" id="pending-count"></span></summary>
-  <div class="inside"><div id="pending"></div></div>
+  <div class="inside">
+    <div class="actions" style="margin-bottom:12px"><button class="primary" onclick="surpriseUs()">✨ Pick Random Adventure</button></div>
+    <div id="pending"></div>
+  </div>
 </details>
 
 <details class="compactdetails">
