@@ -1,0 +1,1 @@
+-- Applied to production. The hardened trigger definition is consolidated in 20260922093004_multi_club_foundation.sql.
