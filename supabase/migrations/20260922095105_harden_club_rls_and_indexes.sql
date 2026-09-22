@@ -1,0 +1,1 @@
+-- Applied to production. The final private-schema RLS helpers and indexes are consolidated in 20260922093004_multi_club_foundation.sql.
