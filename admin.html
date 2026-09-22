@@ -67,7 +67,7 @@ main{max-width:980px;margin:auto;padding:26px 4vw 60px}.card{background:#151020;
 <p class="small">Linden Lab's Name-to-Agent-ID API can resolve the saved benefactor username to the avatar UUID needed for a viewer Pay link. The API key is used for this lookup only and is not stored.</p>
 <div class="row">
   <input id="ll-api-key" type="password" autocomplete="off" placeholder="Linden Lab API key">
-  <button id="resolve-recipient">Resolve benefactor</button>
+  <button id="resolve-recipient">Resolve both players</button>
   <a class="btn" href="https://accounts.secondlife.com/manage_api_key" target="_blank" rel="noopener">Get LL API key</a>
 </div>
 </section>
@@ -106,6 +106,38 @@ main{max-width:980px;margin:auto;padding:26px 4vw 60px}.card{background:#151020;
     <button id="clear-test-money">Clear test money</button>
     <button id="send-payout-test">Send test payout alert</button>
   </div>
+</div>
+</section>
+
+<section class="card">
+<h2>💬 Second Life IM</h2>
+<p class="small">Optional backend messenger. Players do not rez anything, wear anything, or install scripts. A dedicated SL bot avatar sends the payer a real Second Life IM.</p>
+<div class="statusbox">
+  <div><b>Status:</b> <span id="sl-bot-status">Checking…</span></div>
+  <div class="small" id="sl-bot-detail" style="margin-top:5px"></div>
+</div>
+
+<div id="sl-id-setup" style="margin-top:12px;display:none">
+  <div class="small"><b>One-time:</b> resolve both saved SL usernames to avatar UUIDs.</div>
+  <div class="row" style="margin-top:8px">
+    <input id="sl-bot-api-key" type="password" autocomplete="off" placeholder="Linden Lab API key">
+    <button id="resolve-sl-users">Resolve player IDs</button>
+    <a class="btn" href="https://accounts.secondlife.com/manage_api_key" target="_blank" rel="noopener">Get LL API key</a>
+  </div>
+</div>
+
+<div class="actions" style="margin-top:12px">
+  <button id="generate-bot-token">Generate bot setup key</button>
+  <button id="send-sl-im-test">Send test SL IM</button>
+</div>
+
+<div id="bot-token-box" class="statusbox" style="display:none">
+  <div class="small"><b>Copy this key now.</b> It is shown only when generated and belongs on the VPS, not in Second Life.</div>
+  <div class="row" style="margin-top:8px">
+    <input id="bot-token-value" readonly>
+    <button id="copy-bot-token">Copy key</button>
+  </div>
+  <div class="small" style="margin-top:8px">Then update/clone the GitHub repo on the VPS and run <b>sudo bash bot/install.sh</b>.</div>
 </div>
 </section>
 
@@ -156,6 +188,14 @@ async function refresh(){
  state={...s,sub,ctl,permission,tested};
 
  const treasureOn=!!s.treasure_enabled;
+ const seen=s.bot_last_seen_at?new Date(s.bot_last_seen_at):null;
+ const botFresh=seen && (Date.now()-seen.getTime()<120000);
+ $('#sl-bot-status').textContent=botFresh?'Connected':(s.bot_configured?'Configured — waiting for VPS bot':'Not set up');
+ $('#sl-bot-status').className=botFresh?'ok':'warn';
+ $('#sl-bot-detail').textContent=botFresh
+   ?('Bot '+(s.bot_account_name||'avatar')+' checked in recently.')
+   :(s.bot_configured?'Start/restart the VPS bot service so it can connect.':'Generate a bot setup key, then install the messenger on the VPS.');
+ $('#sl-id-setup').style.display=s.payer_uuid?'none':'block';
  $('#treasure-state').textContent=treasureOn?'ON':'OFF';
  $('#treasure-state').className='modepill '+(treasureOn?'on':'off');
  $('#treasure-toggle').textContent=treasureOn?'Turn off':'Turn on';
@@ -196,6 +236,31 @@ async function refresh(){
  $('#show-pay-setup').textContent=s.recipient_uuid?'Pay link ready':'Set up';
  $('#show-pay-setup').disabled=!!s.recipient_uuid;
  say(namesOk&&alertsOk&&tested?'✓ Required setup is complete.':'Finish the numbered setup items above.');
+}
+async function generateBotToken(){
+ const sub=await currentSub(),ctl=localStorage.getItem('bbb-push-control')||'';
+ if(!sub||!ctl)return say('Enable payout alerts on this admin device first.');
+ const out=await call('create_bot_token',{endpoint:sub.endpoint,control_token:ctl});
+ $('#bot-token-value').value=out.bot_token||'';
+ $('#bot-token-box').style.display='block';
+ say('Bot setup key generated. Copy it now, then use it during VPS installation.');
+ await refresh();
+}
+async function resolveSlUsersForBot(){
+ const key=$('#sl-bot-api-key').value.trim();
+ if(!key)return say('Paste a Linden Lab API key first.');
+ const sub=await currentSub(),ctl=localStorage.getItem('bbb-push-control')||'';
+ if(!sub||!ctl)return say('Enable payout alerts first so this device can authorize the lookup.');
+ await call('resolve_recipient',{endpoint:sub.endpoint,control_token:ctl,username:state.recipient_username,api_key:key});
+ $('#sl-bot-api-key').value='';
+ say('Both SL player IDs are resolved.');
+ await refresh();
+}
+async function sendSlImTest(){
+ const sub=await currentSub(),ctl=localStorage.getItem('bbb-push-control')||'';
+ if(!sub||!ctl)return say('Enable payout alerts on this admin device first.');
+ const out=await call('test_sl_im',{endpoint:sub.endpoint,control_token:ctl});
+ say('Test SL IM queued for '+(out.target_username||'the payer')+'. It should arrive from the bot in Second Life.');
 }
 async function setTreasureMode(){
  const sub=await currentSub(),ctl=localStorage.getItem('bbb-push-control')||'';
@@ -271,7 +336,7 @@ async function resolveRecipient(){
  await call('resolve_recipient',{endpoint:sub.endpoint,control_token:ctl,username:state.recipient_username,api_key:key});
  $('#ll-api-key').value='';
  $('#pay-setup').style.display='none';
- say('Benefactor resolved. Pay link is ready.');
+ say('Both SL player IDs resolved. Pay link is ready.');
  await refresh();
 }
 async function markPaid(){
@@ -283,6 +348,13 @@ async function markPaid(){
  await call('check').catch(()=>{});
  await refresh();
 }
+$('#generate-bot-token').onclick=()=>generateBotToken().catch(e=>say('Could not generate bot key: '+e.message));
+$('#copy-bot-token').onclick=()=>navigator.clipboard.writeText($('#bot-token-value').value).then(()=>say('Bot setup key copied.')).catch(()=>say('Could not copy the key.'));
+$('#resolve-sl-users').onclick=()=>resolveSlUsersForBot().catch(e=>say('Could not resolve player IDs: '+e.message));
+$('#send-sl-im-test').onclick=()=>sendSlImTest().catch(e=>{
+ const m=e.message==='test_balance_required'?'Add 1,000 L$ test money first.':e.message==='payer_uuid_missing'?'Resolve player IDs first.':e.message==='bot_not_configured'?'Generate a bot setup key first.':'Could not queue SL IM: '+e.message;
+ say(m);
+});
 $('#treasure-toggle').onclick=()=>setTreasureMode().catch(e=>say('Could not change Adventure Treasure: '+e.message));
 $('#enable-alerts').onclick=()=>enableAlerts().catch(e=>say('Could not enable alerts: '+e.message));
 $('#test-alert').onclick=()=>serverTest(true).catch(()=>{});
