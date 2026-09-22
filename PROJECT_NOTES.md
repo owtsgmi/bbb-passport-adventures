@@ -230,12 +230,12 @@ This file is the persistent source of truth for future edits to this project.
 
 
 ## Header and player icon conventions
-- **Hamburger source of truth:** match the working `feedback.html` Comments page navigation pattern on every page. Use the same 46px menu button, absolute left-gutter placement on wide screens, 230px dropdown, and the same narrow-screen fallback. Do not invent page-specific hamburger layouts.
-- `index.html`, `settings.html`, `instructions.html`, `bbb.html`, and `admin.html` were normalized to that Comments-page pattern.
-- Main title art now uses a real passport-cover photograph rather than the custom drawn passport icon. Current source is a public-domain U.S. Department of State passport-cover image served from Wikimedia Commons, with `passport-icon.svg` as the fallback if the remote image fails.
+- **Hamburger source of truth:** `shared-nav.css` contains the Comments-page navigation pattern for every page. Use the same 46px menu button, absolute left-gutter placement when there is room, 230px dropdown, and stacked mobile fallback. Do not add page-specific `.navwrap` or `.navmenu` rules.
+- `index.html`, `settings.html`, `instructions.html`, `bbb.html`, `feedback.html`, and `admin.html` all load `shared-nav.css`. At 1,120px and below the button moves into the header before the left gutter can clip it; at 760px and below the header stacks like the original working Comments page.
+- Main title art uses the repo-local `passport-cover.jpg`, a resized public-domain U.S. Department of State passport-cover scan from Wikimedia Commons, rather than the custom drawn passport icon or a fragile remote image URL. `passport-icon.svg` remains only as the browser error fallback.
 - Desktop navigation hamburger is an icon-only **☰** in the left gutter, vertically aligned with the page title/alien line rather than sitting on its own row.
-- At narrower browser widths the hamburger must move inside the header grid rather than remain in the left gutter, so it is never clipped off-screen.
-- Important CSS caution: responsive `.navwrap` overrides must appear after the base `.navwrap` rule, otherwise the base absolute positioning wins and clips the hamburger again.
+- At narrower browser widths the hamburger must move inside the header rather than remain in the left gutter, so it is never clipped off-screen.
+- Important CSS caution: change shared navigation behavior only in `shared-nav.css`; duplicating responsive `.navwrap` overrides inside individual pages previously caused clipping and CSS conflicts.
 - First/player-one tab icon: **🗡️**.
 - Second/player-two tab icon: **👽**.
 - Use these same icons for the matching Settings labels and StaFi fields.

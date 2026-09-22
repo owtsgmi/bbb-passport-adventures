@@ -1,0 +1,75 @@
+.navbtn {
+  width: 46px;
+  height: 46px;
+  padding: 4px;
+  display: grid;
+  place-items: center;
+  font: inherit;
+  font-size: 23px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.navwrap {
+  position: absolute;
+  right: 100%;
+  top: 0;
+  margin-right: 8px;
+  z-index: 31;
+}
+
+.navmenu {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: 44px;
+  min-width: 230px;
+  padding: 8px;
+  background: #171121;
+  border: 1px solid #5c4775;
+  border-radius: 14px;
+  box-shadow: 0 16px 36px #0008;
+}
+
+.navwrap.open .navmenu {
+  display: block;
+}
+
+.navmenu a {
+  display: block;
+  padding: 10px 12px;
+  color: var(--ink);
+  text-decoration: none;
+  border-radius: 10px;
+}
+
+.navmenu a:hover {
+  background: #2a1e3d;
+}
+
+.navmenu .here {
+  color: var(--gold);
+}
+
+/* Move the button into the header before the left gutter becomes too narrow. */
+@media (max-width: 1120px) {
+  .navwrap {
+    position: relative;
+    right: auto;
+    top: auto;
+    flex: 0 0 46px;
+    margin: 0;
+  }
+}
+
+/* Match the proven Comments-page stacked mobile header. */
+@media (max-width: 760px) {
+  .top,
+  .headrow {
+    display: block;
+  }
+
+  .navwrap {
+    margin: 0 0 8px;
+  }
+}
