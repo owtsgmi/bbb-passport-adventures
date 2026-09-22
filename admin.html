@@ -11,7 +11,8 @@ header{position:sticky;top:0;background:#100c24ee;border-bottom:1px solid #4a376
 button,a.btn,input{border:1px solid #4b3b61;border-radius:12px;background:#171121;color:var(--ink);padding:10px 12px}button,a.btn{cursor:pointer;text-decoration:none;display:inline-block}.primary{background:linear-gradient(135deg,#8b63e8,#c45ca8);border-color:#d7a4e8;font-weight:800}
 main{max-width:980px;margin:auto;padding:26px 4vw 60px}.card{background:#151020;border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px}.card h2,.card h3{margin:0 0 8px}.card h3{color:#ffe08a}.actions,.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row input{min-width:280px;flex:1}.check{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid #30263f}.check:last-child{border-bottom:0}.checkicon{font-size:20px;text-align:center}.ok{color:var(--green)}.warn{color:var(--gold)}.muted{color:var(--muted)}.statusbox{background:#100d1b;border:1px solid #4a3a61;border-radius:14px;padding:14px;margin-top:12px}.money{font-size:38px;font-weight:900;color:#ffe08a}.due{border-color:#a65b70;background:linear-gradient(135deg,#31151e,#221227)}.due strong{color:#ffc0ce}.notice{min-height:20px;margin-top:10px;color:var(--muted)}.mini{font-size:12px}.hide{display:none}.modebar{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap}.modepill{display:inline-block;border:1px solid #5b486f;border-radius:999px;padding:6px 10px;font-weight:900}.modepill.on{color:var(--green);border-color:#4f8a70;background:#10271f}.modepill.off{color:var(--gold);border-color:#7a632e;background:#2b2414}@media(max-width:700px){.check{grid-template-columns:30px 1fr}.check .actions{grid-column:2}.row input{min-width:100%}}
 </style>
-<link rel="icon" type="image/svg+xml" href="favicon.svg">\n</head>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
 <body>
 <header><div class="top"><a class="btn" href="index.html">← Adventures</a><div class="brand"><h1>🔧 Passport Adventures Admin</h1><div>Setup, notifications, and reward payments — kept out of the player experience.</div></div></div></header>
 <main>
@@ -94,6 +95,21 @@ main{max-width:980px;margin:auto;padding:26px 4vw 60px}.card{background:#151020;
 </section>
 
 <section class="card">
+<h3>🧪 Test payout simulation</h3>
+<p class="small">Admin-only test money. This does <b>not</b> change adventure history, the benefactor's real balance, or any L$.</p>
+<div class="statusbox">
+  <div class="small">Test money</div>
+  <div class="money" id="test-balance">0 L$</div>
+  <div class="small" id="test-money-status">No test money loaded.</div>
+  <div class="actions" style="margin-top:12px">
+    <button id="add-test-money">Add 1,000 L$ test money</button>
+    <button id="clear-test-money">Clear test money</button>
+    <button id="send-payout-test">Send test payout alert</button>
+  </div>
+</div>
+</section>
+
+<section class="card">
 <h3>Notification troubleshooting</h3>
 <p class="small"><b>Where to look:</b> payout alerts are desktop/system notifications, not messages inside the Passport Adventures browser tab.</p>
 <div class="actions">
@@ -165,6 +181,9 @@ async function refresh(){
 
  $('#benefactor-name').textContent=s.recipient_username||'Not set';
  $('#reward-balance').textContent=Number(s.balance||0)+' L$';
+ const testBalance=Number(s.test_balance||0);
+ $('#test-balance').textContent=testBalance+' L$';
+ $('#test-money-status').textContent=testBalance?'TEST ONLY — ready to simulate a 1,000 L$ payout alert for '+(s.recipient_username||'the second player')+'.':'No test money loaded.';
  const ready=Number(s.ready_payments||0);
  $('#reward-status').textContent=ready?ready+' × 1,000 L$ payment'+(ready===1?' is':'s are')+' ready.':Math.max(0,1000-Number(s.balance||0))+' L$ until the next 1,000 L$ payment.';
  $('#payment-box').style.display=ready?'block':'none';
@@ -237,6 +256,13 @@ async function localTest(){
  await reg.showNotification('🖥 Passport Adventures local test',{body:'Local browser/desktop notifications are working.',tag:'bbb-admin-local',renotify:true});
  say('Local popup requested. Look at your desktop/system notification area.');
 }
+async function setTestBalance(amount){
+ const sub=await currentSub(),ctl=localStorage.getItem('bbb-push-control')||'';
+ if(!sub||!ctl)return say('Enable payout alerts on this admin device first.');
+ await call('set_test_balance',{endpoint:sub.endpoint,control_token:ctl,amount});
+ say(amount?'🧪 Added 1,000 L$ test money. Real rewards were not changed.':'Test money cleared.');
+ await refresh();
+}
 async function resolveRecipient(){
  const key=$('#ll-api-key').value.trim();
  if(!key)return say('Paste a Linden Lab API key first.');
@@ -261,6 +287,9 @@ $('#treasure-toggle').onclick=()=>setTreasureMode().catch(e=>say('Could not chan
 $('#enable-alerts').onclick=()=>enableAlerts().catch(e=>say('Could not enable alerts: '+e.message));
 $('#test-alert').onclick=()=>serverTest(true).catch(()=>{});
 $('#server-test').onclick=()=>serverTest(false).catch(()=>{});
+$('#add-test-money').onclick=()=>setTestBalance(1000).catch(e=>say('Could not add test money: '+e.message));
+$('#clear-test-money').onclick=()=>setTestBalance(0).catch(e=>say('Could not clear test money: '+e.message));
+$('#send-payout-test').onclick=()=>serverTest(false).catch(()=>{});
 $('#local-test').onclick=()=>localTest().catch(e=>say('Local test failed: '+e.message));
 $('#show-pay-setup').onclick=()=>{$('#pay-setup').style.display='block';$('#ll-api-key').focus()};
 $('#resolve-recipient').onclick=()=>resolveRecipient().catch(e=>say('Benefactor lookup failed: '+e.message));
