@@ -80,6 +80,7 @@ main{max-width:980px;margin:auto;padding:26px 4vw 60px}.card{background:#151020;
   <div class="small" style="margin-top:12px">Waiting to be paid</div>
   <div class="money" id="reward-balance">0 L$</div>
   <div class="small" id="reward-status">Loading…</div>
+  <div class="small" id="collect-request-status" style="margin-top:7px;display:none"></div>
 </div>
 
 <div id="payment-box" class="statusbox due" style="display:none">
@@ -226,6 +227,13 @@ async function refresh(){
  $('#test-money-status').textContent=testBalance?'TEST ONLY — ready to simulate a 1,000 L$ payout alert for '+(s.recipient_username||'the second player')+'.':'No test money loaded.';
  const ready=Number(s.ready_payments||0);
  $('#reward-status').textContent=ready?ready+' × 1,000 L$ payment'+(ready===1?' is':'s are')+' ready.':Math.max(0,1000-Number(s.balance||0))+' L$ until the next 1,000 L$ payment.';
+ const requestEl=$('#collect-request-status');
+ const requestedForCurrent=ready&&Number(s.last_collect_request_balance||0)===Number(s.balance||0)&&s.last_collect_request_at;
+ if(requestedForCurrent){
+   const when=new Date(s.last_collect_request_at);
+   requestEl.textContent='💰 '+(s.recipient_username||'Benefactor')+' tapped Collect Rewards · '+when.toLocaleString();
+   requestEl.style.display='block';
+ }else requestEl.style.display='none';
  $('#payment-box').style.display=ready?'block':'none';
  $('#payment-detail').textContent=ready?((Number(s.balance||0)-1000)+' L$ will remain after one 1,000 L$ payment.'):'';
 
