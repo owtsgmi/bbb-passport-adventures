@@ -32,6 +32,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
 <section class="card">
 <h3>2. Pick an adventure</h3>
 <p>Open <b>Choose Another Adventure</b>. The first control inside is the prominent <b>✨ Pick Random Adventure</b> button. Each adventure has exactly <b>3 passport stops</b>.</p>
+<p>For a club with more than one active player, use the compact <b>Playing this adventure</b> choices beneath the random button. Only those selected players are included in that run, and the selection is saved as a snapshot so later roster changes do not rewrite the result.</p>
 <p>The current adventure stays pinned at the top so you can jump back to it easily while you're moving around Second Life. It is <b>locked by default</b> so an accidental tap on <b>Pick Random Adventure</b> or another adventure cannot replace it.</p><p>To intentionally switch, uncheck <b>Adventure locked</b> on the Current Adventure bar. The app will still ask for confirmation before replacing it, and the newly selected adventure locks itself automatically.</p>
 <p>The adventure stop list stays clean: each stop row shows the BBB location photo, place, status, and its own Firestorm copy button. The old extra Travel / Next stop / Copy destination block above the list has been removed.</p>
 <p>A zoomable Second Life map appears at the bottom of the current adventure and marks all three stops. Use <b>Fit</b> to frame the adventure or <b>World</b> to zoom out across the broader Second Life grid. Every stop in the current adventure is selectable: click the stop row or its <b>🎯 Focus</b> button to reset any previous pan/zoom and jump the map back to region-level detail for that stop.</p>
@@ -105,7 +106,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
     </section>
     <section class="archcard">
       <h3>Private settings</h3>
-      <p>Email magic links provide account identity; club membership and owner/admin roles control access. Row Level Security and the authenticated club service prevent one club from reading another club's private gameplay.</p>
+      <p>Email magic links provide account identity; club membership and owner/admin roles control access. Row Level Security and the authenticated club service prevent one club from reading another club's private gameplay. A signed-in player's raw StaFi URL stays in that player's private settings and is never included in the club roster payload.</p>
       <p>The original two-player installation keeps its browser-encrypted StaFi links and Secret Club Code for migration. The Secret Club Code can prove ownership when claiming that original club, but it is no longer used as identity for new clubs.</p>
     </section>
     <section class="archcard">
@@ -125,20 +126,12 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
       <p>Users should never post Secret Club Codes, Owner Passphrases, or private StaFi links there.</p>
     </section>
     <section class="archcard">
-      <h3>Future public multi-user roadmap</h3>
-      <p>The public version should keep the low-friction feel while replacing shared browser state with real user identity and group-scoped data.</p>
-      <ol>
-        <li><b>Add lightweight Supabase Auth:</b> magic-link or one-time-code sign-in, with a profile/display name. No need for traditional passwords.</li>
-        <li><b>Create Clubs:</b> one user creates a club/pair/group and invites others with a simple invite link or short join code. A user can belong to more than one club.</li>
-        <li><b>Make all game state club-scoped:</b> current adventure, adventure history, reward rules, payouts, and settings belong to a club rather than one global row.</li>
-        <li><b>Make stamp progress user-scoped:</b> each member gets their own passport progress records. StaFi links remain private to that user; the club only needs the resulting stamp state.</li>
-        <li><b>Use RLS everywhere:</b> Supabase policies should allow users to see/change only their own profile data and clubs they actually belong to. Club owners/admins get explicit moderation permissions.</li>
-        <li><b>Add live collaboration:</b> subscribe to club state changes so adventure progress updates instantly across members' devices.</li>
-        <li><b>Generalize rewards:</b> move KK/AA-specific ownership into configurable club rules: who receives the prize, who sponsors it, the reward range or fixed amount, and whether everyone or selected members must complete a run.</li>
-        <li><b>Migrate this prototype:</b> preserve the existing AA/KK history by converting it into the first club, keeping completed adventures and payout records intact.</li>
-        <li><b>Harden public features:</b> rate-limit feedback/invites, add basic abuse controls, and eventually replace the temporary Owner Passphrase with authenticated owner/admin roles.</li>
-      </ol>
-      <p class="small">The shared public BBB catalog should stay global/read-only; private passport progress and club gameplay should stay isolated per user and club.</p>
+      <h3>Multiuser clubs today</h3>
+      <p>Email magic-link accounts, independent clubs, invite links, owner/admin/member roles, and club switching are live. A couple is simply a two-player club; larger groups can keep a bigger roster and choose the participants for each adventure.</p>
+      <p>Every adventure run snapshots its selected participants. Per-player stamps, run completion, Treasure rewards, collection requests, and payment records remain inside that club.</p>
+      <p>Treasure roles are explicit: a club owner/admin chooses one payer and one Treasure recipient. Reward amounts are generated by the authenticated backend only after all selected participants finish the run; browsers cannot submit or alter reward amounts.</p>
+      <p>The original AA/KK installation remains available as the rollback-safe signed-out game until it is claimed with the existing Secret Club Code. Claiming it preserves its player slots and history.</p>
+      <p class="small">The shared public BBB catalog stays global/read-only; private passport progress and club gameplay stay isolated per user and club.</p>
     </section>
     <section class="archcard">
       <h3>Current boundaries</h3>
@@ -147,7 +140,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
         <li>The public BBB mirror and the private StaFi progress system are separate.</li>
         <li>Feedback submission is public, but curation is owner-only through a separate private Owner Passphrase.</li>
         <li>Nearby-stop ranking is best-effort until complete grid-wide coordinates are available.</li>
-        <li>The personal two-player reward model can be generalized later without changing the basic adventure engine.</li>
+        <li>Automatic personal StaFi importing is still pending; signed-in players currently use the per-stop Mark stamp control.</li>
         <li>Owner-only moderation is code-based rather than account-based: anyone who possesses the private Owner Passphrase would have curator rights, so that code must remain private.</li>
       </ul>
     </section>

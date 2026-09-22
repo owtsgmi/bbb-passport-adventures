@@ -1,4 +1,4 @@
-let clubMode=false,clubData=null,clubPlayers=[],clubProgress=new Map(),clubRuns=[],clubParticipants=[];
+let clubMode=false,clubData=null,clubPlayers=[],clubProgress=new Map(),clubRuns=[],clubParticipants=[],clubParticipantSelection=new Set();
 function activePlayers(){return clubMode?clubPlayers.filter(function(p){return p.is_active}):[]}
 function viewedPlayer(){return clubMode?(clubPlayers.find(function(p){return p.id===currentView})||activePlayers()[0]||null):null}
 function viewedDone(){if(!clubMode)return currentView==='partner'?partnerDone:meDone;return clubProgress.get((viewedPlayer()||{}).id)||new Set()}
@@ -11,24 +11,39 @@ setView=function(v){currentView=v;if(clubMode)localStorage.setItem('bbb-club-vie
 startedAdventure=function(a){return started.has(a.id)||(clubMode?activePlayers().some(function(p){return a.stamps.some(function(st){return (clubProgress.get(p.id)||new Set()).has(st.id)})}):a.stamps.some(function(st){return meDone.has(st.id)||partnerDone.has(st.id)}))};
 togetherComplete=function(a){if(!clubMode)return personComplete(a,meDone)&&personComplete(a,partnerDone);const people=participantPlayers(a);return people.length>0&&people.every(function(p){return personComplete(a,clubProgress.get(p.id)||new Set())})};
 sharedNextIndex=function(a){const people=participantPlayers(a);let i=a.stamps.findIndex(function(st){return clubMode?(!people.length||people.some(function(p){return !(clubProgress.get(p.id)||new Set()).has(st.id)})):!(meDone.has(st.id)&&partnerDone.has(st.id))});return i<0?0:i};
+const legacySyncCompletedRewardsToPayouts=syncCompletedRewardsToPayouts;
+syncCompletedRewardsToPayouts=function(){return clubMode?false:legacySyncCompletedRewardsToPayouts()};
+function selectedParticipantIds(){const active=activePlayers(),chosen=active.filter(function(p){return clubParticipantSelection.has(p.id)}).map(function(p){return p.id});return chosen.length?chosen:active.map(function(p){return p.id})}
+function setClubParticipant(id,checked){if(checked)clubParticipantSelection.add(id);else clubParticipantSelection.delete(id);renderParticipantPicker()}
+function renderParticipantPicker(){
+ const host=document.getElementById('club-participant-picker');if(!host)return;
+ if(!clubMode){host.innerHTML='';host.classList.remove('show');return}
+ const active=activePlayers();if(!clubParticipantSelection.size)active.forEach(function(p){clubParticipantSelection.add(p.id)});
+ host.classList.add('show');host.innerHTML='<div class="participantlabel">Playing this adventure</div><div class="participantchoices">'+active.map(function(p){return '<label><input type="checkbox" '+(clubParticipantSelection.has(p.id)?'checked ':'')+'onchange="setClubParticipant(&quot;'+p.id+'&quot;,this.checked)"> '+esc(p.display_name)+'</label>'}).join('')+'</div><div class="tiny">Choose the people joining the next adventure. Everyone selected must collect all 3 stamps.</div>';
+}
 const legacyStartAdventure=startAdventure;
-startAdventure=function(id){const ok=legacyStartAdventure(id);if(ok&&clubMode)PassportCloud.call('start_adventure',{club_id:clubData.club.id,adventure_id:Number(id),player_ids:activePlayers().map(function(p){return p.id})}).then(function(){return pollClub(true)}).catch(function(){toast('Adventure saved here; club sync will retry.')});return ok};
-function canEditViewedPlayer(){const p=viewedPlayer(),session=window.PassportCloud&&PassportCloud.session(),u=session&&session.user&&session.user.id,role=clubData&&clubData.membership&&clubData.membership.role;return !!(clubMode&&p&&(p.user_id===u||role==='owner'||role==='admin'))}
+startAdventure=function(id){
+ const adventure=adventures.find(function(a){return a.id===Number(id)}),players=selectedParticipantIds();
+ if(clubMode&&!players.length){toast('Choose at least one player for this adventure.');return false}
+ const ok=legacyStartAdventure(id);
+ if(ok&&clubMode&&adventure)PassportCloud.call('start_adventure',{club_id:clubData.club.id,adventure_id:Number(id),stamp_ids:adventure.stamps.map(function(st){return st.id}),player_ids:players}).then(function(){return pollClub(true)}).catch(function(){toast('Adventure saved here; club sync will retry.')});return ok
+};
+function canEditViewedPlayer(){const p=viewedPlayer(),session=window.PassportCloud&&PassportCloud.session(),u=session&&session.user&&session.user.id,role=clubData&&clubData.membership&&clubData.membership.role;return !!(clubMode&&p&&(p.user_id===u||(!p.user_id&&(role==='owner'||role==='admin'))))}
 async function toggleClubStamp(advId,stampId){
  const p=viewedPlayer(),set=viewedDone();if(!clubMode||!p)return;
  const completed=!set.has(stampId);if(completed)set.add(stampId);else set.delete(stampId);render();
- try{await PassportCloud.call('set_stamp',{club_id:clubData.club.id,player_id:p.id,stamp_id:stampId,completed:completed});syncCompletedRewardsToPayouts();await writeCloud();await pollClub(true)}catch(e){if(completed)set.delete(stampId);else set.add(stampId);render();toast('Could not update that stamp.')}
+ try{await PassportCloud.call('set_stamp',{club_id:clubData.club.id,player_id:p.id,stamp_id:stampId,adventure_id:Number(advId),completed:completed});await pollClub(true)}catch(e){if(completed)set.delete(stampId);else set.add(stampId);render();toast('Could not update that stamp.')}
 }
 const legacyMissionRows=missionRows;
 missionRows=function(a,mapInteractive){
  if(!clubMode)return legacyMissionRows(a,mapInteractive);
- mapInteractive=!!mapInteractive;const next=sharedNextIndex(a),selected=viewedDone(),people=participantPlayers(a),player=viewedPlayer();
+ mapInteractive=!!mapInteractive;const next=sharedNextIndex(a),selected=viewedDone(),people=participantPlayers(a),player=viewedPlayer(),run=clubRuns.find(function(r){return Number(r.adventure_id)===Number(a.id)}),canMark=run&&run.status==='active'&&canEditViewedPlayer();
  let h='<table class="mission-table"><thead><tr><th>#</th><th>Passport stop</th><th>'+esc((player&&player.display_name||'Player')+' status')+'</th><th></th></tr></thead><tbody>';
  a.stamps.forEach(function(st,i){
    const personDone=selected.has(st.id),nr=i===next&&!togetherComplete(a),count=people.filter(function(p){return (clubProgress.get(p.id)||new Set()).has(st.id)}).length;
    const cls=(nr?'nextrow ':'')+(mapInteractive?'mapselectable':''),rowClick=mapInteractive?' onclick="selectAdventureStop('+a.id+','+i+')"':'';
    const mapButton=mapInteractive?'<button class="sl mapbtn" title="Reset map and zoom to this stop" onclick="event.stopPropagation();selectAdventureStop('+a.id+','+i+')">🎯 Focus</button>':'';
-   const stampButton=canEditViewedPlayer()?'<br><button class="stampbtn" onclick="event.stopPropagation();toggleClubStamp('+a.id+','+st.id+')">'+(personDone?'Undo':'Mark stamp')+'</button>':'';
+   const stampButton=canMark?'<br><button class="stampbtn" onclick="event.stopPropagation();toggleClubStamp('+a.id+','+st.id+')">'+(personDone?'Undo':'Mark stamp')+'</button>':'';
    h+='<tr class="'+cls+'" data-map-row="'+(mapInteractive?i:'')+'" id="trip-'+a.id+'-stop-'+(i+1)+'"'+rowClick+'><td>'+(i+1)+'</td><td><div class="stopinfo">'+stampThumbHtml(st)+'<div><div class="place">'+esc(st.name)+(nr?'<span class="nexttag">NEXT</span>':'')+'</div><div class="where">'+esc(st.region)+' · '+st.x+', '+st.y+', '+st.z+'</div></div></div></td><td class="who">'+(personDone?'✅ Got it':'○ Needed')+'<span class="small"> · '+count+'/'+people.length+' players</span>'+stampButton+'</td><td class="act"><button class="sl" onclick="event.stopPropagation();copy(fsUrl(adventures.find(function(x){return x.id==='+a.id+'}).stamps['+i+']),&quot;Destination copied for Firestorm&quot;)">🔥 Copy</button>'+mapButton+'</td></tr>';
  });
  return h+'</tbody></table>';
@@ -40,7 +55,7 @@ pinnedHtml=function(a){
  const treasureBadge=adventureTreasureEnabled?' <span class="badge mystery">🎁 Mystery L$</span>':'',treasureNote=adventureTreasureEnabled?' · L$ amount reveals only when everyone finishes':'',person=(viewedPlayer()||{}).display_name||'Player';
  return '<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>'+esc(a.title)+treasureBadge+'</h3><div class="meta">'+esc(a.zone)+' · about '+a.minutes+' min · 3 stops · '+people.length+' players</div><div class="progress"><div class="bar" style="width:'+Math.round((shown/a.stamps.length)*100)+'%"></div></div><div class="small">'+esc(person)+' passport: '+shown+'/'+a.stamps.length+' · Group: '+together+'/'+a.stamps.length+treasureNote+'</div></div></div><div style="padding:0 17px 17px">'+missionRows(a,true)+'</div><div class="runmap"><div id="run-map"></div></div></div>';
 };
-function beneficiaryPlayer(){return clubMode?(activePlayers().find(function(p){return !p.is_payer})||activePlayers()[0]):null}
+function beneficiaryPlayer(){return clubMode?(activePlayers().find(function(p){return p.is_beneficiary})||activePlayers().find(function(p){return !p.is_payer})||activePlayers()[0]):null}
 const legacyPartnerAheadCount=partnerAheadCount;
 partnerAheadCount=function(){if(!clubMode)return legacyPartnerAheadCount();const b=beneficiaryPlayer();return b?adventures.filter(function(a){return participantPlayers(a).filter(function(p){return p.id!==b.id}).every(function(p){return personComplete(a,clubProgress.get(p.id)||new Set())})&&!personComplete(a,clubProgress.get(b.id)||new Set())}).length:0};
 const legacyRewardHtml=rewardHtml;
@@ -65,5 +80,6 @@ render=function(){
  const progressEl=$('#passport-progress'),remainingEl=$('#passport-remaining');if(progressEl)progressEl.textContent=passportDone+' / '+TOTAL_PASSPORT_STAMPS;if(remainingEl)remainingEl.textContent=toGo?toGo+' to go':'Passport complete!';
  const tabs=document.getElementById('player-tabs');if(clubMode&&tabs)tabs.innerHTML=activePlayers().map(function(p,i){return '<button class="viewtab '+(currentView===p.id?'active':'')+'" onclick="setView(&quot;'+p.id+'&quot;)">'+(i===0?'🗡️':i===1?'👽':'🧭')+' '+esc(p.display_name)+'</button>'}).join('');
  const context=document.getElementById('club-context');if(context)context.innerHTML=clubMode?'Playing with <b>'+esc(clubData.club.name)+'</b> · <a href="settings.html">switch or invite players</a>':'';
+ renderParticipantPicker();
 };
 render();

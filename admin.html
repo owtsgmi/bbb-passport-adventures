@@ -385,6 +385,6 @@ $('#resolve-recipient').onclick=()=>resolveRecipient().catch(e=>say('Benefactor 
 $('#mark-paid').onclick=()=>markPaid().catch(e=>say(e.message==='threshold_not_met'?'The balance is below 1,000 L$.':'Could not record payment: '+e.message));
 refresh().catch(e=>say('Admin status could not load: '+e.message));
 </script>
-<script src="club-admin.js?v=1"></script>
+<script src="club-admin.js?v=2"></script>
 </body>
 </html>

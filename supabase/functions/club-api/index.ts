@@ -15,9 +15,10 @@ function reply(data:unknown,status=200){return new Response(JSON.stringify(data)
 function cleanText(value:unknown,max:number){return String(value||"").trim().replace(/\s+/g," ").slice(0,max)}
 function uuid(value:unknown){const s=String(value||"");return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)?s:""}
 function ints(value:unknown){return Array.isArray(value)?[...new Set(value.map(Number).filter(Number.isSafeInteger).filter(n=>n>0&&n<100000))]:[]}
-function randomCode(){const a=new Uint8Array(8);crypto.getRandomValues(a);return Array.from(a,b=>b.toString(16).padStart(2,"0")).join("").toUpperCase()}
+function randomCode(){const a=new Uint8Array(16);crypto.getRandomValues(a);return Array.from(a,b=>b.toString(16).padStart(2,"0")).join("").toUpperCase()}
 function randomSlug(name:string){const base=name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,42)||"passport-club";return base+"-"+randomCode().slice(0,6).toLowerCase()}
-function rewardRemaining(row:any){const total=Math.max(0,Number(row?.linden||0));if(row?.paid)return 0;return Math.max(0,total-Math.max(0,Number(row?.paid_linden||0)))}
+function randomReward(){const a=new Uint32Array(1);crypto.getRandomValues(a);return 20+(a[0]%81)}
+function rewardRemaining(row:any){return Math.max(0,Number(row?.amount||0)-Math.max(0,Number(row?.paid_amount||0)))}
 async function sha256(s:string){const h=new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s.trim().toUpperCase())));return Array.from(h,b=>b.toString(16).padStart(2,"0")).join("")}
 
 async function db(path:string,init:RequestInit={}){
@@ -39,6 +40,34 @@ async function membership(clubId:string,userId:string){
 }
 async function requireMember(clubId:string,userId:string){const m=await membership(clubId,userId);if(!m)throw new Error("not_a_club_member");return m}
 function manager(m:any){return m?.role==="owner"||m?.role==="admin"}
+async function clubBalance(clubId:string,beneficiaryId=""){
+  const suffix=beneficiaryId?"&beneficiary_player_id=eq."+beneficiaryId:"";
+  const rows=await db("club_rewards?club_id=eq."+clubId+suffix+"&select=amount,paid_amount");
+  return rows.reduce((sum:number,row:any)=>sum+rewardRemaining(row),0);
+}
+async function finalizeRun(clubId:string,adventureId:number){
+  const run=(await db("club_adventure_runs?club_id=eq."+clubId+"&adventure_id=eq."+adventureId+"&select=id,status,stamp_ids"))?.[0];
+  if(!run||run.status==="completed")return null;
+  const stampIds=ints(run.stamp_ids);if(stampIds.length!==3)return null;
+  const participants=await db("club_run_participants?run_id=eq."+run.id+"&select=player_id");
+  const playerIds=participants.map((p:any)=>p.player_id);if(!playerIds.length)return null;
+  const progress=await db("club_stamp_progress?club_id=eq."+clubId+"&player_id=in.("+playerIds.join(",")+")&stamp_id=in.("+stampIds.join(",")+")&select=player_id,stamp_id");
+  const complete=playerIds.every((playerId:string)=>stampIds.every((stampId:number)=>progress.some((p:any)=>p.player_id===playerId&&Number(p.stamp_id)===stampId)));
+  if(!complete)return null;
+  const now=new Date().toISOString();
+  await db("club_adventure_runs?id=eq."+run.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"completed",completed_at:now})});
+  const club=(await db("clubs?id=eq."+clubId+"&select=treasure_enabled"))?.[0];
+  if(!club?.treasure_enabled)return {completed:true,reward:null};
+  const existing=(await db("club_rewards?run_id=eq."+run.id+"&select=*"))?.[0];
+  if(existing)return {completed:true,reward:existing};
+  const beneficiary=(await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&is_beneficiary=eq.true&select=id&limit=1"))?.[0]
+    ||(await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&is_payer=eq.false&select=id&order=sort_order.asc,created_at.asc&limit=1"))?.[0]
+    ||(await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&select=id&order=sort_order.asc,created_at.asc&limit=1"))?.[0];
+  if(!beneficiary)return {completed:true,reward:null};
+  const created=(await db("club_rewards?on_conflict=run_id",{method:"POST",headers:{Prefer:"resolution=ignore-duplicates,return=representation"},body:JSON.stringify({club_id:clubId,run_id:run.id,beneficiary_player_id:beneficiary.id,amount:randomReward()})}))?.[0];
+  const reward=created||(await db("club_rewards?run_id=eq."+run.id+"&select=*"))?.[0]||null;
+  return {completed:true,reward};
+}
 async function loadClub(clubId:string,userId:string){
   const m=await requireMember(clubId,userId);
   const runs=await db("club_adventure_runs?club_id=eq."+clubId+"&select=*&order=started_at.asc");
@@ -46,7 +75,7 @@ async function loadClub(clubId:string,userId:string){
   const [clubs,members,players,boards,participants,stamps,rewards,collectRequests]=await Promise.all([
     db("clubs?id=eq."+clubId+"&select=id,name,slug,owner_id,treasure_enabled,payout_threshold,is_legacy,created_at,updated_at"),
     db("club_members?club_id=eq."+clubId+"&select=user_id,role,joined_at&order=joined_at.asc"),
-    db("club_players?club_id=eq."+clubId+"&select=id,user_id,display_name,sl_username,sort_order,is_active,is_payer,created_at,updated_at&order=sort_order.asc,created_at.asc"),
+    db("club_players?club_id=eq."+clubId+"&select=id,user_id,display_name,sl_username,sort_order,is_active,is_payer,is_beneficiary,created_at,updated_at&order=sort_order.asc,created_at.asc"),
     db("club_board_state?club_id=eq."+clubId+"&select=*"),
     runIds.length?db("club_run_participants?select=run_id,player_id,joined_at&run_id=in.("+runIds.join(",")+")"):Promise.resolve([]),
     db("club_stamp_progress?club_id=eq."+clubId+"&select=player_id,stamp_id,source,completed_at"),
@@ -81,15 +110,18 @@ Deno.serve(async(req:Request)=>{
       const ids=memberships.map((m:any)=>m.club_id);
       const clubs=ids.length?await db("clubs?id=in.("+ids.join(",")+")&select=id,name,slug,owner_id,treasure_enabled,payout_threshold,is_legacy,created_at,updated_at"):[];
       const profile=(await db("profiles?user_id=eq."+user.id+"&select=user_id,display_name,sl_username"))?.[0]||null;
-      return reply({ok:true,user:{id:user.id,email:user.email},profile,clubs:clubs.map((c:any)=>({...c,role:memberships.find((m:any)=>m.club_id===c.id)?.role||"member"}))});
+      const privateSettings=(await db("user_private_settings?user_id=eq."+user.id+"&select=stafi_url"))?.[0]||null;
+      return reply({ok:true,user:{id:user.id,email:user.email},profile,private_settings:privateSettings,clubs:clubs.map((c:any)=>({...c,role:memberships.find((m:any)=>m.club_id===c.id)?.role||"member"}))});
     }
     if(action==="load")return reply({ok:true,...await loadClub(uuid(body.club_id),user.id)});
 
     if(action==="update_profile"){
       const display=cleanText(body.display_name,60);if(!display)return reply({ok:false,error:"display_name_required"},400);
       const sl=cleanText(body.sl_username,80)||null;
+      const stafi=body.stafi_url===undefined?undefined:String(body.stafi_url||"").trim().slice(0,1000)||null;
       const rows=await db("profiles?user_id=eq."+user.id,{method:"PATCH",headers:{Prefer:"return=representation"},body:JSON.stringify({display_name:display,sl_username:sl})});
       await db("club_players?user_id=eq."+user.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({display_name:display,sl_username:sl})});
+      if(stafi!==undefined)await db("user_private_settings?on_conflict=user_id",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({user_id:user.id,stafi_url:stafi})});
       return reply({ok:true,profile:rows?.[0]});
     }
 
@@ -99,13 +131,17 @@ Deno.serve(async(req:Request)=>{
       const code=randomCode(),clubId=crypto.randomUUID();
       const club=(await db("clubs",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({id:clubId,name,slug:randomSlug(name),owner_id:user.id,join_code_hash:await sha256(code),treasure_enabled:false})}))?.[0];
       await db("club_members",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({club_id:clubId,user_id:user.id,role:"owner"})});
-      await db("club_players",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({club_id:clubId,user_id:user.id,display_name:profile.display_name||"Adventurer",sl_username:profile.sl_username||null,sort_order:1,is_payer:true})});
+      await db("club_players",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({club_id:clubId,user_id:user.id,display_name:profile.display_name||"Adventurer",sl_username:profile.sl_username||null,sort_order:1,is_payer:true,is_beneficiary:true})});
       await db("club_board_state",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({club_id:clubId,updated_by:user.id})});
       return reply({ok:true,club,join_code:code});
     }
 
     if(action==="join"){
       const code=cleanText(body.join_code,40).toUpperCase();if(code.length<8)return reply({ok:false,error:"bad_join_code"},400);
+      const limiter=(await db("profiles?user_id=eq."+user.id+"&select=join_attempts,join_window_started_at"))?.[0]||{};
+      const windowStart=limiter.join_window_started_at?new Date(limiter.join_window_started_at).getTime():0,inside=windowStart&&Date.now()-windowStart<10*60*1000,attempts=inside?Math.max(0,Number(limiter.join_attempts||0)):0;
+      if(attempts>=20)return reply({ok:false,error:"join_rate_limited"},429);
+      await db("profiles?user_id=eq."+user.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({join_attempts:attempts+1,join_window_started_at:inside?limiter.join_window_started_at:new Date().toISOString()})});
       const clubs=await db("clubs?join_code_hash=eq."+await sha256(code)+"&select=id,name");const club=clubs?.[0];
       if(!club)return reply({ok:false,error:"join_code_not_found"},404);
       const profile=(await db("profiles?user_id=eq."+user.id+"&select=display_name,sl_username"))?.[0]||{};
@@ -116,6 +152,13 @@ Deno.serve(async(req:Request)=>{
       }else{
         await db("club_players?on_conflict=club_id,user_id",{method:"POST",headers:{Prefer:"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify({club_id:club.id,user_id:user.id,display_name:profile.display_name||"Adventurer",sl_username:profile.sl_username||null,sort_order:100})});
       }
+      const joinedPlayer=(await db("club_players?club_id=eq."+club.id+"&user_id=eq."+user.id+"&select=id"))?.[0];
+      const currentBeneficiary=(await db("club_players?club_id=eq."+club.id+"&is_beneficiary=eq.true&select=id,is_payer&limit=1"))?.[0];
+      if(joinedPlayer&&currentBeneficiary?.is_payer&&joinedPlayer.id!==currentBeneficiary.id){
+        await db("club_players?club_id=eq."+club.id+"&is_beneficiary=eq.true",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({is_beneficiary:false})});
+        await db("club_players?id=eq."+joinedPlayer.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({is_beneficiary:true})});
+      }
+      await db("profiles?user_id=eq."+user.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({join_attempts:0,join_window_started_at:null})});
       return reply({ok:true,club_id:club.id,club_name:club.name});
     }
 
@@ -159,23 +202,40 @@ Deno.serve(async(req:Request)=>{
       const patch:any={};if(body.display_name!==undefined){patch.display_name=cleanText(body.display_name,60);if(!patch.display_name)return reply({ok:false,error:"display_name_required"},400)}
       if(body.sl_username!==undefined)patch.sl_username=cleanText(body.sl_username,80)||null;
       if(manager(m)&&body.is_active!==undefined)patch.is_active=body.is_active===true;
-      if(manager(m)&&body.is_payer!==undefined)patch.is_payer=body.is_payer===true;
+      if(manager(m)&&body.is_payer===true){await db("club_players?club_id=eq."+clubId+"&is_payer=eq.true",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({is_payer:false})});patch.is_payer=true}
+      if(manager(m)&&body.is_beneficiary===true){await db("club_players?club_id=eq."+clubId+"&is_beneficiary=eq.true",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({is_beneficiary:false})});patch.is_beneficiary=true}
       await db("club_players?id=eq."+playerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(patch)});return reply({ok:true});
+    }
+    if(action==="set_member_role"){
+      if(m.role!=="owner")return reply({ok:false,error:"owner_required"},403);
+      const targetUser=uuid(body.user_id),role=String(body.role||"");if(!targetUser||!(["admin","member"].includes(role)))return reply({ok:false,error:"bad_member_role"},400);
+      const target=(await db("club_members?club_id=eq."+clubId+"&user_id=eq."+targetUser+"&select=role"))?.[0];if(!target)return reply({ok:false,error:"member_not_found"},404);if(target.role==="owner")return reply({ok:false,error:"owner_role_locked"},409);
+      await db("club_members?club_id=eq."+clubId+"&user_id=eq."+targetUser,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({role})});return reply({ok:true});
+    }
+    if(action==="remove_member"){
+      if(!manager(m))return reply({ok:false,error:"manager_required"},403);
+      const targetUser=uuid(body.user_id),target=(await db("club_members?club_id=eq."+clubId+"&user_id=eq."+targetUser+"&select=role"))?.[0];if(!target)return reply({ok:false,error:"member_not_found"},404);
+      if(target.role==="owner"||(m.role!=="owner"&&target.role==="admin"))return reply({ok:false,error:"not_authorized"},403);
+      await db("club_members?club_id=eq."+clubId+"&user_id=eq."+targetUser,{method:"DELETE",headers:{Prefer:"return=minimal"}});
+      await db("club_players?club_id=eq."+clubId+"&user_id=eq."+targetUser,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({user_id:null})});return reply({ok:true});
+    }
+    if(action==="leave_club"){
+      if(m.role==="owner")return reply({ok:false,error:"owner_cannot_leave"},409);
+      await db("club_members?club_id=eq."+clubId+"&user_id=eq."+user.id,{method:"DELETE",headers:{Prefer:"return=minimal"}});
+      await db("club_players?club_id=eq."+clubId+"&user_id=eq."+user.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({user_id:null})});return reply({ok:true});
     }
     if(action==="save_board"){
       const patch:any={updated_by:user.id};
       if(body.started!==undefined)patch.started=ints(body.started);
       if(body.current_adventure!==undefined)patch.current_adventure=Math.max(0,Number(body.current_adventure)||0);
       if(body.adventure_locked!==undefined)patch.adventure_locked=body.adventure_locked===true;
-      if(body.adventure_rewards&&typeof body.adventure_rewards==="object"&&!Array.isArray(body.adventure_rewards)&&JSON.stringify(body.adventure_rewards).length<100000)patch.adventure_rewards=body.adventure_rewards;
-      if(Array.isArray(body.payout_log)&&JSON.stringify(body.payout_log).length<100000)patch.payout_log=body.payout_log.slice(0,250);
       await db("club_board_state?club_id=eq."+clubId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(patch)});return reply({ok:true});
     }
     if(action==="request_collect"){
-      const playerId=uuid(body.player_id),player=(await db("club_players?id=eq."+playerId+"&club_id=eq."+clubId+"&select=id,user_id,display_name"))?.[0];
-      if(!player)return reply({ok:false,error:"player_not_found"},404);if(!manager(m)&&player.user_id!==user.id)return reply({ok:false,error:"not_authorized"},403);
-      const board=(await db("club_board_state?club_id=eq."+clubId+"&select=payout_log"))?.[0]||{};const log=Array.isArray(board.payout_log)?board.payout_log:[];
-      const balance=log.reduce((n:number,r:any)=>n+rewardRemaining(r),0);if(balance<1000)return reply({ok:false,error:"threshold_not_met",balance},409);
+      const club=(await db("clubs?id=eq."+clubId+"&select=treasure_enabled"))?.[0];if(!club?.treasure_enabled)return reply({ok:false,error:"treasure_disabled"},409);
+      const playerId=uuid(body.player_id),player=(await db("club_players?id=eq."+playerId+"&club_id=eq."+clubId+"&is_beneficiary=eq.true&select=id,user_id,display_name"))?.[0];
+      if(!player)return reply({ok:false,error:"beneficiary_not_found"},404);if(!manager(m)&&player.user_id!==user.id)return reply({ok:false,error:"not_authorized"},403);
+      const balance=await clubBalance(clubId,playerId);if(balance<1000)return reply({ok:false,error:"threshold_not_met",balance},409);
       const existing=await db("club_collect_requests?club_id=eq."+clubId+"&beneficiary_player_id=eq."+playerId+"&status=eq.pending&select=id,created_at");
       if(existing?.[0])return reply({ok:true,already_requested:true,balance,requested_at:existing[0].created_at});
       const row=(await db("club_collect_requests",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({club_id:clubId,requested_by:user.id,beneficiary_player_id:playerId})}))?.[0];
@@ -184,34 +244,33 @@ Deno.serve(async(req:Request)=>{
     }
     if(action==="mark_paid"){
       if(!manager(m))return reply({ok:false,error:"manager_required"},403);
-      const board=(await db("club_board_state?club_id=eq."+clubId+"&select=payout_log"))?.[0]||{},log=Array.isArray(board.payout_log)?board.payout_log:[];
-      const balance=log.reduce((n:number,r:any)=>n+rewardRemaining(r),0);if(balance<1000)return reply({ok:false,error:"threshold_not_met",balance},409);
-      let left=1000;const now=new Date().toISOString();
-      for(const item of log.map((r:any,i:number)=>({r,i})).sort((a:any,b:any)=>new Date(a.r?.at||0).getTime()-new Date(b.r?.at||0).getTime())){
-        if(left<=0)break;const r=log[item.i],rem=rewardRemaining(r);if(rem<=0)continue;const take=Math.min(rem,left),already=Math.max(0,Number(r?.paid_linden||0));r.paid_linden=already+take;r.last_payment_at=now;r.last_payment_manual=true;if(r.paid_linden>=Math.max(0,Number(r?.linden||0))){r.paid=true;r.paid_at=r.paid_at||now}left-=take;
-      }
-      await db("club_board_state?club_id=eq."+clubId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({payout_log:log,updated_by:user.id})});
-      await db("club_collect_requests?club_id=eq."+clubId+"&status=eq.pending",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"paid",handled_at:now,handled_by:user.id})});
-      return reply({ok:true,paid:1000,remaining_balance:log.reduce((n:number,r:any)=>n+rewardRemaining(r),0)});
+      try{
+        const remaining=await db("rpc/allocate_club_payment",{method:"POST",body:JSON.stringify({p_club_id:clubId,p_handler:user.id})});
+        return reply({ok:true,paid:1000,remaining_balance:Number(remaining||0)});
+      }catch(e){const message=String((e as Error)?.message||e);if(message.includes("threshold_not_met"))return reply({ok:false,error:"threshold_not_met"},409);if(message.includes("beneficiary_not_found"))return reply({ok:false,error:"beneficiary_not_found"},409);throw e}
     }
     if(action==="start_adventure"){
-      const adventureId=Number(body.adventure_id);if(!Number.isSafeInteger(adventureId)||adventureId<1)return reply({ok:false,error:"bad_adventure"},400);
-      const run=(await db("club_adventure_runs?on_conflict=club_id,adventure_id",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify({club_id:clubId,adventure_id:adventureId,status:"active",locked:true,started_by:user.id,completed_at:null})}))?.[0];
+      const adventureId=Number(body.adventure_id);if(!Number.isSafeInteger(adventureId)||adventureId<1||adventureId>127)return reply({ok:false,error:"bad_adventure"},400);
+      const stampIds=ints(body.stamp_ids);if(stampIds.length!==3)return reply({ok:false,error:"three_stamps_required"},400);
+      const run=(await db("club_adventure_runs?on_conflict=club_id,adventure_id",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify({club_id:clubId,adventure_id:adventureId,status:"active",locked:true,started_by:user.id,completed_at:null,stamp_ids:stampIds})}))?.[0];
       const chosen=Array.isArray(body.player_ids)?body.player_ids.map(uuid).filter(Boolean):[];const active=await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&select=id");
-      const allowed=new Set(active.map((p:any)=>p.id));const playerIds=(chosen.length?chosen:active.map((p:any)=>p.id)).filter((id:string)=>allowed.has(id));
+      const allowed=new Set<string>(active.map((p:any)=>p.id));const playerIds:string[]=[...new Set<string>((chosen.length?chosen:active.map((p:any)=>p.id)).filter((id:string)=>allowed.has(id)))];if(!playerIds.length)return reply({ok:false,error:"participant_required"},400);
       await db("club_run_participants?run_id=eq."+run.id,{method:"DELETE",headers:{Prefer:"return=minimal"}});
       if(playerIds.length)await db("club_run_participants",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify(playerIds.map((player_id:string)=>({run_id:run.id,player_id})))});
       const board=(await db("club_board_state?club_id=eq."+clubId+"&select=started"))?.[0]||{};
       await db("club_board_state?club_id=eq."+clubId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({started:[...new Set([...(board.started||[]),adventureId])],current_adventure:adventureId,adventure_locked:true,updated_by:user.id})});
-      return reply({ok:true,run_id:run.id,participants:playerIds.length});
+      return reply({ok:true,run_id:run.id,participants:playerIds.length,finalized:await finalizeRun(clubId,adventureId)});
     }
     if(action==="set_stamp"){
       const playerId=uuid(body.player_id),stampId=Number(body.stamp_id);if(!playerId||!Number.isSafeInteger(stampId)||stampId<1)return reply({ok:false,error:"bad_stamp"},400);
       const player=(await db("club_players?id=eq."+playerId+"&club_id=eq."+clubId+"&select=id,user_id"))?.[0];
-      if(!player)return reply({ok:false,error:"player_not_found"},404);if(!manager(m)&&player.user_id!==user.id)return reply({ok:false,error:"own_stamps_only"},403);
+      if(!player)return reply({ok:false,error:"player_not_found"},404);
+      if(player.user_id&&player.user_id!==user.id)return reply({ok:false,error:"own_stamps_only"},403);
+      if(!player.user_id&&!manager(m))return reply({ok:false,error:"manager_required_for_guest"},403);
       if(body.completed===false)await db("club_stamp_progress?club_id=eq."+clubId+"&player_id=eq."+playerId+"&stamp_id=eq."+stampId,{method:"DELETE",headers:{Prefer:"return=minimal"}});
       else await db("club_stamp_progress?on_conflict=club_id,player_id,stamp_id",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({club_id:clubId,player_id:playerId,stamp_id:stampId,source:body.source==="stafi"?"stafi":"manual",completed_by:user.id})});
-      return reply({ok:true});
+      const adventureId=Number(body.adventure_id),finalized=Number.isSafeInteger(adventureId)&&adventureId>0?await finalizeRun(clubId,adventureId):null;
+      return reply({ok:true,finalized});
     }
     return reply({ok:false,error:"unknown_action"},400);
   }catch(e){const message=String((e as Error)?.message||e);console.error(message);const known=["not_a_club_member"];return reply({ok:false,error:known.includes(message)?message:"server_error"},known.includes(message)?403:500)}

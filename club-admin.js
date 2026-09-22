@@ -2,13 +2,13 @@
 'use strict';
 let state=null;
 const el=id=>document.getElementById(id);
-function remaining(r){const total=Math.max(0,Number(r&&r.linden||0));if(r&&r.paid)return 0;return Math.max(0,total-Math.max(0,Number(r&&r.paid_linden||0)))}
+function remaining(r){return Math.max(0,Number(r&&r.amount||0)-Math.max(0,Number(r&&r.paid_amount||0)))}
 async function refresh(){
  await PassportCloud.ready();const clubId=PassportCloud.activeClub(),session=PassportCloud.session();if(!session||!session.user||!clubId)return;
  const d=await PassportCloud.call('load',{club_id:clubId});state=d;
  if(d.membership.role!=='owner'&&d.membership.role!=='admin')return;
  el('club-admin-card').classList.remove('hide');el('club-admin-name').textContent='🎁 '+d.club.name;
- const beneficiary=d.players.find(p=>p.is_active&&!p.is_payer)||d.players.find(p=>p.is_active),balance=(d.board&&d.board.payout_log||[]).reduce((n,r)=>n+remaining(r),0),pending=(d.collect_requests||[]).find(r=>r.status==='pending');
+ const beneficiary=d.players.find(p=>p.is_active&&p.is_beneficiary)||d.players.find(p=>p.is_active&&!p.is_payer)||d.players.find(p=>p.is_active),balance=(d.rewards||[]).filter(r=>!beneficiary||r.beneficiary_player_id===beneficiary.id).reduce((n,r)=>n+remaining(r),0),pending=(d.collect_requests||[]).find(r=>r.status==='pending');
  el('club-beneficiary').textContent=beneficiary&&beneficiary.display_name||'Not set';el('club-balance').textContent=balance+' L$';el('club-treasure-toggle').textContent='Treasure: '+(d.club.treasure_enabled?'ON':'OFF');
  el('club-request').textContent=pending?'🎉 1,000 L$ bonus requested '+new Date(pending.created_at).toLocaleString():'No bonus request waiting.';
  el('club-mark-paid').disabled=balance<1000;el('club-admin-message').textContent=balance>=1000?'Pay 1,000 L$ manually in Second Life, then record it here.':Math.max(0,1000-balance)+' L$ until the next payment.';
