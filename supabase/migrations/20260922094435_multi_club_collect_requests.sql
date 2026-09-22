@@ -1,0 +1,1 @@
+-- Applied to production. The final idempotent definition is consolidated in 20260922093004_multi_club_foundation.sql.
