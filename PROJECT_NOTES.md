@@ -26,12 +26,14 @@ This file is the persistent source of truth for future edits to this project.
 - Player-facing header should stay intentionally simple:
   - title: **Bellisseria Passport Adventures**;
   - short subtitle: **Pick a 3-stop adventure, collect BBB stamps together, and explore Second Life.**
-  - primary actions: **Pick an Adventure** and **Settings**;
+  - keep the top header free of action buttons;
+  - **Settings** lives in the hamburger menu, not beside the passport counter;
   - keep a prominent top-right passport completion counter for the selected player, e.g. **1 / 382**, with the remaining stamp count below it. This is the primary game goal and should remain visually prominent;
   - no cloud-sync text, StaFi-link count, payout status, notification diagnostics, or other technical/admin status in the header.
-- Button text: **Pick an Adventure**.
+- Random selection button text: **Pick Random Adventure**. It appears only inside the expanded **Choose Another Adventure** section.
 - Current adventure loads collapsed.
 - Adult-playful purple/pink/gold style with subtle alien graphics.
+- Settings is available from the hamburger menu on the supporting pages too.
 - Settings is player-oriented and allows:
   - first and second player Second Life usernames (also used as tab names)
   - each person's BBB StaFi progress-page URL
@@ -226,7 +228,7 @@ This file is the persistent source of truth for future edits to this project.
 
 ## Header and player icon conventions
 - Desktop navigation hamburger is an icon-only **☰** in the left gutter, vertically aligned with the page title/alien line rather than sitting on its own row.
-- On narrow/mobile screens the hamburger falls back into normal flow above the title so it remains reachable.
+- At narrower browser widths the hamburger must move inside the header grid rather than remain in the left gutter, so it is never clipped off-screen.
 - First/player-one tab icon: **🗡️**.
 - Second/player-two tab icon: **👽**.
 - Use these same icons for the matching Settings labels and StaFi fields.
