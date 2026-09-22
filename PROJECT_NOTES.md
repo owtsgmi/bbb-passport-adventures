@@ -255,6 +255,11 @@ This file is the persistent source of truth for future edits to this project.
   - show the current L$ total in the collapsed summary;
   - put milestone progress, lifetime prize total, waiting status, and recent prizes behind an on-demand details disclosure;
   - do not use a full-width reward section in the main page flow.
+- On the second-player/benefactor view, once unpaid Adventure Treasure is at least **1,000 L$**, the expanded Treasure details show **Collect Rewards**.
+- **Collect Rewards** requests exactly one 1,000 L$ payout; it never transfers L$ itself.
+- `payout-push` action `request_collect` validates Treasure is enabled and the real unpaid balance is at least 1,000 L$, then notifies the payer through configured browser push and queues a real SL IM when the backend bot is available.
+- Duplicate requests at the exact same unpaid balance are deduped using `bbb_push_config.last_collect_request_balance`; after the payer records a payment and the balance changes, the benefactor may request the next 1,000 L$ chunk.
+- Admin shows a visible note when the current balance has an active benefactor Collect Rewards request.
 - The first-player view may show the same treasure pot for context, but should remain non-technical and contain no payout/admin controls.
 - Settings uses neutral player wording:
   - first SL username;
@@ -280,7 +285,7 @@ This file is the persistent source of truth for future edits to this project.
 - Payment threshold and unit remain **1,000 L$**.
 - No automatic L$ transfer is performed by the app.
 - Real payment is made manually in Second Life; after sending it, the admin records exactly one 1,000 L$ payment.
-- `payout-push` Edge Function version 7 includes authenticated `mark_paid`, authenticated `set_treasure_mode`, authenticated `set_test_balance`, backend bot token management, SL IM queue polling/acknowledgement, and test-SL-IM queueing, using the current device's push subscription control token for admin actions. It allocates exactly 1,000 L$ across payout-log rows, returns the remaining balance, pauses real threshold notifications while Adventure Treasure is off, and routes payout/test notifications to `admin.html` rather than the player-facing Adventures page.
+- `payout-push` Edge Function version 8 includes authenticated `mark_paid`, authenticated `set_treasure_mode`, authenticated `set_test_balance`, backend bot token management, SL IM queue polling/acknowledgement, test-SL-IM queueing, and the server-validated player-facing `request_collect` action. Admin-only actions still use the current device's push subscription control token. It allocates exactly 1,000 L$ across payout-log rows, returns the remaining balance, pauses real threshold notifications while Adventure Treasure is off, and routes payout/test notifications to `admin.html` rather than the player-facing Adventures page.
 - Browser payout alerts use standard Web Push:
   - service worker: `sw.js`;
   - Edge Function: `payout-push`;
