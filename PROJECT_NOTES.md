@@ -24,7 +24,7 @@ This file is the persistent source of truth for future edits to this project.
 ## UI
 - Two configurable player tabs use the players' **actual Second Life usernames** as their labels.
 - Player-facing header should stay intentionally simple:
-  - title: **Passport Adventures**;
+  - title: **Bellisseria Passport Adventures**;
   - short subtitle: **Pick a 3-stop adventure, collect BBB stamps together, and explore Second Life.**
   - primary actions: **Pick an Adventure** and **Settings**;
   - keep a prominent top-right passport completion counter for the selected player, e.g. **1 / 382**, with the remaining stamp count below it. This is the primary game goal and should remain visually prominent;
@@ -255,9 +255,9 @@ This file is the persistent source of truth for future edits to this project.
   - show the current L$ total in the collapsed summary;
   - put milestone progress, lifetime prize total, waiting status, and recent prizes behind an on-demand details disclosure;
   - do not use a full-width reward section in the main page flow.
-- On the second-player/benefactor view, once unpaid Adventure Treasure is at least **1,000 L$**, the expanded Treasure details show **Collect Rewards**.
-- **Collect Rewards** requests exactly one 1,000 L$ payout; it never transfers L$ itself.
-- `payout-push` action `request_collect` validates Treasure is enabled and the real unpaid balance is at least 1,000 L$, then notifies the payer through configured browser push and queues a real SL IM when the backend bot is available.
+- On the second-player/benefactor view, once unpaid Adventure Treasure is at least **1,000 L$**, the expanded Treasure details show **🎉 Get Your 1,000 L$ Bonus** with friendly copy such as **Good job — you earned it!**
+- Do not frame this as the benefactor asking the payer for money. The UI should feel celebratory and automatic. Behind the scenes, the bonus button requests exactly one 1,000 L$ payout; it never transfers L$ itself.
+- `payout-push` action `request_collect` validates Treasure is enabled and the real unpaid balance is at least 1,000 L$, then notifies the payer through configured browser push and queues a real SL IM when the backend bot is available. Payer-facing notification text should say the benefactor **earned/is ready for their 1,000 L$ bonus**, not that they are asking for payment.
 - Duplicate requests at the exact same unpaid balance are deduped using `bbb_push_config.last_collect_request_balance`; after the payer records a payment and the balance changes, the benefactor may request the next 1,000 L$ chunk.
 - Admin shows a visible note when the current balance has an active benefactor Collect Rewards request.
 - The first-player view may show the same treasure pot for context, but should remain non-technical and contain no payout/admin controls.
@@ -285,7 +285,7 @@ This file is the persistent source of truth for future edits to this project.
 - Payment threshold and unit remain **1,000 L$**.
 - No automatic L$ transfer is performed by the app.
 - Real payment is made manually in Second Life; after sending it, the admin records exactly one 1,000 L$ payment.
-- `payout-push` Edge Function version 8 includes authenticated `mark_paid`, authenticated `set_treasure_mode`, authenticated `set_test_balance`, backend bot token management, SL IM queue polling/acknowledgement, test-SL-IM queueing, and the server-validated player-facing `request_collect` action. Admin-only actions still use the current device's push subscription control token. It allocates exactly 1,000 L$ across payout-log rows, returns the remaining balance, pauses real threshold notifications while Adventure Treasure is off, and routes payout/test notifications to `admin.html` rather than the player-facing Adventures page.
+- `payout-push` Edge Function version 9 includes authenticated `mark_paid`, authenticated `set_treasure_mode`, authenticated `set_test_balance`, backend bot token management, SL IM queue polling/acknowledgement, test-SL-IM queueing, and the server-validated player-facing `request_collect` action. Admin-only actions still use the current device's push subscription control token. It allocates exactly 1,000 L$ across payout-log rows, returns the remaining balance, pauses real threshold notifications while Adventure Treasure is off, and routes payout/test notifications to `admin.html` rather than the player-facing Adventures page.
 - Browser payout alerts use standard Web Push:
   - service worker: `sw.js`;
   - Edge Function: `payout-push`;
@@ -351,7 +351,7 @@ This file is the persistent source of truth for future edits to this project.
 
 ## Naming / UX decisions to preserve
 - Call the optional L$ feature **Adventure Treasure**. Do **not** call it “benefactor mode.”
-- Site branding is now **alien-only**: use 👽 for Passport Adventures branding and do not reintroduce unicorn icons/branding in player-facing UI.
+- Site branding remains unicorn-free. The main app title is **Bellisseria Passport Adventures** (official spelling: Bellisseria). Use the custom `passport-icon.svg` passport-book graphic for the main title; the browser-tab favicon may remain the alien favicon unless explicitly changed.
 - Adventure Treasure defaults **OFF**.
 - Keep setup and payment mechanics on `admin.html`, out of the player experience.
 - Keep the top of `index.html` clean and game-oriented. Technical connection/sync/StaFi status belongs off the main header; Admin is the home for operational setup and diagnostics.
