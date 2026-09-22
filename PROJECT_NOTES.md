@@ -27,6 +27,7 @@ This file is the persistent source of truth for future edits to this project.
   - title: **Passport Adventures**;
   - short subtitle: **Pick a 3-stop adventure, collect BBB stamps together, and explore Second Life.**
   - primary actions: **Pick an Adventure** and **Settings**;
+  - keep a prominent top-right passport completion counter for the selected player, e.g. **1 / 382**, with the remaining stamp count below it. This is the primary game goal and should remain visually prominent;
   - no cloud-sync text, StaFi-link count, payout status, notification diagnostics, or other technical/admin status in the header.
 - Button text: **Pick an Adventure**.
 - Current adventure loads collapsed.
