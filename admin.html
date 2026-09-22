@@ -18,6 +18,13 @@ main{max-width:980px;margin:auto;padding:26px 4vw 60px}.card{background:#151020;
 <header><div class="top"><div class="navwrap" id="nav"><button class="navbtn" title="Menu" aria-label="Menu" onclick="document.getElementById('nav').classList.toggle('open')">☰</button><div class="navmenu"><a href="index.html">🎮 Adventures</a><a href="settings.html">⚙ Settings</a><a href="instructions.html">📖 Instructions</a><a href="bbb.html">📍 BBB Passport Stops</a><a href="feedback.html">💬 Comments & Bugs</a></div></div><div class="brand"><h1>🔧 Bellisseria Passport Adventures Admin</h1><div>Setup, notifications, and reward payments — kept out of the player experience.</div></div></div></header>
 <main>
 
+<section class="card hide" id="club-admin-card">
+<div class="modebar"><div><h2 id="club-admin-name">Club payouts</h2><div class="small">This club's Treasure balance and manual payment record are completely separate from every other club.</div></div><a class="btn" href="settings.html">Players &amp; club settings</a></div>
+<div class="statusbox"><div class="small">Beneficiary</div><b id="club-beneficiary">—</b><div class="small" style="margin-top:10px">Waiting to be paid</div><div class="money" id="club-balance">0 L$</div><div class="small" id="club-request">No bonus request waiting.</div></div>
+<div class="actions" style="margin-top:12px"><button id="club-treasure-toggle">Treasure: OFF</button><button class="primary" id="club-mark-paid">Mark 1,000 L$ paid</button></div>
+<div class="notice" id="club-admin-message"></div>
+</section>
+
 <section class="card">
 <div class="modebar">
   <div>
@@ -155,6 +162,7 @@ main{max-width:980px;margin:auto;padding:26px 4vw 60px}.card{background:#151020;
 
 </main>
 
+<script src="club-session.js?v=1"></script>
 <script>
 const SUPA_URL='https://tzxlrglgwzinefutledx.supabase.co';
 const PUSH_API=SUPA_URL+'/functions/v1/payout-push';
@@ -377,5 +385,6 @@ $('#resolve-recipient').onclick=()=>resolveRecipient().catch(e=>say('Benefactor 
 $('#mark-paid').onclick=()=>markPaid().catch(e=>say(e.message==='threshold_not_met'?'The balance is below 1,000 L$.':'Could not record payment: '+e.message));
 refresh().catch(e=>say('Admin status could not load: '+e.message));
 </script>
+<script src="club-admin.js?v=1"></script>
 </body>
 </html>
