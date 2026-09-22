@@ -1,0 +1,19 @@
+[Unit]
+Description=Passport Adventures Second Life Messenger
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/passport-messenger.env
+ExecStart=/opt/dotnet/dotnet /opt/passport-messenger/app/PassportMessenger.dll
+Restart=always
+RestartSec=10
+WorkingDirectory=/opt/passport-messenger/app
+User=passportbot
+Group=passportbot
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
