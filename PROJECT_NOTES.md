@@ -35,8 +35,9 @@ This file is the persistent source of truth for future edits to this project.
 - Keep adventure stop lists clean: do **not** render the old `missionSetup` Travel / Next stop / Copy destination strip above stop rows. Per-stop Copy buttons are enough.
 - Current adventure loads collapsed.
 - Adult-playful purple/pink/gold style with subtle alien graphics.
-- Settings is available from the hamburger menu on the supporting pages too.
-- Settings is player-oriented and allows:
+- Settings is a standalone page at `settings.html`, linked from the hamburger menu on Adventures and supporting pages.
+- Do not reintroduce the inline Settings panel on `index.html`; the main Adventures page should remain focused on gameplay.
+- The standalone Settings page is player-oriented and allows:
   - first and second player Second Life usernames (also used as tab names)
   - each person's BBB StaFi progress-page URL
   - default tab
