@@ -261,6 +261,8 @@ This file is the persistent source of truth for future edits to this project.
   3. send one test notification and confirm the desktop/system popup;
   4. optional one-click Second Life Pay-link setup.
 - Admin page also shows:
+  - an admin-only **Test payout simulation** section with **Add 1,000 L$ test money**, **Clear test money**, and **Send test payout alert**;
+  - test money is stored separately in `bbb_push_config.test_balance` and must never alter `payout_log`, adventure completion, the real benefactor balance, or actual L$;
   - benefactor username;
   - current unpaid reward balance;
   - how many fixed 1,000 L$ payments are ready;
@@ -271,7 +273,7 @@ This file is the persistent source of truth for future edits to this project.
 - Payment threshold and unit remain **1,000 L$**.
 - No automatic L$ transfer is performed by the app.
 - Real payment is made manually in Second Life; after sending it, the admin records exactly one 1,000 L$ payment.
-- `payout-push` Edge Function version 4 includes authenticated `mark_paid` and authenticated `set_treasure_mode`, using the current device's push subscription control token. It allocates exactly 1,000 L$ across payout-log rows, returns the remaining balance, pauses real threshold notifications while Adventure Treasure is off, and routes payout/test notifications to `admin.html` rather than the player-facing Adventures page.
+- `payout-push` Edge Function version 5 includes authenticated `mark_paid`, authenticated `set_treasure_mode`, and authenticated `set_test_balance`, using the current device's push subscription control token. It allocates exactly 1,000 L$ across payout-log rows, returns the remaining balance, pauses real threshold notifications while Adventure Treasure is off, and routes payout/test notifications to `admin.html` rather than the player-facing Adventures page.
 - Browser payout alerts use standard Web Push:
   - service worker: `sw.js`;
   - Edge Function: `payout-push`;
@@ -300,7 +302,7 @@ This file is the persistent source of truth for future edits to this project.
    - browser may require permission to open an external application.
 2. **Run a full Adventure Treasure payout simulation**
    - turn Adventure Treasure ON from Admin;
-   - simulate/produce enough real test reward balance to cross 1,000 L$ without polluting permanent adventure history;
+   - use Admin **Add 1,000 L$ test money** to create a separate simulation balance without touching permanent adventure/reward history;
    - verify the admin/payer device receives the desktop payout notification;
    - clicking the notification should open `admin.html`;
    - verify the 1,000 L$ payment-ready box;
@@ -336,4 +338,6 @@ This file is the persistent source of truth for future edits to this project.
 - The player page should not advertise L$ rewards in its subtitle because Adventure Treasure may be OFF.
 - The benefactor should see a fun accumulation of money they are going to receive, not operational payout language.
 - Browser payout alerts are desktop/system notifications, not notifications inside the browser tab.
+- The realistic test payout notification must explicitly say which saved Second Life username should be paid.
+- **There is no in-world Second Life IM sender in the current no-script/no-bot architecture.** The old LSL reminder path was retired and SmartBots was rejected on recurring cost. Current testing covers desktop/system push + Admin + optional Firestorm Pay handoff. If actual in-world IMs are requested again, that is a deliberate architecture change requiring a sender (LSL object or bot/service).
 - Admin setup must clearly say the site needs browser **Notifications** permission; optional Firestorm launching may need an external-app/pop-up permission prompt.
