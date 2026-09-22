@@ -88,6 +88,11 @@ This file is the persistent source of truth for future edits to this project.
 - Existing built-in campaign stops are matched by exact region/coordinates first, then normalized name. Matching live data can refresh URLs/images.
 - The Adventures page now reuses those original BBB images as thumbnails beside each passport-stop location. It fetches the live BBB catalog through `bbb-stamp-assets`, matches by region/coordinates then normalized name, proxies images through the same Edge Function, uses lazy loading, and falls back to a map-pin placeholder when a photo is unavailable.
 - A local `bbb-adventure-image-cache` is used only as a fallback when the live BBB catalog/image lookup is temporarily unavailable.
+- `bbb-stamp-assets` now prefers the BBB HTTP catalog URL first because the HTTPS endpoint can stall. Each live fetch has a bounded timeout.
+- The original BBB photos are hosted on `picture-service.secondlife.com`; the image proxy allowlist includes that host. For HTTPS Second Life picture-service URLs, the client loads the image directly for speed.
+- Shared server cache table: `bbb_catalog_cache`. Normal page loads return the cached 388-stop catalog quickly instead of scraping BBB on every visit.
+- Supabase cron job `bbb-catalog-refresh` refreshes the shared BBB catalog every 6 hours with a longer timeout. Stale cached data is used if BBB is temporarily unavailable.
+- The BBB Passport Stops page uses larger photo thumbnails in the main stop list, a larger selected-stop photo, and photos for nearby/random-stop cards.
 - Newly discovered BBB stops are added to the stop catalog as **BBB Live** entries without altering the 127 three-stop adventure/reward dataset.
 - Last successful public BBB catalog response is cached locally only as a fallback if BBB is temporarily unavailable.
 - UI shows whether the page was refreshed live, is using cached BBB data, or has fallen back to the built-in catalog.
