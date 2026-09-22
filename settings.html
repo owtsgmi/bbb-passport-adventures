@@ -1,0 +1,215 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Settings · Bellisseria Passport Adventures</title>
+<style>
+:root{--ink:#fff9ff;--muted:#bcb0ca;--line:#3b3152;--gold:#ffd166;--green:#63e6a5}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 12% 0%,#342052 0,#171126 30%,#0d0a16 72%);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+header{position:sticky;top:0;z-index:20;background:#100c24ee;backdrop-filter:blur(12px);border-bottom:1px solid #4a376c;padding:14px 4vw}
+.top{max-width:980px;margin:auto;display:grid;grid-template-columns:46px minmax(0,1fr);gap:12px;align-items:start;position:relative}
+.brand h1{margin:0;font-size:27px;background:linear-gradient(90deg,#ffe39a,#ff9bd7,#b99cff);-webkit-background-clip:text;color:transparent;display:flex;align-items:center;gap:9px}
+.brand img{width:34px;height:40px}.brand div,.small{color:var(--muted);font-size:13px}
+button,a.btn,input,select{border:1px solid #4b3b61;border-radius:12px;background:#171121;color:var(--ink);padding:10px 12px;font:inherit}
+button,a.btn{cursor:pointer;text-decoration:none;display:inline-block}.primary{background:linear-gradient(135deg,#8b63e8,#c45ca8);border-color:#d7a4e8;font-weight:800}
+.navwrap{position:relative;z-index:31}.navbtn{font-weight:900;width:46px;height:46px;padding:4px;font-size:23px;display:grid;place-items:center}
+.navmenu{display:none;position:absolute;left:0;top:50px;min-width:220px;background:#171121;border:1px solid #5c4775;border-radius:14px;padding:8px;box-shadow:0 16px 36px #0008}.navwrap.open .navmenu{display:block}.navmenu a{display:block;color:var(--ink);text-decoration:none;padding:10px 12px;border-radius:10px}.navmenu a:hover{background:#2a1e3d}.navmenu .here{color:var(--gold)}
+main{max-width:900px;margin:auto;padding:26px 4vw 60px}.card{background:linear-gradient(135deg,#171121,#21122a);border:1px solid #674d85;border-radius:20px;padding:20px;box-shadow:0 12px 32px #0003}.card h2{margin:0 0 5px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}.field label{display:block;font-weight:800;margin-bottom:6px}.field input,.field select{width:100%}.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:16px}.note{margin-top:14px;padding:12px 14px;border:1px solid #4a3a61;border-radius:14px;background:#100d1b;color:var(--muted);font-size:12px;line-height:1.45}#status{min-height:20px;margin-top:12px;color:var(--muted)}.ok{color:var(--green)!important}.warn{color:var(--gold)!important}
+@media(max-width:700px){header{padding-left:12px;padding-right:12px}.grid{grid-template-columns:1fr}.brand h1{font-size:22px}}
+</style>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+<body>
+<header>
+  <div class="top">
+    <div class="navwrap" id="nav"><button class="navbtn" title="Menu" aria-label="Menu" onclick="document.getElementById('nav').classList.toggle('open')">☰</button>
+      <div class="navmenu">
+        <a href="index.html">🎮 Adventures</a>
+        <a class="here" href="settings.html">⚙ Settings</a>
+        <a href="instructions.html">📖 Instructions</a>
+        <a href="bbb.html">📍 BBB Passport Stops</a>
+        <a href="feedback.html">💬 Comments & Bugs</a>
+      </div>
+    </div>
+    <div class="brand"><h1><img src="passport-icon.svg" alt="">Settings</h1><div>Players, BBB progress pages, and shared game preferences.</div></div>
+  </div>
+</header>
+
+<main>
+<section class="card">
+  <h2>⚙ Bellisseria Passport Adventures</h2>
+  <div class="small">These are game settings only. Payout infrastructure and diagnostics stay on Admin.</div>
+
+  <div class="grid">
+    <div class="field"><label>🗡️ First player SL username</label><input id="set-partner-name" placeholder="your.username"></div>
+    <div class="field"><label>👽 Second player SL username</label><input id="set-me-name" placeholder="partner.username"></div>
+    <div class="field"><label>🗡️ First player BBB StaFi page</label><input id="set-partner-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
+    <div class="field"><label>👽 Second player BBB StaFi page</label><input id="set-me-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
+    <div class="field"><label>Open Adventures on</label><select id="set-default-view"><option value="partner">First player</option><option value="me">Second player</option></select></div>
+    <div class="field"><label>🔐 Secret Club Code</label><input id="set-family-key" type="password" autocomplete="new-password" placeholder="Use the same code on trusted devices"></div>
+  </div>
+
+  <div class="actions"><label class="small"><input id="set-remember-key" type="checkbox" checked> Remember Secret Club Code on this device</label></div>
+
+  <div class="actions">
+    <button class="primary" id="save">💾 Save Settings</button>
+    <button id="load-cloud">☁ Load Private Settings</button>
+    <button id="copy-code">🔑 Copy Club Code</button>
+    <button id="open-first">🗡️ Open First StaFi</button>
+    <button id="open-second">👽 Open Second StaFi</button>
+    <a class="btn" href="admin.html">🔧 Admin</a>
+  </div>
+
+  <div class="note"><b>The two SL usernames are shared display settings.</b> BBB StaFi links are encrypted before they are stored. On another trusted device, enter the same Secret Club Code and choose <b>Load Private Settings</b>.</div>
+  <div id="status">Loading settings…</div>
+</section>
+</main>
+
+<script>
+const SUPA_URL='https://tzxlrglgwzinefutledx.supabase.co';
+const SUPA_KEY='sb_publishable_s54v4rmFk_BjHoweE7mliA_w64vK6WR';
+const STATE_URL=SUPA_URL+'/rest/v1/bbb_board_state?id=eq.1&select=tab_partner_name,tab_me_name,default_view,updated_at';
+const PRIVATE_URL=SUPA_URL+'/rest/v1/bbb_private_settings?id=eq.1';
+const $=s=>document.querySelector(s);
+
+let tabPartnerName=localStorage.getItem('bbb-tab-partner-name')||'AA';
+let tabMeName=localStorage.getItem('bbb-tab-me-name')||'KK';
+let partnerStaFiUrl=localStorage.getItem('bbb-partner-stafi-url')||'';
+let meStaFiUrl=localStorage.getItem('bbb-me-stafi-url')||'';
+let defaultView=localStorage.getItem('bbb-default-view')||'partner';
+let familyKey=localStorage.getItem('bbb-family-key')||sessionStorage.getItem('bbb-family-key')||'';
+
+function status(msg,good=false){const e=$('#status');e.textContent=msg;e.className=good?'ok':''}
+function bytesToB64(bytes){let bin='';bytes.forEach(b=>bin+=String.fromCharCode(b));return btoa(bin)}
+function b64ToBytes(s){const bin=atob(s);return Uint8Array.from(bin,c=>c.charCodeAt(0))}
+function makeFamilyKey(){const a=crypto.getRandomValues(new Uint8Array(24));return bytesToB64(a).replace(/=+$/,'')}
+async function derivePrivateKey(secret,salt){
+ const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),'PBKDF2',false,['deriveKey']);
+ return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function encryptPrivatePayload(payload,secret){
+ const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+ const key=await derivePrivateKey(secret,salt);
+ const plain=new TextEncoder().encode(JSON.stringify(payload));
+ const enc=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,plain));
+ return {ciphertext:bytesToB64(enc),salt:bytesToB64(salt),iv:bytesToB64(iv)};
+}
+async function decryptPrivatePayload(row,secret){
+ const salt=b64ToBytes(row.salt),iv=b64ToBytes(row.iv),data=b64ToBytes(row.ciphertext);
+ const key=await derivePrivateKey(secret,salt);
+ const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,data);
+ return JSON.parse(new TextDecoder().decode(plain));
+}
+function fill(){
+ $('#set-partner-name').value=tabPartnerName;
+ $('#set-me-name').value=tabMeName;
+ $('#set-partner-url').value=partnerStaFiUrl;
+ $('#set-me-url').value=meStaFiUrl;
+ $('#set-default-view').value=defaultView;
+ $('#set-family-key').value=familyKey;
+ $('#set-remember-key').checked=!!localStorage.getItem('bbb-family-key');
+}
+async function loadShared(){
+ try{
+   const r=await fetch(STATE_URL,{headers:{apikey:SUPA_KEY}});
+   if(!r.ok)throw new Error('Cloud read '+r.status);
+   const rows=await r.json(),row=rows[0];
+   if(row){
+     tabPartnerName=row.tab_partner_name||tabPartnerName;
+     tabMeName=row.tab_me_name||tabMeName;
+     defaultView=row.default_view||defaultView;
+     localStorage.setItem('bbb-tab-partner-name',tabPartnerName);
+     localStorage.setItem('bbb-tab-me-name',tabMeName);
+     localStorage.setItem('bbb-default-view',defaultView);
+   }
+ }catch(e){}
+ fill();
+ status('Settings loaded.',true);
+}
+async function saveShared(){
+ const r=await fetch(SUPA_URL+'/rest/v1/bbb_board_state?id=eq.1',{
+   method:'PATCH',
+   headers:{apikey:SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+   body:JSON.stringify({tab_partner_name:tabPartnerName,tab_me_name:tabMeName,default_view:defaultView,updated_at:new Date().toISOString()})
+ });
+ if(!r.ok)throw new Error('Display settings write '+r.status);
+}
+async function savePrivate(){
+ const enc=await encryptPrivatePayload({partnerStaFiUrl,meStaFiUrl},familyKey);
+ const r=await fetch(PRIVATE_URL,{
+   method:'PATCH',
+   headers:{apikey:SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+   body:JSON.stringify({...enc,version:1,updated_at:new Date().toISOString()})
+ });
+ if(!r.ok)throw new Error('Private settings write '+r.status);
+}
+async function save(){
+ tabPartnerName=$('#set-partner-name').value.trim()||'AA';
+ tabMeName=$('#set-me-name').value.trim()||'KK';
+ partnerStaFiUrl=$('#set-partner-url').value.trim();
+ meStaFiUrl=$('#set-me-url').value.trim();
+ defaultView=$('#set-default-view').value||'partner';
+ familyKey=$('#set-family-key').value.trim()||familyKey||makeFamilyKey();
+ $('#set-family-key').value=familyKey;
+
+ localStorage.setItem('bbb-tab-partner-name',tabPartnerName);
+ localStorage.setItem('bbb-tab-me-name',tabMeName);
+ localStorage.setItem('bbb-partner-stafi-url',partnerStaFiUrl);
+ localStorage.setItem('bbb-me-stafi-url',meStaFiUrl);
+ localStorage.setItem('bbb-default-view',defaultView);
+
+ if($('#set-remember-key').checked){
+   localStorage.setItem('bbb-family-key',familyKey);sessionStorage.removeItem('bbb-family-key');
+ }else{
+   localStorage.removeItem('bbb-family-key');sessionStorage.setItem('bbb-family-key',familyKey);
+ }
+
+ status('Saving…');
+ try{
+   await Promise.all([saveShared(),savePrivate()]);
+   status('✓ Settings saved and synced.',true);
+ }catch(e){
+   status('Saved on this device, but cloud sync failed: '+e.message);
+ }
+}
+async function loadPrivate(){
+ familyKey=$('#set-family-key').value.trim()||familyKey;
+ if(familyKey.length<8){status('Enter your Secret Club Code first.');return}
+ status('Loading private settings…');
+ try{
+   const r=await fetch(PRIVATE_URL+'&select=*',{headers:{apikey:SUPA_KEY}});
+   if(!r.ok)throw new Error('Private settings read '+r.status);
+   const rows=await r.json(),row=rows[0];
+   if(!row?.ciphertext){status('No encrypted private settings are stored yet.');return}
+   const p=await decryptPrivatePayload(row,familyKey);
+   partnerStaFiUrl=p.partnerStaFiUrl||'';
+   meStaFiUrl=p.meStaFiUrl||'';
+   localStorage.setItem('bbb-partner-stafi-url',partnerStaFiUrl);
+   localStorage.setItem('bbb-me-stafi-url',meStaFiUrl);
+   if($('#set-remember-key').checked){localStorage.setItem('bbb-family-key',familyKey);sessionStorage.removeItem('bbb-family-key')}
+   else{localStorage.removeItem('bbb-family-key');sessionStorage.setItem('bbb-family-key',familyKey)}
+   fill();
+   status('✓ Private settings loaded.',true);
+ }catch(e){status('Could not unlock private settings — check the Secret Club Code.')}
+}
+function copyCode(){
+ const k=$('#set-family-key').value.trim()||familyKey;
+ if(!k){status('Save settings first to create a Secret Club Code.');return}
+ navigator.clipboard.writeText(k).then(()=>status('✓ Secret Club Code copied.',true)).catch(()=>prompt('Copy this Secret Club Code:',k));
+}
+function openStaFi(which){
+ const u=which==='partner'?$('#set-partner-url').value.trim():$('#set-me-url').value.trim();
+ if(!u){status('Add that player’s BBB StaFi page first.');return}
+ window.open(u,'_blank','noopener');
+}
+
+$('#save').onclick=()=>save();
+$('#load-cloud').onclick=()=>loadPrivate();
+$('#copy-code').onclick=()=>copyCode();
+$('#open-first').onclick=()=>openStaFi('partner');
+$('#open-second').onclick=()=>openStaFi('me');
+loadShared();
+</script>
+</body>
+</html>
