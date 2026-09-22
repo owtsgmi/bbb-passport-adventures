@@ -273,7 +273,7 @@ This file is the persistent source of truth for future edits to this project.
 - Payment threshold and unit remain **1,000 L$**.
 - No automatic L$ transfer is performed by the app.
 - Real payment is made manually in Second Life; after sending it, the admin records exactly one 1,000 L$ payment.
-- `payout-push` Edge Function version 5 includes authenticated `mark_paid`, authenticated `set_treasure_mode`, and authenticated `set_test_balance`, using the current device's push subscription control token. It allocates exactly 1,000 L$ across payout-log rows, returns the remaining balance, pauses real threshold notifications while Adventure Treasure is off, and routes payout/test notifications to `admin.html` rather than the player-facing Adventures page.
+- `payout-push` Edge Function version 7 includes authenticated `mark_paid`, authenticated `set_treasure_mode`, authenticated `set_test_balance`, backend bot token management, SL IM queue polling/acknowledgement, and test-SL-IM queueing, using the current device's push subscription control token for admin actions. It allocates exactly 1,000 L$ across payout-log rows, returns the remaining balance, pauses real threshold notifications while Adventure Treasure is off, and routes payout/test notifications to `admin.html` rather than the player-facing Adventures page.
 - Browser payout alerts use standard Web Push:
   - service worker: `sw.js`;
   - Edge Function: `payout-push`;
@@ -294,32 +294,41 @@ This file is the persistent source of truth for future edits to this project.
 
 
 ## Immediate next work
-1. **Finish and test the optional Second Life Pay shortcut**
+1. **Bring the self-hosted Second Life IM messenger online**
+   - create or choose a dedicated SL bot avatar;
+   - mark that account as a Scripted Agent;
+   - resolve both player UUIDs from Admin if the payer UUID is still missing;
+   - generate a bot setup key in Admin;
+   - clone/update the repo on the VPS and run `sudo bash bot/install.sh`;
+   - confirm Admin shows the bot as Connected;
+   - add 1,000 L$ test money and use **Send test SL IM**;
+   - verify a real IM appears in Firestorm for the payer.
+2. **Finish and test the optional Second Life Pay shortcut**
    - obtain a Linden Lab API key;
    - resolve the saved second-player/benefactor username to avatar UUID;
    - confirm **Pay in Second Life** launches Firestorm;
    - confirm Firestorm opens the correct avatar's Pay dialog;
    - browser may require permission to open an external application.
-2. **Run a full Adventure Treasure payout simulation**
+3. **Run a full Adventure Treasure payout simulation**
    - turn Adventure Treasure ON from Admin;
    - use Admin **Add 1,000 L$ test money** to create a separate simulation balance without touching permanent adventure/reward history;
    - verify the admin/payer device receives the desktop payout notification;
    - clicking the notification should open `admin.html`;
    - verify the 1,000 L$ payment-ready box;
    - test **Mark 1,000 L$ paid** and confirm the remainder is correct.
-3. **Re-check player experience with the feature switch**
+4. **Re-check player experience with the feature switch**
    - OFF: no L$ score chip, no treasure panel, no Mystery L$ labels, no completed reward amounts;
    - ON: benefactor sees friendly Adventure Treasure only;
    - player pages never expose notification/API/payment bookkeeping controls.
-4. **Test the admin notification flow on Windows**
+5. **Test the admin notification flow on Windows**
    - browser site Notifications permission;
    - Windows toast / Notification Center;
    - notification click opens Admin;
    - Firestorm external-app launch.
-5. **Automatic BBB StaFi sync remains the major gameplay integration**
+6. **Automatic BBB StaFi sync remains the major gameplay integration**
    - desired end state: BBB stamp accepted → StaFi updates → app imports stamp → shared progress updates → NEXT advances;
    - do not claim this works until fully connected and tested.
-6. **Later public architecture**
+7. **Later public architecture**
    - real auth;
    - club-scoped game state;
    - per-user StaFi;
@@ -341,4 +350,10 @@ This file is the persistent source of truth for future edits to this project.
 - The realistic test payout notification must explicitly say which saved Second Life username should be paid.
 - **There is no in-world Second Life IM sender in the current no-script/no-bot architecture.** The old LSL reminder path was retired and SmartBots was rejected on recurring cost. Current testing covers desktop/system push + Admin + optional Firestorm Pay handoff. If actual in-world IMs are requested again, that is a deliberate architecture change requiring a sender (LSL object or bot/service).
 - **Hard UX constraint:** do not require users to rez prims, paste LSL, wear HUDs, or manage scripts for payout notifications. The user explicitly rejected any prim/script setup. If in-world IM delivery is revisited, it must be completely backend-managed with zero in-world setup for normal users; otherwise keep the existing desktop/system notification flow.
+- True in-world IM delivery is now being implemented via a **self-hosted LibreMetaverse scripted-agent bot on the VPS**. Normal users do nothing in-world. The dedicated bot avatar must be marked as a Scripted Agent in Second Life account settings.
+- Bot source lives under `bot/` in this repo: `PassportMessenger.csproj`, `Program.cs`, `install.sh`, `passport-messenger.service`, and `README.md`.
+- Bot credentials are stored only on the VPS in `/etc/passport-messenger.env` with mode 600; never put the SL bot password or bot setup token in GitHub or client-side JavaScript.
+- Backend queue table: `bbb_sl_im_queue`. The bot polls `payout-push` using an admin-generated one-time setup token whose SHA-256 hash is stored in `bbb_push_config.bot_token_hash`.
+- `bbb_push_config` also tracks `payer_uuid`, `bot_last_seen_at`, and `bot_account_name`. Admin status treats the bot as connected when it has checked in recently.
+- Real payout IM format should be simple and explicit, e.g. `Passport Adventures: kististulip has earned 1,000 L$. Please pay kististulip 1,000 L$.` Test messages must be clearly labeled TEST ONLY.
 - Admin setup must clearly say the site needs browser **Notifications** permission; optional Firestorm launching may need an external-app/pop-up permission prompt.
