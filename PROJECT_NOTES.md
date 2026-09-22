@@ -232,7 +232,8 @@ This file is the persistent source of truth for future edits to this project.
 ## Header and player icon conventions
 - **Hamburger source of truth:** `shared-nav.css` contains the Comments-page navigation pattern for every page. Use the same 46px menu button, absolute left-gutter placement when there is room, 230px dropdown, and stacked mobile fallback. Do not add page-specific `.navwrap` or `.navmenu` rules.
 - `index.html`, `settings.html`, `instructions.html`, `bbb.html`, `feedback.html`, and `admin.html` all load `shared-nav.css`. At 1,120px and below the button moves into the header before the left gutter can clip it; at 760px and below the header stacks like the original working Comments page.
-- Main title art uses the repo-local `passport-cover.jpg`, a resized public-domain U.S. Department of State passport-cover scan from Wikimedia Commons, rather than the custom drawn passport icon or a fragile remote image URL. `passport-icon.svg` remains only as the browser error fallback.
+- Main title art uses the repo-local `passport-icon.svg`: a crisp navy-and-gold passport booklet designed to keep the word **PASSPORT** and emblem readable at header size. Do not replace it with a detailed photograph that turns muddy when reduced.
+- The Adventures header uses a compact two-column grid: branding and player controls stay together on the left, while passport progress and optional Treasure occupy the right column. The right-side stack must not create a large empty gap between the subtitle and player tabs.
 - Desktop navigation hamburger is an icon-only **☰** in the left gutter, vertically aligned with the page title/alien line rather than sitting on its own row.
 - At narrower browser widths the hamburger must move inside the header rather than remain in the left gutter, so it is never clipped off-screen.
 - Important CSS caution: change shared navigation behavior only in `shared-nav.css`; duplicating responsive `.navwrap` overrides inside individual pages previously caused clipping and CSS conflicts.
@@ -360,7 +361,7 @@ This file is the persistent source of truth for future edits to this project.
 
 ## Naming / UX decisions to preserve
 - Call the optional L$ feature **Adventure Treasure**. Do **not** call it “benefactor mode.”
-- Site branding remains unicorn-free. The main app title is **Bellisseria Passport Adventures** (official spelling: Bellisseria). Use a realistic passport-cover image for the main title; `passport-icon.svg` is only the fallback. The browser-tab favicon may remain the alien favicon unless explicitly changed.
+- Site branding remains unicorn-free. The main app title is **Bellisseria Passport Adventures** (official spelling: Bellisseria). Use the readable navy-and-gold `passport-icon.svg` beside the main title. The browser-tab favicon may remain the alien favicon unless explicitly changed.
 - Adventure Treasure defaults **OFF**.
 - Keep setup and payment mechanics on `admin.html`, out of the player experience.
 - Keep the top of `index.html` clean and game-oriented. Technical connection/sync/StaFi status belongs off the main header; Admin is the home for operational setup and diagnostics.

@@ -1,17 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 112" role="img" aria-label="Passport">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 118" role="img" aria-label="Navy and gold passport">
   <defs>
     <linearGradient id="cover" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#2a1f61"/>
-      <stop offset="1" stop-color="#15102f"/>
+      <stop offset="0" stop-color="#132b55"/>
+      <stop offset="0.58" stop-color="#091b3b"/>
+      <stop offset="1" stop-color="#06132d"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff0a6"/>
+      <stop offset="0.48" stop-color="#e5bd55"/>
+      <stop offset="1" stop-color="#a87923"/>
     </linearGradient>
   </defs>
-  <rect x="12" y="6" width="72" height="100" rx="9" fill="url(#cover)" stroke="#9d7bff" stroke-width="3"/>
-  <rect x="20" y="14" width="56" height="84" rx="5" fill="none" stroke="#ffffff22" stroke-width="2"/>
-  <text x="48" y="32" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="1.7" fill="#ffe08a">PASSPORT</text>
-  <circle cx="48" cy="59" r="19" fill="none" stroke="#ffe08a" stroke-width="2.5"/>
-  <ellipse cx="48" cy="59" rx="8" ry="19" fill="none" stroke="#ffe08a" stroke-width="2"/>
-  <path d="M29 59h38M32 49c9 5 23 5 32 0M32 69c9-5 23-5 32 0" fill="none" stroke="#ffe08a" stroke-width="2"/>
-  <path d="M48 40v38" stroke="#ffe08a" stroke-width="2"/>
-  <circle cx="72" cy="88" r="8" fill="#63e6a5" stroke="#0d0a16" stroke-width="2"/>
-  <path d="M69 88l2 2 4-5" fill="none" stroke="#0d0a16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <path d="M13 5h66c6 0 10 4 10 10v89c0 6-4 10-10 10H13c-4 0-6-2-6-6V11c0-4 2-6 6-6z" fill="#020916" opacity=".55" transform="translate(2 2)"/>
+  <path d="M12 4h66c6 0 10 4 10 10v89c0 6-4 10-10 10H12c-4 0-6-2-6-6V10c0-4 2-6 6-6z" fill="url(#cover)" stroke="#d5ad4d" stroke-width="2"/>
+  <path d="M16 5v107" stroke="#f0cd6a" stroke-width="2" opacity=".55"/>
+  <path d="M21 8h56c4 0 7 3 7 7v87c0 4-3 7-7 7H21" fill="none" stroke="#fff1ad" stroke-width="1" opacity=".24"/>
+
+  <text x="48" y="29" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="11.8" font-weight="900" letter-spacing=".7" fill="url(#gold)">PASSPORT</text>
+
+  <g fill="none" stroke="url(#gold)" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="50" cy="59" r="18" stroke-width="2.7"/>
+    <ellipse cx="50" cy="59" rx="7.3" ry="18" stroke-width="2.1"/>
+    <path d="M32 59h36M35 50c8 4 22 4 30 0M35 68c8-4 22-4 30 0" stroke-width="2.1"/>
+    <path d="M27 50c-5 5-7 11-6 18m4-13-5-2m4 8-6 1m8 5-5 4M73 50c5 5 7 11 6 18m-4-13 5-2m-4 8 6 1m-8 5 5 4" stroke-width="2.4"/>
+  </g>
+
+  <g fill="none" stroke="url(#gold)" stroke-width="2.3">
+    <rect x="39" y="88" width="22" height="13" rx="2.5"/>
+    <circle cx="50" cy="94.5" r="4.2"/>
+  </g>
 </svg>
