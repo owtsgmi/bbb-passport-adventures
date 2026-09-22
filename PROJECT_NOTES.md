@@ -230,6 +230,9 @@ This file is the persistent source of truth for future edits to this project.
 
 
 ## Header and player icon conventions
+- **Hamburger source of truth:** match the working `feedback.html` Comments page navigation pattern on every page. Use the same 46px menu button, absolute left-gutter placement on wide screens, 230px dropdown, and the same narrow-screen fallback. Do not invent page-specific hamburger layouts.
+- `index.html`, `settings.html`, `instructions.html`, `bbb.html`, and `admin.html` were normalized to that Comments-page pattern.
+- Main title art now uses a real passport-cover photograph rather than the custom drawn passport icon. Current source is a public-domain U.S. Department of State passport-cover image served from Wikimedia Commons, with `passport-icon.svg` as the fallback if the remote image fails.
 - Desktop navigation hamburger is an icon-only **☰** in the left gutter, vertically aligned with the page title/alien line rather than sitting on its own row.
 - At narrower browser widths the hamburger must move inside the header grid rather than remain in the left gutter, so it is never clipped off-screen.
 - Important CSS caution: responsive `.navwrap` overrides must appear after the base `.navwrap` rule, otherwise the base absolute positioning wins and clips the hamburger again.
@@ -357,7 +360,7 @@ This file is the persistent source of truth for future edits to this project.
 
 ## Naming / UX decisions to preserve
 - Call the optional L$ feature **Adventure Treasure**. Do **not** call it “benefactor mode.”
-- Site branding remains unicorn-free. The main app title is **Bellisseria Passport Adventures** (official spelling: Bellisseria). Use the custom `passport-icon.svg` passport-book graphic for the main title; the browser-tab favicon may remain the alien favicon unless explicitly changed.
+- Site branding remains unicorn-free. The main app title is **Bellisseria Passport Adventures** (official spelling: Bellisseria). Use a realistic passport-cover image for the main title; `passport-icon.svg` is only the fallback. The browser-tab favicon may remain the alien favicon unless explicitly changed.
 - Adventure Treasure defaults **OFF**.
 - Keep setup and payment mechanics on `admin.html`, out of the player experience.
 - Keep the top of `index.html` clean and game-oriented. Technical connection/sync/StaFi status belongs off the main header; Admin is the home for operational setup and diagnostics.
