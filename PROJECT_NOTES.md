@@ -250,12 +250,11 @@ This file is the persistent source of truth for future edits to this project.
 - When Adventure Treasure is off, hide the treasure balance, mystery-L$ labels, completed-adventure reward amounts, and the L$ scorecard chip. Existing reward/accounting data is preserved rather than deleted.
 - `payout-push` must pause real threshold notifications while Adventure Treasure is off. Admin test notifications may still be used for setup/diagnostics.
 - Admin toggles Adventure Treasure through authenticated `set_treasure_mode` on the `payout-push` Edge Function.
-- The benefactor/second-player view should feel like a game reward screen:
-  - friendly **Adventure Treasure** wording;
-  - current L$ waiting for them;
-  - lifetime adventure-prize total;
-  - recent prize list;
-  - progress toward the next **1,000 L$ milestone**.
+- Adventure Treasure should stay visually secondary to passport completion:
+  - render it as a compact row directly under the prominent top-right passport counter;
+  - show the current L$ total in the collapsed summary;
+  - put milestone progress, lifetime prize total, waiting status, and recent prizes behind an on-demand details disclosure;
+  - do not use a full-width reward section in the main page flow.
 - The first-player view may show the same treasure pot for context, but should remain non-technical and contain no payout/admin controls.
 - Settings uses neutral player wording:
   - first SL username;
