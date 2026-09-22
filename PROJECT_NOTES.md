@@ -86,6 +86,8 @@ This file is the persistent source of truth for future edits to this project.
 - Client calls the Supabase Edge Function `bbb-stamp-assets` with `cache: no-store` and a cache-busting query parameter.
 - Edge Function fetches the public BBB stamp catalog fresh, parses map SLURLs/coordinates and available images, and returns structured live data with `fetched_at`.
 - Existing built-in campaign stops are matched by exact region/coordinates first, then normalized name. Matching live data can refresh URLs/images.
+- The Adventures page now reuses those original BBB images as thumbnails beside each passport-stop location. It fetches the live BBB catalog through `bbb-stamp-assets`, matches by region/coordinates then normalized name, proxies images through the same Edge Function, uses lazy loading, and falls back to a map-pin placeholder when a photo is unavailable.
+- A local `bbb-adventure-image-cache` is used only as a fallback when the live BBB catalog/image lookup is temporarily unavailable.
 - Newly discovered BBB stops are added to the stop catalog as **BBB Live** entries without altering the 127 three-stop adventure/reward dataset.
 - Last successful public BBB catalog response is cached locally only as a fallback if BBB is temporarily unavailable.
 - UI shows whether the page was refreshed live, is using cached BBB data, or has fallen back to the built-in catalog.
