@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Admin · Passport Adventures</title>
+<title>Admin · Bellisseria Passport Adventures</title>
 <style>
 :root{--ink:#fff9ff;--muted:#bcb0ca;--line:#3b3152;--green:#63e6a5;--gold:#ffd166;--red:#ff7f98}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 12% 0%,#342052 0,#171126 30%,#0d0a16 72%);color:var(--ink);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
@@ -14,7 +14,7 @@ main{max-width:980px;margin:auto;padding:26px 4vw 60px}.card{background:#151020;
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 </head>
 <body>
-<header><div class="top"><a class="btn" href="index.html">← Adventures</a><div class="brand"><h1>🔧 Passport Adventures Admin</h1><div>Setup, notifications, and reward payments — kept out of the player experience.</div></div></div></header>
+<header><div class="top"><a class="btn" href="index.html">← Adventures</a><div class="brand"><h1>🔧 Bellisseria Passport Adventures Admin</h1><div>Setup, notifications, and reward payments — kept out of the player experience.</div></div></div></header>
 <main>
 
 <section class="card">
@@ -231,7 +231,7 @@ async function refresh(){
  const requestedForCurrent=ready&&Number(s.last_collect_request_balance||0)===Number(s.balance||0)&&s.last_collect_request_at;
  if(requestedForCurrent){
    const when=new Date(s.last_collect_request_at);
-   requestEl.textContent='💰 '+(s.recipient_username||'Benefactor')+' tapped Collect Rewards · '+when.toLocaleString();
+   requestEl.textContent='🎉 '+(s.recipient_username||'Benefactor')+' is ready for their 1,000 L$ bonus · '+when.toLocaleString();
    requestEl.style.display='block';
  }else requestEl.style.display='none';
  $('#payment-box').style.display=ready?'block':'none';
