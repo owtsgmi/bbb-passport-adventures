@@ -43,7 +43,7 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 <body>
 <header>
 <div class="headrow">
-  <div class="navwrap" id="main-nav"><button class="navbtn" title="Menu" aria-label="Menu" onclick="document.getElementById('main-nav').classList.toggle('open')">☰</button><div class="navmenu"><a class="here" href="index.html">🎮 Adventures</a><a href="index.html?settings=1">⚙ Settings</a><a href="instructions.html">📖 Instructions</a><a href="bbb.html">📍 BBB Passport Stops</a><a href="feedback.html">💬 Comments & Bugs</a></div></div>
+  <div class="navwrap" id="main-nav"><button class="navbtn" title="Menu" aria-label="Menu" onclick="document.getElementById('main-nav').classList.toggle('open')">☰</button><div class="navmenu"><a class="here" href="index.html">🎮 Adventures</a><a href="settings.html">⚙ Settings</a><a href="instructions.html">📖 Instructions</a><a href="bbb.html">📍 BBB Passport Stops</a><a href="feedback.html">💬 Comments & Bugs</a></div></div>
   <div class="brand"><h1><img class="brandmark" src="passport-icon.svg" alt="">Bellisseria Passport Adventures</h1><div class="sub">Pick a 3-stop adventure, collect BBB stamps together, and explore Second Life.</div></div>
   <div class="goalstack">
     <div class="passportgoal" aria-label="Passport stamp progress"><strong id="passport-progress">0 / 382</strong><span>Passport stamps</span><em id="passport-remaining">382 to go</em></div>
@@ -59,22 +59,6 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 </details>
 </header>
 <div id="toast"></div>
-<section id="settings-page" class="settingspage">
-  <div class="settingscard">
-    <div class="advhead"><div><h2 style="margin:0 0 4px">⚙ Settings <span class="alienmark">👽</span></h2><div class="small">Player names, BBB progress pages, and shared game preferences.</div></div><button onclick="toggleSettings()">✕ Close</button></div>
-    <div class="settingsgrid" style="margin-top:16px">
-      <div class="settingsfield"><label>🗡️ First player SL username</label><input id="set-partner-name" placeholder="your.username"></div>
-      <div class="settingsfield"><label>👽 Second player SL username</label><input id="set-me-name" placeholder="partner.username"></div>
-      <div class="settingsfield"><label>🗡️ First player BBB StaFi page</label><input id="set-partner-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
-      <div class="settingsfield"><label>👽 Second player BBB StaFi page</label><input id="set-me-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
-      <div class="settingsfield"><label>Open on</label><select id="set-default-view"><option value="partner">First tab</option><option value="me">Second tab</option></select></div>
-      <div class="settingsfield"><label>🔐 Secret Club Code</label><input id="set-family-key" type="password" autocomplete="new-password" placeholder="Use the same key on both devices"></div>
-    </div>
-    <div class="actions" style="margin-top:12px"><label class="small"><input id="set-remember-key" type="checkbox" checked> Remember Secret Club Code on this device</label></div>
-    <div class="actions" style="margin-top:16px"><button class="primary" onclick="saveSettings()">💾 Save</button><button onclick="unlockPrivateSettings()">☁ Load on this device</button><button onclick="copyFamilyKey()">🔑 Copy Club Code</button><button onclick="testCurrentStaFi()">🔗 Open selected StaFi page</button><a class="sl" href="admin.html">🔧 Admin</a></div>
-    <div class="settingsnote"><b>The SL usernames become the two player tabs.</b> Use the same Secret Club Code on trusted devices to load the private BBB StaFi links.</div>
-  </div>
-</section>
 
 <main>
 <details class="compactdetails currentrun">
@@ -182,11 +166,7 @@ let privateSettingsUpdated='';
 let currentView=localStorage.getItem('bbb-view')||defaultView;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function toggleSettings(){
- const p=document.getElementById('settings-page');
- p.classList.toggle('open');
- if(p.classList.contains('open')){loadSettingsForm(); if(familyKey)autoLoadPrivateSettings();}
-}
+function toggleSettings(){location.href='settings.html'}
 function loadSettingsForm(){
  $('#set-partner-name').value=tabPartnerName;
  $('#set-me-name').value=tabMeName;
@@ -534,7 +514,6 @@ function init(){
  ['q','zone'].forEach(id=>$('#'+id).addEventListener(id==='q'?'input':'change',render));
  const m=location.hash.match(/trip-(\d+)(?:-stop-(\d+))?/);if(m){lastAdventure=Number(m[1]);started.add(lastAdventure);localStorage.setItem('bbb-last-adventure',lastAdventure);localStorage.setItem('bbb-started',JSON.stringify([...started]))}
  render();
- if(new URLSearchParams(location.search).get('settings')==='1')setTimeout(()=>toggleSettings(),80);
  if(m)setTimeout(()=>document.getElementById(m[2]?`trip-${m[1]}-stop-${m[2]}`:'pinned-card')?.scrollIntoView({behavior:'smooth',block:'center'}),120);
 }
 init();
