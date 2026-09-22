@@ -379,3 +379,18 @@ This file is the persistent source of truth for future edits to this project.
 - `bbb_push_config` also tracks `payer_uuid`, `bot_last_seen_at`, and `bot_account_name`. Admin status treats the bot as connected when it has checked in recently.
 - Real payout IM format should be simple and explicit, e.g. `Passport Adventures: kististulip has earned 1,000 L$. Please pay kististulip 1,000 L$.` Test messages must be clearly labeled TEST ONLY.
 - Admin setup must clearly say the site needs browser **Notifications** permission; optional Firestorm launching may need an external-app/pop-up permission prompt.
+
+## Multi-user implementation (current)
+- The public multi-user foundation is live and additive. The polished signed-out Adventures page remains the compatibility path for the original board; do not remove that fallback until the original club has been claimed and verified.
+- Identity uses Supabase Auth email magic links through `club-session.js`. The active club id is stored locally as `bbb-active-club`; it is only a preference, never authorization.
+- Tenant tables are `profiles`, `clubs`, `club_members`, `club_players`, `club_board_state`, `club_adventure_runs`, `club_run_participants`, `club_stamp_progress`, `club_rewards`, `club_collect_requests`, and `user_private_settings`.
+- All tenant tables have RLS enabled. Authenticated users can read only clubs where `club_members` contains their `auth.uid()`. Mutations run through the JWT-protected `club-api` Edge Function, which repeats membership/role checks server-side.
+- A user may create or join multiple independent clubs and switch the active club from Settings. Club join codes are random 128-bit values; only SHA-256 hashes are stored. Rotating an invite invalidates the previous code.
+- Clubs can have any number of active players. Signed-in members get linked player slots; owners/admins may add guest player slots. Adventure runs snapshot their participants so later roster changes do not rewrite old completion rules.
+- In club mode, the Adventures header keeps the existing visual hierarchy and dynamically renders one compact tab per player. Completion requires every run participant to have all three stamps. Members may mark their own stamps; owner/admin roles may update guest players.
+- The pre-existing `bbb_board_state` and `bbb_private_settings` remain untouched as a rollback-safe legacy path. Their data was copied into the fixed **Original Passport Club** (`00000000-0000-4000-8000-000000000001`) with two unlinked player slots. An authenticated user can claim it by proving the existing Secret Club Code decrypts the legacy private payload, then invite the other player. The secret is verified in memory and is not stored.
+- Adventure Treasure is configured per club and defaults OFF for newly created clubs. Reward/payout logs stay club-scoped. A 1,000 L$ bonus creates a `club_collect_requests` record; club owner/admin manually pays in Second Life and uses Admin to mark exactly 1,000 L$ paid. No automatic L$ debit exists.
+- `admin.html` shows an additional active-club payout card for owner/admin accounts. The existing global notification/bot controls remain available for the original installation and global infrastructure; do not expose bot/VPS/token plumbing to ordinary club owners.
+- Automatic per-user BBB StaFi importing is still pending. Until it is connected and tested, club gameplay uses the tidy per-stop **Mark stamp** control; do not claim live StaFi import works.
+- Version-controlled backend sources live under `supabase/migrations/` and `supabase/functions/club-api/`.
+
