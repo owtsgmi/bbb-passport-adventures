@@ -284,10 +284,11 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
 
   rebuildDropdowns();
 
-  qs('#search').addEventListener('input',renderList);
-  qs('#browse').addEventListener('change',renderList);
-  qs('#zone').addEventListener('change',renderList);
-  qs('#status').addEventListener('change',renderList);
+  function leaveNearbyMode(){nearbyResults=null;renderList()}
+  qs('#search').addEventListener('input',leaveNearbyMode);
+  qs('#browse').addEventListener('change',leaveNearbyMode);
+  qs('#zone').addEventListener('change',leaveNearbyMode);
+  qs('#status').addEventListener('change',leaveNearbyMode);
   qs('#random-five').addEventListener('click',loadNearbyForSelected);
   document.addEventListener('click',function(e){var n=document.getElementById('nav');if(n&&!n.contains(e.target))n.classList.remove('open')});
   renderList();syncLiveBBB();
