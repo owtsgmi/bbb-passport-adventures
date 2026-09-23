@@ -14,7 +14,7 @@
 .slg-title{font-weight:800}.slg-sub{font-size:11px;color:#bcb0ca;margin-top:2px}
 .slg-controls{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .slg-controls button{border:1px solid #4b3b61;border-radius:10px;background:#171121;color:#fff9ff;padding:7px 9px;cursor:pointer}
-.slg-level{font-size:11px;color:#bcb0ca;min-width:95px;text-align:center}
+.slg-level{display:inline-grid;place-items:center;width:28px;height:28px;border:1px solid #4b3b61;border-radius:50%;color:#d9cde5;font-size:14px;font-weight:800;cursor:help}
 .slg-viewport{height:700px;overflow:hidden;position:relative;background:#09070d;touch-action:none;user-select:none;cursor:grab}.slg-viewport.dragging{cursor:grabbing}
 .slg-stage{position:absolute;left:50%;top:50%;width:${TILE*GRID}px;height:${TILE*GRID}px;transform:translate(-50%,-50%);transform-origin:center center;cursor:grab;background:#09070d}
 .slg-stage.dragging{cursor:grabbing}
@@ -57,7 +57,7 @@
     _build(){
       this.el.innerHTML=`<div class="slg-wrap">
         <div class="slg-head"><div><div class="slg-title">${this.opts.title||'Second Life Map'}</div><div class="slg-sub" data-slg-sub>Drag to pan · wheel or pinch to zoom · World shows the broad grid</div></div>
-        <div class="slg-controls"><button type="button" data-slg-in>＋</button><button type="button" data-slg-out>−</button><button type="button" data-slg-fit>Fit</button><button type="button" data-slg-world>World</button><span class="slg-level" data-slg-level></span></div></div>
+        <div class="slg-controls"><button type="button" data-slg-in>＋</button><button type="button" data-slg-out>−</button><button type="button" data-slg-fit>Fit</button><button type="button" data-slg-world>World</button><span class="slg-level" data-slg-level aria-label="Map zoom information" tabindex="0">ⓘ</span></div></div>
         <div class="slg-viewport" data-slg-vp><div class="slg-stage" data-slg-stage></div></div>
       </div>`;
       this.stage=this.el.querySelector('[data-slg-stage]');
@@ -247,7 +247,7 @@
       if(this.tileStats.missing)text+=' · '+this.tileStats.missing+' tile'+(this.tileStats.missing===1?'':'s')+' unavailable';
       return text;
     }
-    _updateLevelText(){this.levelLabel.textContent=this._levelText()}
+    _updateLevelText(){const t=this._levelText();this.levelLabel.title=t;this.levelLabel.setAttribute('aria-label','Map zoom: '+t)}
     _wireTiles(){
       const cells=Array.from(this.stage.querySelectorAll('.slg-tilecell'));
       this.tileStats={loaded:0,missing:0,total:cells.length};
