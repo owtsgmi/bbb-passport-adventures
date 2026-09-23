@@ -695,6 +695,7 @@ function adoptClub(data){
   if(previousClub!==data.club.id)clubParticipantSelection=new Set(activePlayers().map(function(p){return p.id}));else clubParticipantSelection=new Set(activePlayers().filter(function(p){return clubParticipantSelection.has(p.id)}).map(function(p){return p.id}));
   const saved=localStorage.getItem('bbb-club-view-'+data.club.id);currentView=clubPlayers.some(function(p){return p.id===saved&&p.is_active})?saved:(activePlayers()[0]&&activePlayers()[0].id||'');
   lastCloudUpdate=clubFingerprint(data);render();syncStatus('Club synced');
+  if(typeof maybeTrimRetiredActiveRun==='function')maybeTrimRetiredActiveRun().catch(function(){});
 }
 async function pollClub(force){
  if(cloudBusy&&!force)return;
