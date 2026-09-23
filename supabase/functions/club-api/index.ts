@@ -135,12 +135,16 @@ async function finalizeRun(clubId:string,adventureId:number){
   const participants=await db("club_run_participants?run_id=eq."+run.id+"&select=player_id");
   const playerIds=participants.map((p:any)=>p.player_id);if(!playerIds.length)return null;
   const progress=await db("club_stamp_progress?club_id=eq."+clubId+"&player_id=in.("+playerIds.join(",")+")&stamp_id=in.("+stampIds.join(",")+")&select=player_id,stamp_id");
-  const completingPlayerId=playerIds.find((playerId:string)=>stampIds.every((stampId:number)=>progress.some((p:any)=>p.player_id===playerId&&Number(p.stamp_id)===stampId)));
+  const club=(await db("clubs?id=eq."+clubId+"&select=game_mode,treasure_enabled"))?.[0];
+  const mode=String(club?.game_mode||"group");
+  const playerComplete=(playerId:string)=>stampIds.every((stampId:number)=>progress.some((p:any)=>p.player_id===playerId&&Number(p.stamp_id)===stampId));
+  const completingPlayerId=mode==="babygirl"
+    ?(playerIds.length===2&&playerIds.every(playerComplete)?playerIds[0]:null)
+    :playerIds.find(playerComplete);
   if(!completingPlayerId)return null;
   const now=new Date().toISOString();
   await db("club_adventure_runs?id=eq."+run.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"completed",completed_at:now})});
-  const club=(await db("clubs?id=eq."+clubId+"&select=treasure_enabled"))?.[0];
-  if(!club?.treasure_enabled)return {completed:true,completed_by_player_id:completingPlayerId,reward:null};
+  if(mode!=="babygirl"||!club?.treasure_enabled)return {completed:true,completed_by_player_id:completingPlayerId,reward:null};
   const existing=(await db("club_rewards?run_id=eq."+run.id+"&select=*"))?.[0];
   if(existing)return {completed:true,completed_by_player_id:completingPlayerId,reward:existing};
   const beneficiary=(await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&is_beneficiary=eq.true&is_payer=eq.false&select=id&limit=1"))?.[0]
@@ -155,7 +159,7 @@ async function loadClub(clubId:string,userId:string){
   const runs=await db("club_adventure_runs?club_id=eq."+clubId+"&select=*&order=started_at.asc");
   const runIds=runs.map((x:any)=>x.id);
   const [clubs,members,players,boards,participants,stamps,rewards,collectRequests,runtimeRows]=await Promise.all([
-    db("clubs?id=eq."+clubId+"&select=id,name,slug,owner_id,treasure_enabled,payout_threshold,is_legacy,created_at,updated_at"),
+    db("clubs?id=eq."+clubId+"&select=id,name,slug,owner_id,game_mode,treasure_enabled,payout_threshold,is_legacy,created_at,updated_at"),
     db("club_members?club_id=eq."+clubId+"&select=user_id,role,joined_at&order=joined_at.asc"),
     db("club_players?club_id=eq."+clubId+"&select=id,user_id,display_name,sl_username,sort_order,is_active,is_payer,is_beneficiary,stafi_collected_count,stafi_available_count,stafi_last_success_at,created_at,updated_at&order=sort_order.asc,created_at.asc"),
     db("club_board_state?club_id=eq."+clubId+"&select=*"),
@@ -278,7 +282,7 @@ Deno.serve(async(req:Request)=>{
     if(action==="list"){
       const memberships=await db("club_members?user_id=eq."+user.id+"&select=club_id,role,joined_at&order=joined_at.asc");
       const ids=memberships.map((m:any)=>m.club_id);
-      const clubs=ids.length?await db("clubs?id=in.("+ids.join(",")+")&select=id,name,slug,owner_id,treasure_enabled,payout_threshold,is_legacy,created_at,updated_at"):[];
+      const clubs=ids.length?await db("clubs?id=in.("+ids.join(",")+")&select=id,name,slug,owner_id,game_mode,treasure_enabled,payout_threshold,is_legacy,created_at,updated_at"):[];
       const profile=(await db("profiles?user_id=eq."+user.id+"&select=user_id,display_name,sl_username"))?.[0]||null;
       const privateSettings=(await db("user_private_settings?user_id=eq."+user.id+"&select=stafi_url,stafi_sync_enabled,stafi_verified_at,stafi_last_sync_at,stafi_last_success_at,stafi_last_error,stafi_last_stamp_count,stafi_uncollected_count,stafi_available_count"))?.[0]||null;
       const runtime=(await db("app_runtime_state?id=eq.1&select=passport_available_count"))?.[0]||null;
@@ -298,13 +302,14 @@ Deno.serve(async(req:Request)=>{
 
     if(action==="create"){
       const name=cleanText(body.name,80);if(!name)return reply({ok:false,error:"club_name_required"},400);
+      const mode=["solo","babygirl","group"].includes(String(body.game_mode||""))?String(body.game_mode):"solo";
       const profile=(await db("profiles?user_id=eq."+user.id+"&select=display_name,sl_username"))?.[0]||{};
-      const code=randomCode(),clubId=crypto.randomUUID();
-      const club=(await db("clubs",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({id:clubId,name,slug:randomSlug(name),owner_id:user.id,join_code_hash:await sha256(code),treasure_enabled:false})}))?.[0];
+      const code=randomCode(),clubId=crypto.randomUUID(),babygirl=mode==="babygirl";
+      const club=(await db("clubs",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({id:clubId,name,slug:randomSlug(name),owner_id:user.id,join_code_hash:await sha256(code),game_mode:mode,treasure_enabled:babygirl})}))?.[0];
       await db("club_members",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({club_id:clubId,user_id:user.id,role:"owner"})});
-      await db("club_players",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({club_id:clubId,user_id:user.id,display_name:profile.display_name||"Adventurer",sl_username:profile.sl_username||null,sort_order:1,is_payer:false,is_beneficiary:false,claimed_at:new Date().toISOString()})});
+      await db("club_players",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({club_id:clubId,user_id:user.id,display_name:profile.display_name||"Adventurer",sl_username:profile.sl_username||null,sort_order:1,is_payer:babygirl,is_beneficiary:false,claimed_at:new Date().toISOString()})});
       await db("club_board_state",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({club_id:clubId,updated_by:user.id})});
-      return reply({ok:true,club,join_code:code});
+      return reply({ok:true,club,join_code:mode==="solo"?null:code});
     }
 
     if(action==="join"){
@@ -313,13 +318,19 @@ Deno.serve(async(req:Request)=>{
       const windowStart=limiter.join_window_started_at?new Date(limiter.join_window_started_at).getTime():0,inside=windowStart&&Date.now()-windowStart<10*60*1000,attempts=inside?Math.max(0,Number(limiter.join_attempts||0)):0;
       if(attempts>=20)return reply({ok:false,error:"join_rate_limited"},429);
       await db("profiles?user_id=eq."+user.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({join_attempts:attempts+1,join_window_started_at:inside?limiter.join_window_started_at:new Date().toISOString()})});
-      const clubs=await db("clubs?join_code_hash=eq."+await sha256(code)+"&select=id,name");const club=clubs?.[0];
+      const clubs=await db("clubs?join_code_hash=eq."+await sha256(code)+"&select=id,name,game_mode");const club=clubs?.[0];
       if(!club)return reply({ok:false,error:"join_code_not_found"},404);
+      const already=await membership(club.id,user.id);
+      if(!already){
+        if(club.game_mode==="solo")return reply({ok:false,error:"solo_club_no_invites"},409);
+        const activePlayers=await db("club_players?club_id=eq."+club.id+"&is_active=eq.true&select=id");
+        if(club.game_mode==="babygirl"&&activePlayers.length>=2)return reply({ok:false,error:"babygirl_full"},409);
+      }
       const profile=(await db("profiles?user_id=eq."+user.id+"&select=display_name,sl_username"))?.[0]||{};
       await db("club_members?on_conflict=club_id,user_id",{method:"POST",headers:{Prefer:"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify({club_id:club.id,user_id:user.id,role:"member"})});
       await db("club_players?on_conflict=club_id,user_id",{method:"POST",headers:{Prefer:"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify({club_id:club.id,user_id:user.id,display_name:profile.display_name||"Adventurer",sl_username:profile.sl_username||user.sl_username,sort_order:100,claimed_at:new Date().toISOString()})});
-      const joinedClub=(await db("clubs?id=eq."+club.id+"&select=treasure_enabled"))?.[0];
-      if(joinedClub?.treasure_enabled)await ensureTreasureRecipient(club.id);
+      const joinedClub=(await db("clubs?id=eq."+club.id+"&select=game_mode,treasure_enabled"))?.[0];
+      if(joinedClub?.game_mode==="babygirl"&&joinedClub?.treasure_enabled)await ensureTreasureRecipient(club.id);
       await db("profiles?user_id=eq."+user.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({join_attempts:0,join_window_started_at:null})});
       return reply({ok:true,club_id:club.id,club_name:club.name});
     }
@@ -335,34 +346,40 @@ Deno.serve(async(req:Request)=>{
 
     if(action==="rotate_invite"){
       if(!manager(m))return reply({ok:false,error:"manager_required"},403);
+      const club=(await db("clubs?id=eq."+clubId+"&select=game_mode"))?.[0];
+      if(club?.game_mode==="solo")return reply({ok:false,error:"solo_club_no_invites"},409);
+      if(club?.game_mode==="babygirl"){
+        const active=await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&select=id");
+        if(active.length>=2)return reply({ok:false,error:"babygirl_full"},409);
+      }
       const code=randomCode();await db("clubs?id=eq."+clubId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({join_code_hash:await sha256(code)})});
       return reply({ok:true,join_code:code});
     }
     if(action==="update_club"){
+      if(!manager(m))return reply({ok:false,error:"manager_required"},403);
       const patch:any={};
+      const currentClub=(await db("clubs?id=eq."+clubId+"&select=game_mode,treasure_enabled"))?.[0];
+      if(!currentClub)return reply({ok:false,error:"club_not_found"},404);
       if(body.name!==undefined){
-        if(!manager(m))return reply({ok:false,error:"manager_required"},403);
         patch.name=cleanText(body.name,80);if(!patch.name)return reply({ok:false,error:"club_name_required"},400);
       }
-      if(body.treasure_enabled!==undefined){
-        const requested=body.treasure_enabled===true;
-        const club=(await db("clubs?id=eq."+clubId+"&select=treasure_enabled"))?.[0];
-        if(!club)return reply({ok:false,error:"club_not_found"},404);
-        if(requested!==!!club.treasure_enabled){
-          if(requested){
+      if(body.game_mode!==undefined){
+        const mode=String(body.game_mode||"");
+        if(!["solo","babygirl","group"].includes(mode))return reply({ok:false,error:"bad_game_mode"},400);
+        if(mode!==currentClub.game_mode){
+          const activeRun=(await db("club_adventure_runs?club_id=eq."+clubId+"&status=eq.active&select=id&limit=1"))?.[0];
+          if(activeRun)return reply({ok:false,error:"mode_change_active_adventure"},409);
+          const active=await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&select=id,user_id");
+          if(mode==="solo"&&active.length>1)return reply({ok:false,error:"solo_requires_one_player"},409);
+          if(mode==="babygirl"&&active.length>2)return reply({ok:false,error:"babygirl_max_two"},409);
+          patch.game_mode=mode;
+          patch.treasure_enabled=mode==="babygirl";
+          if(mode==="babygirl"){
             try{await assignTreasurePayer(clubId,user.id)}catch(e){if(String(e).includes("active_player_required"))return reply({ok:false,error:"active_player_required"},409);throw e}
-            patch.treasure_enabled=true;
-          }else{
-            const payer=(await db("club_players?club_id=eq."+clubId+"&user_id=eq."+user.id+"&is_active=eq.true&is_payer=eq.true&select=id,display_name"))?.[0];
-            if(!payer){
-              const locked=(await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&is_payer=eq.true&select=display_name&limit=1"))?.[0];
-              return reply({ok:false,error:"treasure_locked_to_payer",payer_name:locked?.display_name||null},409);
-            }
-            patch.treasure_enabled=false;
-            await clearTreasureRoles(clubId);
-          }
+          }else await clearTreasureRoles(clubId);
         }
       }
+      if(body.treasure_enabled!==undefined)return reply({ok:false,error:"treasure_managed_by_mode"},409);
       if(!Object.keys(patch).length)return reply({ok:true});
       await db("clubs?id=eq."+clubId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(patch)});
       return reply({ok:true});
@@ -452,8 +469,12 @@ Deno.serve(async(req:Request)=>{
       await db("club_adventure_runs?club_id=eq."+clubId+"&status=eq.active&adventure_id=neq."+adventureId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"retired",locked:false})});
       const refs=stampRefs(body.stamps,stampIds);if(refs.length!==3)return reply({ok:false,error:"invalid_stamp_references"},400);
       const run=(await db("club_adventure_runs?on_conflict=club_id,adventure_id",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify({club_id:clubId,adventure_id:adventureId,status:"active",locked:true,started_by:user.id,completed_at:null,stamp_ids:stampIds,stamp_refs:refs})}))?.[0];
-      const chosen=Array.isArray(body.player_ids)?body.player_ids.map(uuid).filter(Boolean):[];const active=await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&select=id");
-      const allowed=new Set<string>(active.map((p:any)=>p.id));const playerIds:string[]=[...new Set<string>((chosen.length?chosen:active.map((p:any)=>p.id)).filter((id:string)=>allowed.has(id)))];if(!playerIds.length)return reply({ok:false,error:"participant_required"},400);
+      const active=await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&select=id");
+      const playerIds:string[]=active.map((p:any)=>p.id);if(!playerIds.length)return reply({ok:false,error:"participant_required"},400);
+      const club=(await db("clubs?id=eq."+clubId+"&select=game_mode"))?.[0],mode=String(club?.game_mode||"group");
+      if(mode==="solo"&&playerIds.length!==1)return reply({ok:false,error:"solo_requires_one_player"},409);
+      if(mode==="babygirl"&&playerIds.length!==2)return reply({ok:false,error:"babygirl_needs_two"},409);
+      if(mode==="group"&&playerIds.length<2)return reply({ok:false,error:"group_needs_two"},409);
       await db("club_run_participants?run_id=eq."+run.id,{method:"DELETE",headers:{Prefer:"return=minimal"}});
       if(playerIds.length)await db("club_run_participants",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify(playerIds.map((player_id:string)=>({run_id:run.id,player_id})))});
       const board=(await db("club_board_state?club_id=eq."+clubId+"&select=started"))?.[0]||{};
