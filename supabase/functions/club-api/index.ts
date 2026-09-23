@@ -84,6 +84,21 @@ async function membership(clubId:string,userId:string){
 }
 async function requireMember(clubId:string,userId:string){const m=await membership(clubId,userId);if(!m)throw new Error("not_a_club_member");return m}
 function manager(m:any){return m?.role==="owner"||m?.role==="admin"}
+async function normalizeTreasureRoles(clubId:string){
+  const players=await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&select=id,is_payer,is_beneficiary,sort_order,created_at&order=sort_order.asc,created_at.asc");
+  if(!players.length){
+    await db("club_players?club_id=eq."+clubId+"&is_payer=eq.true",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({is_payer:false})});
+    await db("club_players?club_id=eq."+clubId+"&is_beneficiary=eq.true",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({is_beneficiary:false})});
+    return {payer_id:null,beneficiary_id:null};
+  }
+  const payer=players.find((p:any)=>p.is_payer)||players[0];
+  const beneficiary=players.find((p:any)=>p.is_beneficiary&&p.id!==payer.id)||players.find((p:any)=>p.id!==payer.id)||null;
+  await db("club_players?club_id=eq."+clubId+"&is_payer=eq.true",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({is_payer:false})});
+  await db("club_players?club_id=eq."+clubId+"&is_beneficiary=eq.true",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({is_beneficiary:false})});
+  await db("club_players?id=eq."+payer.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({is_payer:true,is_beneficiary:false})});
+  if(beneficiary)await db("club_players?id=eq."+beneficiary.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({is_beneficiary:true,is_payer:false})});
+  return {payer_id:payer.id,beneficiary_id:beneficiary?.id||null};
+}
 async function clubBalance(clubId:string,beneficiaryId=""){
   const suffix=beneficiaryId?"&beneficiary_player_id=eq."+beneficiaryId:"";
   const rows=await db("club_rewards?club_id=eq."+clubId+suffix+"&select=amount,paid_amount");
@@ -104,9 +119,8 @@ async function finalizeRun(clubId:string,adventureId:number){
   if(!club?.treasure_enabled)return {completed:true,reward:null};
   const existing=(await db("club_rewards?run_id=eq."+run.id+"&select=*"))?.[0];
   if(existing)return {completed:true,reward:existing};
-  const beneficiary=(await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&is_beneficiary=eq.true&select=id&limit=1"))?.[0]
-    ||(await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&is_payer=eq.false&select=id&order=sort_order.asc,created_at.asc&limit=1"))?.[0]
-    ||(await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&select=id&order=sort_order.asc,created_at.asc&limit=1"))?.[0];
+  const beneficiary=(await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&is_beneficiary=eq.true&is_payer=eq.false&select=id&limit=1"))?.[0]
+    ||(await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&is_payer=eq.false&select=id&order=sort_order.asc,created_at.asc&limit=1"))?.[0];
   if(!beneficiary)return {completed:true,reward:null};
   const created=(await db("club_rewards?on_conflict=run_id",{method:"POST",headers:{Prefer:"resolution=ignore-duplicates,return=representation"},body:JSON.stringify({club_id:clubId,run_id:run.id,beneficiary_player_id:beneficiary.id,amount:randomReward()})}))?.[0];
   const reward=created||(await db("club_rewards?run_id=eq."+run.id+"&select=*"))?.[0]||null;
@@ -191,7 +205,7 @@ Deno.serve(async(req:Request)=>{
       const code=randomCode(),clubId=crypto.randomUUID();
       const club=(await db("clubs",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({id:clubId,name,slug:randomSlug(name),owner_id:user.id,join_code_hash:await sha256(code),treasure_enabled:false})}))?.[0];
       await db("club_members",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({club_id:clubId,user_id:user.id,role:"owner"})});
-      await db("club_players",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({club_id:clubId,user_id:user.id,display_name:profile.display_name||"Adventurer",sl_username:profile.sl_username||null,sort_order:1,is_payer:true,is_beneficiary:true,claimed_at:new Date().toISOString()})});
+      await db("club_players",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({club_id:clubId,user_id:user.id,display_name:profile.display_name||"Adventurer",sl_username:profile.sl_username||null,sort_order:1,is_payer:true,is_beneficiary:false,claimed_at:new Date().toISOString()})});
       await db("club_board_state",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({club_id:clubId,updated_by:user.id})});
       return reply({ok:true,club,join_code:code});
     }
@@ -207,12 +221,7 @@ Deno.serve(async(req:Request)=>{
       const profile=(await db("profiles?user_id=eq."+user.id+"&select=display_name,sl_username"))?.[0]||{};
       await db("club_members?on_conflict=club_id,user_id",{method:"POST",headers:{Prefer:"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify({club_id:club.id,user_id:user.id,role:"member"})});
       await db("club_players?on_conflict=club_id,user_id",{method:"POST",headers:{Prefer:"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify({club_id:club.id,user_id:user.id,display_name:profile.display_name||"Adventurer",sl_username:profile.sl_username||user.sl_username,sort_order:100,claimed_at:new Date().toISOString()})});
-      const joinedPlayer=(await db("club_players?club_id=eq."+club.id+"&user_id=eq."+user.id+"&select=id"))?.[0];
-      const currentBeneficiary=(await db("club_players?club_id=eq."+club.id+"&is_beneficiary=eq.true&select=id,is_payer&limit=1"))?.[0];
-      if(joinedPlayer&&currentBeneficiary?.is_payer&&joinedPlayer.id!==currentBeneficiary.id){
-        await db("club_players?club_id=eq."+club.id+"&is_beneficiary=eq.true",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({is_beneficiary:false})});
-        await db("club_players?id=eq."+joinedPlayer.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({is_beneficiary:true})});
-      }
+      await normalizeTreasureRoles(club.id);
       await db("profiles?user_id=eq."+user.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({join_attempts:0,join_window_started_at:null})});
       return reply({ok:true,club_id:club.id,club_name:club.name});
     }
@@ -231,7 +240,24 @@ Deno.serve(async(req:Request)=>{
       if(!manager(m))return reply({ok:false,error:"manager_required"},403);
       const patch:any={};if(body.name!==undefined){patch.name=cleanText(body.name,80);if(!patch.name)return reply({ok:false,error:"club_name_required"},400)}
       if(body.treasure_enabled!==undefined)patch.treasure_enabled=body.treasure_enabled===true;
-      await db("clubs?id=eq."+clubId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(patch)});return reply({ok:true});
+      await db("clubs?id=eq."+clubId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(patch)});
+      if(body.treasure_enabled===true)await normalizeTreasureRoles(clubId);
+      return reply({ok:true});
+    }
+    if(action==="set_treasure_roles"){
+      if(!manager(m))return reply({ok:false,error:"manager_required"},403);
+      const payerId=uuid(body.payer_player_id),beneficiaryId=uuid(body.beneficiary_player_id);
+      const players=await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&select=id,display_name,sl_username,is_payer,is_beneficiary&order=sort_order.asc,created_at.asc");
+      const payer=players.find((p:any)=>p.id===payerId);
+      if(!payer)return reply({ok:false,error:"payer_required"},400);
+      if(beneficiaryId&&beneficiaryId===payerId)return reply({ok:false,error:"treasure_roles_must_differ"},409);
+      const beneficiary=beneficiaryId?players.find((p:any)=>p.id===beneficiaryId):null;
+      if(players.length>1&&!beneficiary)return reply({ok:false,error:"beneficiary_required"},400);
+      await db("club_players?club_id=eq."+clubId+"&is_payer=eq.true",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({is_payer:false})});
+      await db("club_players?club_id=eq."+clubId+"&is_beneficiary=eq.true",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({is_beneficiary:false})});
+      await db("club_players?id=eq."+payer.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({is_payer:true,is_beneficiary:false})});
+      if(beneficiary)await db("club_players?id=eq."+beneficiary.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({is_beneficiary:true,is_payer:false})});
+      return reply({ok:true,payer_player_id:payer.id,beneficiary_player_id:beneficiary?.id||null});
     }
     if(action==="add_guest"){
       if(!manager(m))return reply({ok:false,error:"manager_required"},403);
@@ -245,8 +271,8 @@ Deno.serve(async(req:Request)=>{
       const patch:any={};if(body.display_name!==undefined){patch.display_name=cleanText(body.display_name,60);if(!patch.display_name)return reply({ok:false,error:"display_name_required"},400)}
       if(body.sl_username!==undefined)patch.sl_username=cleanText(body.sl_username,80)||null;
       if(manager(m)&&body.is_active!==undefined)patch.is_active=body.is_active===true;
-      if(manager(m)&&body.is_payer===true){await db("club_players?club_id=eq."+clubId+"&is_payer=eq.true",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({is_payer:false})});patch.is_payer=true}
-      if(manager(m)&&body.is_beneficiary===true){await db("club_players?club_id=eq."+clubId+"&is_beneficiary=eq.true",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({is_beneficiary:false})});patch.is_beneficiary=true}
+      if(manager(m)&&body.is_payer===true){await db("club_players?club_id=eq."+clubId+"&is_payer=eq.true",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({is_payer:false})});patch.is_payer=true;patch.is_beneficiary=false}
+      if(manager(m)&&body.is_beneficiary===true){await db("club_players?club_id=eq."+clubId+"&is_beneficiary=eq.true",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({is_beneficiary:false})});patch.is_beneficiary=true;patch.is_payer=false}
       await db("club_players?id=eq."+playerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(patch)});return reply({ok:true});
     }
     if(action==="set_member_role"){
@@ -260,12 +286,14 @@ Deno.serve(async(req:Request)=>{
       const targetUser=uuid(body.user_id),target=(await db("club_members?club_id=eq."+clubId+"&user_id=eq."+targetUser+"&select=role"))?.[0];if(!target)return reply({ok:false,error:"member_not_found"},404);
       if(target.role==="owner"||(m.role!=="owner"&&target.role==="admin"))return reply({ok:false,error:"not_authorized"},403);
       await db("club_members?club_id=eq."+clubId+"&user_id=eq."+targetUser,{method:"DELETE",headers:{Prefer:"return=minimal"}});
-      await db("club_players?club_id=eq."+clubId+"&user_id=eq."+targetUser,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({user_id:null})});return reply({ok:true});
+      await db("club_players?club_id=eq."+clubId+"&user_id=eq."+targetUser,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({user_id:null,is_active:false,is_payer:false,is_beneficiary:false})});
+      await normalizeTreasureRoles(clubId);return reply({ok:true});
     }
     if(action==="leave_club"){
       if(m.role==="owner")return reply({ok:false,error:"owner_cannot_leave"},409);
       await db("club_members?club_id=eq."+clubId+"&user_id=eq."+user.id,{method:"DELETE",headers:{Prefer:"return=minimal"}});
-      await db("club_players?club_id=eq."+clubId+"&user_id=eq."+user.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({user_id:null})});return reply({ok:true});
+      await db("club_players?club_id=eq."+clubId+"&user_id=eq."+user.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({user_id:null,is_active:false,is_payer:false,is_beneficiary:false})});
+      await normalizeTreasureRoles(clubId);return reply({ok:true});
     }
     if(action==="save_board"){
       const patch:any={updated_by:user.id};
@@ -276,7 +304,7 @@ Deno.serve(async(req:Request)=>{
     }
     if(action==="request_collect"){
       const club=(await db("clubs?id=eq."+clubId+"&select=treasure_enabled"))?.[0];if(!club?.treasure_enabled)return reply({ok:false,error:"treasure_disabled"},409);
-      const playerId=uuid(body.player_id),player=(await db("club_players?id=eq."+playerId+"&club_id=eq."+clubId+"&is_beneficiary=eq.true&select=id,user_id,display_name"))?.[0];
+      const playerId=uuid(body.player_id),player=(await db("club_players?id=eq."+playerId+"&club_id=eq."+clubId+"&is_beneficiary=eq.true&is_payer=eq.false&select=id,user_id,display_name"))?.[0];
       if(!player)return reply({ok:false,error:"beneficiary_not_found"},404);if(!manager(m)&&player.user_id!==user.id)return reply({ok:false,error:"not_authorized"},403);
       const balance=await clubBalance(clubId,playerId);if(balance<1000)return reply({ok:false,error:"threshold_not_met",balance},409);
       const existing=await db("club_collect_requests?club_id=eq."+clubId+"&beneficiary_player_id=eq."+playerId+"&status=eq.pending&select=id,created_at");
