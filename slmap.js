@@ -51,12 +51,12 @@
       this.level=Number(opts.level||4);
       this.center={x:1024,y:1024};
       this.markers=[];
-      this.panX=0;this.panY=0;this.scale=1;this.drag=null;this.focusIndex=-1;this.wheelTimer=null;this.wheelDir=0;this.tileStats={loaded:0,missing:0,total:0};
+      this.panX=0;this.panY=0;this.scale=1;this.drag=null;this.pointers=new Map();this.pinch=null;this.focusIndex=-1;this.wheelTimer=null;this.wheelDir=0;this.tileStats={loaded:0,missing:0,total:0};
       this._build();
     }
     _build(){
       this.el.innerHTML=`<div class="slg-wrap">
-        <div class="slg-head"><div><div class="slg-title">${this.opts.title||'Second Life Map'}</div><div class="slg-sub" data-slg-sub>Drag to pan · mouse wheel to zoom · World shows the broad grid</div></div>
+        <div class="slg-head"><div><div class="slg-title">${this.opts.title||'Second Life Map'}</div><div class="slg-sub" data-slg-sub>Drag to pan · wheel or pinch to zoom · World shows the broad grid</div></div>
         <div class="slg-controls"><button type="button" data-slg-in>＋</button><button type="button" data-slg-out>−</button><button type="button" data-slg-fit>Fit</button><button type="button" data-slg-world>World</button><span class="slg-level" data-slg-level></span></div></div>
         <div class="slg-viewport" data-slg-vp><div class="slg-stage" data-slg-stage></div></div>
       </div>`;
@@ -77,29 +77,89 @@
         },140);
       },{passive:false});
       this.vp.addEventListener('dragstart',e=>e.preventDefault());
-      this.vp.addEventListener('pointerdown',e=>{
-        if(e.button!==undefined&&e.button!==0)return;
-        e.preventDefault();
-        this.drag={x:e.clientX-this.panX,y:e.clientY-this.panY};
+      const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+      const midpoint=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
+      const beginSingleDrag=p=>{
+        this.drag={id:p.id,x:p.x-this.panX,y:p.y-this.panY};
         this.vp.classList.add('dragging');
+      };
+      const beginPinch=()=>{
+        const pts=[...this.pointers.values()];
+        if(pts.length<2)return;
+        const a=pts[0],b=pts[1],mid=midpoint(a,b);
+        this.drag=null;
+        this.pinch={
+          startDistance:Math.max(1,distance(a,b)),
+          lastRatio:1,
+          startPanX:this.panX,startPanY:this.panY,
+          startMidX:mid.x,startMidY:mid.y
+        };
+        this.vp.classList.add('dragging');
+      };
+      const commitPinch=()=>{
+        if(!this.pinch)return;
+        const ratio=this.pinch.lastRatio||1;
+        this.scale=1;
+        this.pinch=null;
+        if(ratio>1.16){
+          const steps=Math.max(1,Math.min(3,Math.round(Math.log(ratio)/Math.log(1.55))));
+          this.setLevel(Math.max(1,this.level-steps));
+        }else if(ratio<0.86){
+          const steps=Math.max(1,Math.min(3,Math.round(Math.log(1/ratio)/Math.log(1.55))));
+          this.setLevel(Math.min(8,this.level+steps));
+        }else{
+          this._applyTransform();
+        }
+      };
+      this.vp.addEventListener('pointerdown',e=>{
+        if(e.pointerType!=='touch'&&e.button!==undefined&&e.button!==0)return;
+        e.preventDefault();
+        const p={id:e.pointerId,x:e.clientX,y:e.clientY,type:e.pointerType};
+        this.pointers.set(e.pointerId,p);
         try{this.vp.setPointerCapture(e.pointerId)}catch(err){}
+        if(this.pointers.size>=2)beginPinch();
+        else beginSingleDrag(p);
       });
       this.vp.addEventListener('pointermove',e=>{
-        if(!this.drag)return;
+        if(!this.pointers.has(e.pointerId))return;
         e.preventDefault();
-        this.panX=e.clientX-this.drag.x;
-        this.panY=e.clientY-this.drag.y;
-        this._applyTransform();
+        const p={id:e.pointerId,x:e.clientX,y:e.clientY,type:e.pointerType};
+        this.pointers.set(e.pointerId,p);
+        if(this.pointers.size>=2){
+          if(!this.pinch)beginPinch();
+          const pts=[...this.pointers.values()],a=pts[0],b=pts[1],mid=midpoint(a,b);
+          const ratio=Math.max(.55,Math.min(1.8,distance(a,b)/this.pinch.startDistance));
+          this.pinch.lastRatio=ratio;
+          this.scale=ratio;
+          this.panX=this.pinch.startPanX+(mid.x-this.pinch.startMidX);
+          this.panY=this.pinch.startPanY+(mid.y-this.pinch.startMidY);
+          this._applyTransform();
+          return;
+        }
+        if(this.drag&&this.drag.id===e.pointerId){
+          this.panX=e.clientX-this.drag.x;
+          this.panY=e.clientY-this.drag.y;
+          this._applyTransform();
+        }
       });
-      const endDrag=e=>{
-        if(!this.drag)return;
-        this.drag=null;
-        this.vp.classList.remove('dragging');
-        try{if(e&&this.vp.hasPointerCapture(e.pointerId))this.vp.releasePointerCapture(e.pointerId)}catch(err){}
+      const endPointer=e=>{
+        const had=this.pointers.has(e.pointerId);
+        if(had)this.pointers.delete(e.pointerId);
+        try{if(this.vp.hasPointerCapture(e.pointerId))this.vp.releasePointerCapture(e.pointerId)}catch(err){}
+        if(this.pinch&&this.pointers.size<2)commitPinch();
+        if(this.pointers.size===1){
+          const p=[...this.pointers.values()][0];
+          beginSingleDrag(p);
+        }else if(!this.pointers.size){
+          this.drag=null;
+          this.vp.classList.remove('dragging');
+        }
       };
-      this.vp.addEventListener('pointerup',endDrag);
-      this.vp.addEventListener('pointercancel',endDrag);
-      this.vp.addEventListener('lostpointercapture',endDrag);
+      this.vp.addEventListener('pointerup',endPointer);
+      this.vp.addEventListener('pointercancel',endPointer);
+      this.vp.addEventListener('lostpointercapture',e=>{
+        if(this.pointers.has(e.pointerId))endPointer(e);
+      });
     }
     async setLocations(locations,opts={}){
       const out=[];
@@ -113,21 +173,26 @@
         this.stage.innerHTML='<div class="slg-empty">Map coordinates unavailable for these locations.</div>';
         return;
       }
-      const avgX=out.reduce((n,m)=>n+m.gridX,0)/out.length;
-      const avgY=out.reduce((n,m)=>n+m.gridY,0)/out.length;
-      this.center={x:avgX,y:avgY};
+      this.center=this._markerCenter(out);
       if(opts.fit!==false)this.level=this._fitLevel(out);
       else if(opts.level)this.level=opts.level;
       this.panX=0;this.panY=0;this.scale=1;
       this.render();
     }
+    _markerCenter(ms){
+      if(!ms.length)return {x:1024,y:1024};
+      const xs=ms.map(m=>m.gridX+Number(m.x||128)/256),ys=ms.map(m=>m.gridY+Number(m.y||128)/256);
+      return {x:(Math.min(...xs)+Math.max(...xs))/2,y:(Math.min(...ys)+Math.max(...ys))/2};
+    }
     _fitLevel(ms){
       if(ms.length<=1)return 3;
       const xs=ms.map(m=>m.gridX+Number(m.x||128)/256),ys=ms.map(m=>m.gridY+Number(m.y||128)/256);
-      const spanNeeded=Math.max(Math.max(...xs)-Math.min(...xs),Math.max(...ys)-Math.min(...ys));
+      const spanX=Math.max(...xs)-Math.min(...xs),spanY=Math.max(...ys)-Math.min(...ys);
+      const width=Math.max(320,this.vp?.clientWidth||0),height=Math.max(360,this.vp?.clientHeight||0);
+      const padX=Math.min(150,Math.max(84,width*.12)),padY=Math.min(150,Math.max(100,height*.14));
       for(let z=1;z<=8;z++){
-        const tileSpan=Math.pow(2,z-1);
-        if(spanNeeded<=tileSpan*3)return z;
+        const regionPixels=TILE/Math.pow(2,z-1);
+        if(spanX*regionPixels+padX*2<=width && spanY*regionPixels+padY*2<=height)return z;
       }
       return 8;
     }
@@ -156,10 +221,7 @@
     }
     fitMarkers(){
       if(!this.markers.length)return;
-      this.center={
-        x:this.markers.reduce((n,m)=>n+m.gridX,0)/this.markers.length,
-        y:this.markers.reduce((n,m)=>n+m.gridY,0)/this.markers.length
-      };
+      this.center=this._markerCenter(this.markers);
       this.level=this._fitLevel(this.markers);this.panX=0;this.panY=0;this.scale=1;this.focusIndex=-1;this.render();
     }
     setLevel(z,world=false){
@@ -168,10 +230,7 @@
       this.level=next;
       this.panX=0;this.panY=0;this.scale=1;
       if(world&&this.markers.length){
-        this.center={
-          x:this.markers.reduce((n,m)=>n+m.gridX,0)/this.markers.length,
-          y:this.markers.reduce((n,m)=>n+m.gridY,0)/this.markers.length
-        };
+        this.center=this._markerCenter(this.markers);
       }
       this.render();
     }
