@@ -1,6 +1,20 @@
 let clubMode=false,clubData=null,clubPlayers=[],clubProgress=new Map(),clubRuns=[],clubParticipants=[],clubParticipantSelection=new Set(),clubStaFiSyncBusy=false,lastClubStaFiSync=0,lastClubActivity=0;
 function activePlayers(){return clubMode?clubPlayers.filter(function(p){return p.is_active}):[]}
 function clubGameMode(){return clubMode&&clubData&&clubData.club?String(clubData.club.game_mode||'group'):'group'}
+function adventureRun(a){return clubMode&&a?clubRuns.find(function(r){return Number(r.adventure_id)===Number(a.id)}):null}
+function adventureStamps(a){
+ if(!a)return [];
+ const all=Array.isArray(a.allStamps)?a.allStamps:(Array.isArray(a.stamps)?a.stamps:[]);
+ const run=adventureRun(a),ids=run&&Array.isArray(run.stamp_ids)?run.stamp_ids.map(Number).filter(Number.isFinite):[];
+ if(ids.length){const wanted=new Set(ids);return all.filter(function(st){return wanted.has(Number(st.id))})}
+ return Array.isArray(a.stamps)?a.stamps:[];
+}
+function retiredCountForAdventure(a){const all=Array.isArray(a&&a.allStamps)?a.allStamps:(a&&a.stamps||[]);return Math.max(0,all.length-adventureStamps(a).length)}
+function stopWord(n){return n+' stop'+(n===1?'':'s')}
+function copyClubAdventureStop(advId,stampId){
+ const a=adventures.find(function(x){return Number(x.id)===Number(advId)}),all=a&&(a.allStamps||a.stamps)||[],st=all.find(function(x){return Number(x.id)===Number(stampId)});
+ if(st)copy(fsUrl(st),'Destination copied for Firestorm');
+}
 function viewedPlayer(){return clubMode?(clubPlayers.find(function(p){return p.id===currentView})||activePlayers()[0]||null):null}
 function viewedDone(){if(!clubMode)return currentView==='partner'?partnerDone:meDone;return clubProgress.get((viewedPlayer()||{}).id)||new Set()}
 function participantPlayers(a){
@@ -8,8 +22,11 @@ function participantPlayers(a){
  const run=clubRuns.find(function(r){return Number(r.adventure_id)===Number(a.id)}),ids=run?clubParticipants.filter(function(x){return x.run_id===run.id}).map(function(x){return x.player_id}):[];
  const pool=ids.length?ids:activePlayers().map(function(p){return p.id});return pool.map(function(id){return clubPlayers.find(function(p){return p.id===id})}).filter(Boolean);
 }
+const legacyPersonComplete=personComplete,legacyProgressFor=progressFor;
+personComplete=function(a,set){if(!clubMode)return legacyPersonComplete(a,set);const stamps=adventureStamps(a);return stamps.length>0&&stamps.every(function(st){return set.has(st.id)})};
+progressFor=function(a,set){if(!clubMode)return legacyProgressFor(a,set);return adventureStamps(a).filter(function(st){return set.has(st.id)}).length};
 setView=function(v){currentView=v;if(clubMode)localStorage.setItem('bbb-club-view-'+clubData.club.id,v);else localStorage.setItem('bbb-view',v);render()};
-startedAdventure=function(a){return started.has(a.id)||(clubMode?activePlayers().some(function(p){return a.stamps.some(function(st){return (clubProgress.get(p.id)||new Set()).has(st.id)})}):a.stamps.some(function(st){return meDone.has(st.id)||partnerDone.has(st.id)}))};
+startedAdventure=function(a){const stamps=clubMode?adventureStamps(a):a.stamps;return started.has(a.id)||(clubMode?activePlayers().some(function(p){return stamps.some(function(st){return (clubProgress.get(p.id)||new Set()).has(st.id)})}):stamps.some(function(st){return meDone.has(st.id)||partnerDone.has(st.id)}))};
 togetherComplete=function(a){
  if(!clubMode)return personComplete(a,meDone)||personComplete(a,partnerDone);
  const people=participantPlayers(a);if(!people.length)return false;
@@ -18,13 +35,14 @@ togetherComplete=function(a){
    :people.some(function(p){return personComplete(a,clubProgress.get(p.id)||new Set())});
 };
 sharedNextIndex=function(a){
- if(!clubMode){const set=currentView==='partner'?partnerDone:meDone,i=a.stamps.findIndex(function(st){return !set.has(st.id)});return i<0?0:i}
+ const stamps=clubMode?adventureStamps(a):a.stamps;
+ if(!clubMode){const set=currentView==='partner'?partnerDone:meDone,i=stamps.findIndex(function(st){return !set.has(st.id)});return i<0?0:i}
  const people=participantPlayers(a);
  if(clubGameMode()==='babygirl'){
-   const i=a.stamps.findIndex(function(st){return !people.length||people.some(function(p){return !(clubProgress.get(p.id)||new Set()).has(st.id)})});
+   const i=stamps.findIndex(function(st){return !people.length||people.some(function(p){return !(clubProgress.get(p.id)||new Set()).has(st.id)})});
    return i<0?0:i;
  }
- const set=viewedDone(),i=a.stamps.findIndex(function(st){return !set.has(st.id)});return i<0?0:i;
+ const set=viewedDone(),i=stamps.findIndex(function(st){return !set.has(st.id)});return i<0?0:i;
 };
 const legacySyncCompletedRewardsToPayouts=syncCompletedRewardsToPayouts;
 syncCompletedRewardsToPayouts=function(){return clubMode?false:legacySyncCompletedRewardsToPayouts()};
@@ -32,14 +50,15 @@ function selectedParticipantIds(){return activePlayers().map(function(p){return 
 function renderParticipantPicker(){}
 const legacyStartAdventure=startAdventure;
 startAdventure=function(id){
- const adventure=adventures.find(function(a){return a.id===Number(id)}),players=selectedParticipantIds(),mode=clubGameMode();
+ const adventure=adventures.find(function(a){return a.id===Number(id)}),players=selectedParticipantIds(),mode=clubGameMode(),stamps=adventureStamps(adventure);
  if(clubMode){
+   if(!stamps.length){toast('That adventure has no active passport stops left.');return false}
    if(mode==='solo'&&players.length!==1){toast('Solo mode needs exactly one active player.');return false}
    if(mode==='babygirl'&&players.length!==2){toast('💗 Invite your Babygirl first — this mode needs exactly two players.');return false}
    if(mode==='group'&&players.length<2){toast('👥 Group mode needs at least two players.');return false}
  }
  const ok=legacyStartAdventure(id);
- if(ok&&clubMode&&adventure)PassportCloud.call('start_adventure',{club_id:clubData.club.id,adventure_id:Number(id),stamp_ids:adventure.stamps.map(function(st){return st.id}),stamps:adventure.stamps.map(function(st){return {id:st.id,name:st.name,region:st.region,x:Number(st.x),y:Number(st.y),z:Number(st.z)}}),player_ids:players}).then(function(){return pollClub(true)}).catch(function(e){
+ if(ok&&clubMode&&adventure)PassportCloud.call('start_adventure',{club_id:clubData.club.id,adventure_id:Number(id),stamp_ids:stamps.map(function(st){return st.id}),stamps:stamps.map(function(st){return {id:st.id,name:st.name,region:st.region,x:Number(st.x),y:Number(st.y),z:Number(st.z)}}),player_ids:players}).then(function(){return pollClub(true)}).catch(function(e){
    const msg=e.message==='babygirl_needs_two'?'💗 Babygirl mode needs exactly two players.'
      :e.message==='group_needs_two'?'👥 Group mode needs at least two players.'
      :e.message==='solo_requires_one_player'?'🧭 Solo mode needs exactly one player.'
@@ -66,28 +85,56 @@ async function toggleClubStamp(advId,stampId){
 const legacyMissionRows=missionRows;
 missionRows=function(a,mapInteractive){
  if(!clubMode)return legacyMissionRows(a,mapInteractive);
- mapInteractive=!!mapInteractive;const next=sharedNextIndex(a),selected=viewedDone(),people=participantPlayers(a),player=viewedPlayer(),run=clubRuns.find(function(r){return Number(r.adventure_id)===Number(a.id)}),canMark=run&&run.status==='active'&&canEditViewedPlayer();
+ mapInteractive=!!mapInteractive;const stamps=adventureStamps(a),next=sharedNextIndex(a),selected=viewedDone(),people=participantPlayers(a),player=viewedPlayer(),run=adventureRun(a),canMark=run&&run.status==='active'&&canEditViewedPlayer();
  let h='<table class="mission-table"><thead><tr><th>#</th><th>Passport stop</th><th>'+esc((player&&player.display_name||'Player')+' status')+'</th><th></th></tr></thead><tbody>';
- a.stamps.forEach(function(st,i){
+ stamps.forEach(function(st,i){
    const personDone=selected.has(st.id),nr=i===next&&!togetherComplete(a),count=people.filter(function(p){return (clubProgress.get(p.id)||new Set()).has(st.id)}).length;
    const cls=(nr?'nextrow ':'')+(mapInteractive?'mapselectable':''),rowClick=mapInteractive?' onclick="selectAdventureStop('+a.id+','+i+')"':'';
    const mapButton=mapInteractive?'<button class="sl mapbtn" title="Reset map and zoom to this stop" onclick="event.stopPropagation();selectAdventureStop('+a.id+','+i+')">🎯 Focus</button>':'';
    const stampButton=canMark?'<br><button class="stampbtn" onclick="event.stopPropagation();toggleClubStamp('+a.id+','+st.id+')">'+(personDone?'Undo':'Mark stamp')+'</button>':'';
-   h+='<tr class="'+cls+'" data-map-row="'+(mapInteractive?i:'')+'" id="trip-'+a.id+'-stop-'+(i+1)+'"'+rowClick+'><td>'+(i+1)+'</td><td><div class="stopinfo">'+stampThumbHtml(st)+'<div><div class="place">'+esc(st.name)+(nr?'<span class="nexttag">NEXT</span>':'')+'</div><div class="where">'+esc(st.region)+' · '+st.x+', '+st.y+', '+st.z+'</div></div></div></td><td class="who">'+(personDone?'✅ Got it':'○ Needed')+'<span class="small"> · '+count+'/'+people.length+' players</span>'+stampButton+'</td><td class="act"><button class="sl" onclick="event.stopPropagation();copy(fsUrl(adventures.find(function(x){return x.id==='+a.id+'}).stamps['+i+']),&quot;Destination copied for Firestorm&quot;)">🔥 Copy</button>'+mapButton+'</td></tr>';
+   h+='<tr class="'+cls+'" data-map-row="'+(mapInteractive?i:'')+'" id="trip-'+a.id+'-stop-'+(i+1)+'"'+rowClick+'><td>'+(i+1)+'</td><td><div class="stopinfo">'+stampThumbHtml(st)+'<div><div class="place">'+esc(st.name)+(nr?'<span class="nexttag">NEXT</span>':'')+'</div><div class="where">'+esc(st.region)+' · '+st.x+', '+st.y+', '+st.z+'</div></div></div></td><td class="who">'+(personDone?'✅ Got it':'○ Needed')+'<span class="small"> · '+count+'/'+people.length+' players</span>'+stampButton+'</td><td class="act"><button class="sl" onclick="event.stopPropagation();copyClubAdventureStop('+a.id+','+st.id+')">🔥 Copy</button>'+mapButton+'</td></tr>';
  });
  return h+'</tbody></table>';
 };
 const legacyPinnedHtml=pinnedHtml;
 pinnedHtml=function(a){
  if(!clubMode)return legacyPinnedHtml(a);
- const selected=viewedDone(),shown=progressFor(a,selected),people=participantPlayers(a),mode=clubGameMode(),person=(viewedPlayer()||{}).display_name||'Player';
+ const stamps=adventureStamps(a),selected=viewedDone(),shown=progressFor(a,selected),people=participantPlayers(a),mode=clubGameMode(),person=(viewedPlayer()||{}).display_name||'Player';
  const best=people.reduce(function(m,p){return Math.max(m,progressFor(a,clubProgress.get(p.id)||new Set()))},0);
- const together=a.stamps.filter(function(st){return people.length===2&&people.every(function(p){return (clubProgress.get(p.id)||new Set()).has(st.id)})}).length;
- const treasureBadge=mode==='babygirl'?' <span class="badge mystery">💗 Mystery L$</span>':'';
- const modeProgress=mode==='babygirl'?' · Together: '+together+'/'+a.stamps.length+' · reward after both reach 3/3'
-   :mode==='group'?' · Best passport: '+best+'/'+a.stamps.length
+ const together=stamps.filter(function(st){return people.length===2&&people.every(function(p){return (clubProgress.get(p.id)||new Set()).has(st.id)})}).length;
+ const treasureBadge=mode==='babygirl'?' <span class="badge mystery">💗 Mystery L$</span>':'',retired=retiredCountForAdventure(a);
+ const retirementNote=retired?' · '+retired+' retired stop'+(retired===1?'':'s')+' removed':'';
+ const modeProgress=mode==='babygirl'?' · Together: '+together+'/'+stamps.length+' · reward after both reach '+stamps.length+'/'+stamps.length
+   :mode==='group'?' · Best passport: '+best+'/'+stamps.length
    :'';
- return '<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>'+esc(a.title)+treasureBadge+'</h3><div class="meta">'+esc(a.zone)+' · about '+a.minutes+' min · 3 stops · '+(mode==='solo'?'🧭 Solo':mode==='babygirl'?'💗 Babygirl':'👥 Group')+'</div><div class="progress"><div class="bar" style="width:'+Math.round((shown/a.stamps.length)*100)+'%"></div></div><div class="small">'+esc(person)+' passport: '+shown+'/'+a.stamps.length+modeProgress+'</div></div></div><div style="padding:0 17px 17px">'+missionRows(a,true)+'</div><div class="runmap"><div id="run-map"></div></div></div>';
+ return '<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>'+esc(a.title)+treasureBadge+'</h3><div class="meta">'+esc(a.zone)+' · about '+a.minutes+' min · '+stopWord(stamps.length)+' · '+(mode==='solo'?'🧭 Solo':mode==='babygirl'?'💗 Babygirl':'👥 Group')+retirementNote+'</div><div class="progress"><div class="bar" style="width:'+(stamps.length?Math.round((shown/stamps.length)*100):0)+'%"></div></div><div class="small">'+esc(person)+' passport: '+shown+'/'+stamps.length+modeProgress+'</div></div></div><div style="padding:0 17px 17px">'+missionRows(a,true)+'</div><div class="runmap"><div id="run-map"></div></div></div>';
+};
+const legacyCollapsedTrip=collapsedTrip;
+collapsedTrip=function(a,completed){
+ if(!clubMode)return legacyCollapsedTrip(a,completed);
+ const stamps=adventureStamps(a),run=adventureRun(a),all=Array.isArray(a.allStamps)?a.allStamps:a.stamps,retired=Math.max(0,all.length-stamps.length),r=completed?rewardFor(a):0;
+ const rewardText=adventureTreasureEnabled?(completed&&r?'🎁 '+r+' L$':'🎁 mystery'):'';
+ const retiredText=retired&&!run?' · '+retired+' retired':'';
+ return '<details class="trip '+(completed?'completed-row':'')+'"><summary><div class="summary-main"><span class="light '+(completed?'red':'green')+'"></span><strong>'+esc(a.title)+'</strong> <span class="small">· '+stopWord(stamps.length)+retiredText+' · ~'+a.minutes+' min</span></div><div class="summary-right">'+rewardText+'</div></summary><div class="tripbody">'+missionRows(a)+'<div class="actions" style="margin-top:10px">'+(completed?'':'<button class="primary" onclick="startAdventure('+a.id+')">Make this our adventure</button>')+'</div></div></details>';
+};
+const legacyRenderRunMap=renderRunMap,legacySelectAdventureStop=selectAdventureStop;
+renderRunMap=async function(a){
+ if(!clubMode)return legacyRenderRunMap(a);
+ const host=document.getElementById('run-map'),stamps=adventureStamps(a);if(!host||!window.SLGridMap||!stamps.length)return;
+ currentAdventureMapId=a.id;selectedAdventureStop=-1;
+ currentAdventureMap=new SLGridMap(host,{title:'🗺 Current adventure · '+stopWord(stamps.length)});
+ await currentAdventureMap.setLocations(stamps.map(function(st,i){return {name:st.name,region:st.region,x:Number(st.x),y:Number(st.y),z:Number(st.z),label:String(i+1)}}),{fit:true});
+};
+selectAdventureStop=async function(advId,index){
+ if(!clubMode)return legacySelectAdventureStop(advId,index);
+ const a=adventures.find(function(x){return x.id===Number(advId)}),stamps=adventureStamps(a);if(!a||!stamps[index])return;
+ if(!currentAdventureMap||currentAdventureMapId!==a.id)await renderRunMap(a);
+ selectedAdventureStop=index;
+ document.querySelectorAll('#pinned-card [data-map-row]').forEach(function(r){
+   const selected=Number(r.dataset.mapRow)===index;r.classList.toggle('mapselected',selected);
+   const p=r.querySelector('.place');if(p){const old=p.querySelector('.maptag');if(old)old.remove();if(selected)p.insertAdjacentHTML('beforeend','<span class="maptag">FOCUS</span>')}
+ });
+ const st=stamps[index];await currentAdventureMap.focusLocation({name:st.name,region:st.region,x:Number(st.x),y:Number(st.y),z:Number(st.z),label:String(index+1)},{level:1});
 };
 function beneficiaryPlayer(){return clubMode?(activePlayers().find(function(p){return p.is_beneficiary})||activePlayers().find(function(p){return !p.is_payer})||activePlayers()[0]):null}
 const legacyPartnerAheadCount=partnerAheadCount;
@@ -108,6 +155,21 @@ requestCollectRewards=async function(btn){
  const old=btn&&btn.textContent||'Get Your Bonus';if(btn){btn.disabled=true;btn.textContent='Sending…'}
  try{const out=await PassportCloud.call('request_collect',{club_id:clubData.club.id,player_id:beneficiary.id});toast(out.already_requested?'Your 1,000 L$ bonus request is already waiting for the Daddy Warbucks.':'🎉 Nice! Your Daddy Warbucks can see the 1,000 L$ payment in Settings.')}catch(e){toast(e.message==='threshold_not_met'?'Keep adventuring — you need 1,000 L$ to collect.':'Could not send collection request.')}finally{if(btn){btn.disabled=false;btn.textContent=old}}
 };
+let retiredRunTrimBusy=false;
+async function maybeTrimRetiredActiveRun(){
+ if(!clubMode||retiredRunTrimBusy)return false;
+ const run=clubRuns.find(function(r){return r.status==='active'&&Number(r.adventure_id)===Number(lastAdventure)});
+ if(!run)return false;
+ const a=adventures.find(function(x){return Number(x.id)===Number(run.adventure_id)});if(!a)return false;
+ const current=a.stamps||[],oldIds=(run.stamp_ids||[]).map(Number),currentIds=current.map(function(st){return Number(st.id)});
+ if(!currentIds.length||oldIds.length<=currentIds.length||currentIds.some(function(id){return !oldIds.includes(id)}))return false;
+ retiredRunTrimBusy=true;
+ try{
+   await PassportCloud.call('trim_adventure_stamps',{club_id:clubData.club.id,adventure_id:Number(a.id),stamp_ids:currentIds,stamps:current.map(function(st){return {id:st.id,name:st.name,region:st.region,x:Number(st.x),y:Number(st.y),z:Number(st.z)}})});
+   await pollClub(true);toast('Retired stop removed — this adventure is now '+stopWord(currentIds.length)+'.');return true;
+ }catch(e){return false}finally{retiredRunTrimBusy=false}
+}
+
 const legacyRender=render;
 render=function(){
  legacyRender();const done=viewedDone();
