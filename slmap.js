@@ -98,15 +98,17 @@
       };
       const commitPinch=()=>{
         if(!this.pinch)return;
-        const ratio=this.pinch.lastRatio||1;
+        const ratio=this.pinch.lastRatio||1,keepPanX=this.panX,keepPanY=this.panY;
         this.scale=1;
         this.pinch=null;
         if(ratio>1.16){
           const steps=Math.max(1,Math.min(3,Math.round(Math.log(ratio)/Math.log(1.55))));
           this.setLevel(Math.max(1,this.level-steps));
+          this.panX=keepPanX;this.panY=keepPanY;this._applyTransform();
         }else if(ratio<0.86){
           const steps=Math.max(1,Math.min(3,Math.round(Math.log(1/ratio)/Math.log(1.55))));
           this.setLevel(Math.min(8,this.level+steps));
+          this.panX=keepPanX;this.panY=keepPanY;this._applyTransform();
         }else{
           this._applyTransform();
         }
