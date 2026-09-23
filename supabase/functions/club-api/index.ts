@@ -302,7 +302,8 @@ Deno.serve(async(req:Request)=>{
 
     if(action==="create"){
       const name=cleanText(body.name,80);if(!name)return reply({ok:false,error:"club_name_required"},400);
-      const mode=["solo","babygirl","group"].includes(String(body.game_mode||""))?String(body.game_mode):"solo";
+      const mode=String(body.game_mode||"solo");
+      if(!["solo","babygirl","group"].includes(mode))return reply({ok:false,error:"game_mode_not_available"},409);
       const profile=(await db("profiles?user_id=eq."+user.id+"&select=display_name,sl_username"))?.[0]||{};
       const code=randomCode(),clubId=crypto.randomUUID(),babygirl=mode==="babygirl";
       const club=(await db("clubs",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({id:clubId,name,slug:randomSlug(name),owner_id:user.id,join_code_hash:await sha256(code),game_mode:mode,treasure_enabled:babygirl})}))?.[0];
@@ -357,29 +358,12 @@ Deno.serve(async(req:Request)=>{
     }
     if(action==="update_club"){
       if(!manager(m))return reply({ok:false,error:"manager_required"},403);
+      if(body.game_mode!==undefined)return reply({ok:false,error:"game_mode_locked"},409);
+      if(body.treasure_enabled!==undefined)return reply({ok:false,error:"treasure_managed_by_mode"},409);
       const patch:any={};
-      const currentClub=(await db("clubs?id=eq."+clubId+"&select=game_mode,treasure_enabled"))?.[0];
-      if(!currentClub)return reply({ok:false,error:"club_not_found"},404);
       if(body.name!==undefined){
         patch.name=cleanText(body.name,80);if(!patch.name)return reply({ok:false,error:"club_name_required"},400);
       }
-      if(body.game_mode!==undefined){
-        const mode=String(body.game_mode||"");
-        if(!["solo","babygirl","group"].includes(mode))return reply({ok:false,error:"bad_game_mode"},400);
-        if(mode!==currentClub.game_mode){
-          const activeRun=(await db("club_adventure_runs?club_id=eq."+clubId+"&status=eq.active&select=id&limit=1"))?.[0];
-          if(activeRun)return reply({ok:false,error:"mode_change_active_adventure"},409);
-          const active=await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&select=id,user_id");
-          if(mode==="solo"&&active.length>1)return reply({ok:false,error:"solo_requires_one_player"},409);
-          if(mode==="babygirl"&&active.length>2)return reply({ok:false,error:"babygirl_max_two"},409);
-          patch.game_mode=mode;
-          patch.treasure_enabled=mode==="babygirl";
-          if(mode==="babygirl"){
-            try{await assignTreasurePayer(clubId,user.id)}catch(e){if(String(e).includes("active_player_required"))return reply({ok:false,error:"active_player_required"},409);throw e}
-          }else await clearTreasureRoles(clubId);
-        }
-      }
-      if(body.treasure_enabled!==undefined)return reply({ok:false,error:"treasure_managed_by_mode"},409);
       if(!Object.keys(patch).length)return reply({ok:true});
       await db("clubs?id=eq."+clubId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(patch)});
       return reply({ok:true});
