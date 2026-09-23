@@ -49,11 +49,16 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
     }else prompt('Copy this SLURL:',t);
   }
 
+  function stopRetiredNow(st){
+    if(!st||!st.retire)return false;
+    var t=Date.parse(String(st.retire)+' 23:59:59');
+    return Number.isFinite(t)&&Date.now()>t;
+  }
   var raw=window.RAW||[];
   var adventures=raw.map(function(a){
     return {id:Number(a[0]),title:a[1],zone:a[2],stamps:(a[5]||[]).map(function(s){
-      return {id:Number(s[0]),name:s[1],url:s[2],region:s[3],x:Number(s[4]),y:Number(s[5]),z:Number(s[6])};
-    })};
+      return {id:Number(s[0]),name:s[1],url:s[2],region:s[3],x:Number(s[4]),y:Number(s[5]),z:Number(s[6]),retire:s[7]||''};
+    }).filter(function(st){return !stopRetiredNow(st)})};
   });
   var byId=new Map();
   adventures.forEach(function(a){
