@@ -4,7 +4,7 @@ const SUPA_URL=Deno.env.get("SUPABASE_URL")!;
 const SERVICE=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const cors={
   "Access-Control-Allow-Origin":"*",
-  "Access-Control-Allow-Headers":"authorization,apikey,content-type,x-client-info",
+  "Access-Control-Allow-Headers":"authorization,apikey,content-type,x-client-info,x-bbb-job-secret",
   "Access-Control-Allow-Methods":"POST,OPTIONS",
   "Content-Type":"application/json",
   "Cache-Control":"no-store"
@@ -51,6 +51,19 @@ function stafiClassification(text:string,ref:any){
   let positiveHit=false,negativeHit=false;
   for(const at of positions){const before=text.slice(Math.max(0,at-4000),at),row=text.slice(Math.max(0,at-220),Math.min(text.length,at+220));const p=lastMarker(before,positive),n=lastMarker(before,negative);if(/not (?:yet )?collected|uncollected|missing|still needed|need this/i.test(row))negativeHit=true;else if(/collected|completed|obtained|visited|you have/i.test(row))positiveHit=true;else if(p>n&&p>=0)positiveHit=true;else if(n>p&&n>=0)negativeHit=true}
   return positiveHit&&!negativeHit?"collected":negativeHit&&!positiveHit?"missing":"unknown";
+}
+function stafiSummary(text:string){
+  const get=(re:RegExp)=>{const m=text.match(re),n=m?Number(m[1]):NaN;return Number.isSafeInteger(n)&&n>=0?n:null};
+  let uncollected=get(/currently available uncollected stamps?\s*:\s*(\d+)/i);
+  if(uncollected===null)uncollected=get(/uncollected stamps?\s*:\s*(\d+)/i);
+  let collected=get(/my collected stamps?\s*:\s*(\d+)/i);
+  if(collected===null)collected=get(/collected stamps?\s*:\s*(\d+)/i);
+  let available=get(/all currently available stamps?\s*:\s*(\d+)/i);
+  if(available===null)available=get(/available stamps?\s*:\s*(\d+)/i);
+  if(available===null&&collected!==null&&uncollected!==null)available=collected+uncollected;
+  if(collected===null&&available!==null&&uncollected!==null&&available>=uncollected)collected=available-uncollected;
+  if(uncollected===null&&available!==null&&collected!==null&&available>=collected)uncollected=available-collected;
+  return {collected,uncollected,available};
 }
 async function fetchStaFi(raw:string){
   let url=stafiUrl(raw);if(!url)throw new Error("invalid_stafi_url");
@@ -117,7 +130,7 @@ async function clubBalance(clubId:string,beneficiaryId=""){
 }
 async function finalizeRun(clubId:string,adventureId:number){
   const run=(await db("club_adventure_runs?club_id=eq."+clubId+"&adventure_id=eq."+adventureId+"&select=id,status,stamp_ids"))?.[0];
-  if(!run||run.status==="completed")return null;
+  if(!run||run.status!=="active")return null;
   const stampIds=ints(run.stamp_ids);if(stampIds.length!==3)return null;
   const participants=await db("club_run_participants?run_id=eq."+run.id+"&select=player_id");
   const playerIds=participants.map((p:any)=>p.player_id);if(!playerIds.length)return null;
@@ -144,7 +157,7 @@ async function loadClub(clubId:string,userId:string){
   const [clubs,members,players,boards,participants,stamps,rewards,collectRequests]=await Promise.all([
     db("clubs?id=eq."+clubId+"&select=id,name,slug,owner_id,treasure_enabled,payout_threshold,is_legacy,created_at,updated_at"),
     db("club_members?club_id=eq."+clubId+"&select=user_id,role,joined_at&order=joined_at.asc"),
-    db("club_players?club_id=eq."+clubId+"&select=id,user_id,display_name,sl_username,sort_order,is_active,is_payer,is_beneficiary,created_at,updated_at&order=sort_order.asc,created_at.asc"),
+    db("club_players?club_id=eq."+clubId+"&select=id,user_id,display_name,sl_username,sort_order,is_active,is_payer,is_beneficiary,stafi_collected_count,stafi_available_count,stafi_last_success_at,created_at,updated_at&order=sort_order.asc,created_at.asc"),
     db("club_board_state?club_id=eq."+clubId+"&select=*"),
     runIds.length?db("club_run_participants?select=run_id,player_id,joined_at&run_id=in.("+runIds.join(",")+")"):Promise.resolve([]),
     db("club_stamp_progress?club_id=eq."+clubId+"&select=player_id,stamp_id,source,completed_at"),
@@ -168,19 +181,24 @@ async function syncStaFi(userId:string,clubId:string,force=false){
     ?(await db("club_adventure_runs?club_id=eq."+clubId+"&adventure_id=eq."+adventureId+"&status=eq.active&select=id,adventure_id,stamp_ids,stamp_refs&limit=1"))?.[0]
     :null;
 
-  // Normal background checks do nothing when there is no current adventure.
-  // The explicit Settings test still fetches StaFi so the URL can be verified.
   if(!force&&!run)return {enabled:true,verified:!!settings.stafi_verified_at,imported:0,checked:0,skipped:"no_active_adventure"};
 
   const now=new Date().toISOString();
   try{
-    const page=await fetchStaFi(settings.stafi_url);
+    const page=await fetchStaFi(settings.stafi_url),summary=stafiSummary(page.text);
+    const countPatch:any={};
+    if(summary.collected!==null)countPatch.stafi_last_stamp_count=summary.collected;
+    if(summary.uncollected!==null)countPatch.stafi_uncollected_count=summary.uncollected;
+    if(summary.available!==null)countPatch.stafi_available_count=summary.available;
+    const playerPatch:any={stafi_last_success_at:now};
+    if(summary.collected!==null)playerPatch.stafi_collected_count=summary.collected;
+    if(summary.available!==null)playerPatch.stafi_available_count=summary.available;
+    await db("club_players?id=eq."+player.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(playerPatch)});
 
     if(!run){
-      const known=await db("club_stamp_progress?club_id=eq."+clubId+"&player_id=eq."+player.id+"&select=stamp_id");
-      const status={stafi_sync_enabled:true,stafi_verified_at:now,stafi_last_sync_at:now,stafi_last_success_at:now,stafi_last_error:null,stafi_last_stamp_count:new Set(known.map((p:any)=>Number(p.stamp_id))).size};
+      const status={stafi_sync_enabled:true,stafi_verified_at:now,stafi_last_sync_at:now,stafi_last_success_at:now,stafi_last_error:null,...countPatch};
       await db("user_private_settings?user_id=eq."+userId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(status)});
-      return {enabled:true,verified:true,imported:0,checked:0,total:status.stafi_last_stamp_count,skipped:"no_active_adventure"};
+      return {enabled:true,verified:true,imported:0,checked:0,summary,skipped:"no_active_adventure"};
     }
 
     const participating=(await db("club_run_participants?run_id=eq."+run.id+"&player_id=eq."+player.id+"&select=player_id"))?.[0];
@@ -199,10 +217,11 @@ async function syncStaFi(userId:string,clubId:string,force=false){
     }
     if(rows.length)await db("club_stamp_progress?on_conflict=club_id,player_id,stamp_id",{method:"POST",headers:{Prefer:"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify(rows)});
 
-    const status={stafi_sync_enabled:true,stafi_verified_at:now,stafi_last_sync_at:now,stafi_last_success_at:now,stafi_last_error:null,stafi_last_stamp_count:completed.size};
+    const fallbackCount=completed.size;
+    const status={stafi_sync_enabled:true,stafi_verified_at:now,stafi_last_sync_at:now,stafi_last_success_at:now,stafi_last_error:null,stafi_last_stamp_count:summary.collected??fallbackCount,...countPatch};
     await db("user_private_settings?user_id=eq."+userId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(status)});
     await finalizeRun(clubId,Number(run.adventure_id));
-    return {enabled:true,verified:true,imported:rows.length,checked:[...new Set(checked)].length,total:completed.size,current_adventure:Number(run.adventure_id)};
+    return {enabled:true,verified:true,imported:rows.length,checked:[...new Set(checked)].length,total:status.stafi_last_stamp_count,summary,current_adventure:Number(run.adventure_id)};
   }catch(e){
     const raw=String((e as Error)?.message||e),safe=/^(invalid_stafi_url|stafi_redirect_failed|stafi_redirect_blocked|stafi_http_\d{3}|stafi_page_too_large|stafi_too_many_redirects|linked_player_required)$/.test(raw)?raw:"stafi_unavailable";
     await db("user_private_settings?user_id=eq."+userId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({stafi_last_sync_at:now,stafi_last_error:safe})});
@@ -210,19 +229,52 @@ async function syncStaFi(userId:string,clubId:string,force=false){
   }
 }
 
+async function scheduledStaFiRefresh(){
+  const enabled=await db("user_private_settings?stafi_sync_enabled=eq.true&stafi_url=not.is.null&select=user_id&limit=50");
+  let users=0,clubsChecked=0,imported=0,errors=0,passportTotal=0;
+  for(const row of enabled||[]){
+    const userId=uuid(row.user_id);if(!userId)continue;
+    const playerRows=await db("club_players?user_id=eq."+userId+"&is_active=eq.true&select=club_id");
+    const clubIds=[...new Set((playerRows||[]).map((p:any)=>uuid(p.club_id)).filter(Boolean))];
+    let touched=false;
+    for(const clubId of clubIds){
+      const board=(await db("club_board_state?club_id=eq."+clubId+"&select=current_adventure"))?.[0],adventureId=Number(board?.current_adventure||0);
+      if(!Number.isSafeInteger(adventureId)||adventureId<1)continue;
+      const active=(await db("club_adventure_runs?club_id=eq."+clubId+"&adventure_id=eq."+adventureId+"&status=eq.active&select=id&limit=1"))?.[0];
+      if(!active)continue;
+      touched=true;clubsChecked++;
+      const out=await syncStaFi(userId,clubId,false);
+      imported+=Number(out.imported||0);if(out.error)errors++;
+      passportTotal=Math.max(passportTotal,Number(out.summary?.available||0));
+    }
+    if(touched)users++;
+  }
+  return {users,clubs_checked:clubsChecked,imported,errors,passport_total:passportTotal,at:new Date().toISOString()};
+}
+async function validJobSecret(req:Request){
+  const supplied=req.headers.get("x-bbb-job-secret")||"";
+  if(supplied.length<32)return false;
+  const row=(await db("internal_job_config?name=eq.stafi-cron&select=secret"))?.[0];
+  return !!row?.secret&&row.secret===supplied;
+}
+
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors});
   if(req.method!=="POST")return reply({ok:false,error:"post_required"},405);
-  const user=await currentUser(req);if(!user?.id)return reply({ok:false,error:"sign_in_required"},401);
   let body:any={};try{body=await req.json()}catch{}
   const action=String(body.action||"list");
   try{
+    if(action==="cron_stafi_refresh"){
+      if(!await validJobSecret(req))return reply({ok:false,error:"job_forbidden"},403);
+      return reply({ok:true,...await scheduledStaFiRefresh()});
+    }
+    const user=await currentUser(req);if(!user?.id)return reply({ok:false,error:"sign_in_required"},401);
     if(action==="list"){
       const memberships=await db("club_members?user_id=eq."+user.id+"&select=club_id,role,joined_at&order=joined_at.asc");
       const ids=memberships.map((m:any)=>m.club_id);
       const clubs=ids.length?await db("clubs?id=in.("+ids.join(",")+")&select=id,name,slug,owner_id,treasure_enabled,payout_threshold,is_legacy,created_at,updated_at"):[];
       const profile=(await db("profiles?user_id=eq."+user.id+"&select=user_id,display_name,sl_username"))?.[0]||null;
-      const privateSettings=(await db("user_private_settings?user_id=eq."+user.id+"&select=stafi_url,stafi_sync_enabled,stafi_verified_at,stafi_last_sync_at,stafi_last_success_at,stafi_last_error,stafi_last_stamp_count"))?.[0]||null;
+      const privateSettings=(await db("user_private_settings?user_id=eq."+user.id+"&select=stafi_url,stafi_sync_enabled,stafi_verified_at,stafi_last_sync_at,stafi_last_success_at,stafi_last_error,stafi_last_stamp_count,stafi_uncollected_count,stafi_available_count"))?.[0]||null;
       return reply({ok:true,user:{id:user.id,sl_username:user.sl_username,display_name:user.display_name},profile,private_settings:privateSettings,clubs:clubs.map((c:any)=>({...c,role:memberships.find((m:any)=>m.club_id===c.id)?.role||"member"}))});
     }
     if(action==="load")return reply({ok:true,...await loadClub(uuid(body.club_id),user.id)});
@@ -386,7 +438,7 @@ Deno.serve(async(req:Request)=>{
     if(action==="start_adventure"){
       const adventureId=Number(body.adventure_id);if(!Number.isSafeInteger(adventureId)||adventureId<1||adventureId>127)return reply({ok:false,error:"bad_adventure"},400);
       const stampIds=ints(body.stamp_ids);if(stampIds.length!==3)return reply({ok:false,error:"three_stamps_required"},400);
-      await db("club_adventure_runs?club_id=eq."+clubId+"&status=eq.active&adventure_id=neq."+adventureId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"abandoned",locked:false})});
+      await db("club_adventure_runs?club_id=eq."+clubId+"&status=eq.active&adventure_id=neq."+adventureId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"retired",locked:false})});
       const refs=stampRefs(body.stamps,stampIds);if(refs.length!==3)return reply({ok:false,error:"invalid_stamp_references"},400);
       const run=(await db("club_adventure_runs?on_conflict=club_id,adventure_id",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify({club_id:clubId,adventure_id:adventureId,status:"active",locked:true,started_by:user.id,completed_at:null,stamp_ids:stampIds,stamp_refs:refs})}))?.[0];
       const chosen=Array.isArray(body.player_ids)?body.player_ids.map(uuid).filter(Boolean):[];const active=await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&select=id");
