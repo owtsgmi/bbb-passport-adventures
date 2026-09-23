@@ -154,7 +154,7 @@ async function loadClub(clubId:string,userId:string){
   const m=await requireMember(clubId,userId);
   const runs=await db("club_adventure_runs?club_id=eq."+clubId+"&select=*&order=started_at.asc");
   const runIds=runs.map((x:any)=>x.id);
-  const [clubs,members,players,boards,participants,stamps,rewards,collectRequests]=await Promise.all([
+  const [clubs,members,players,boards,participants,stamps,rewards,collectRequests,runtimeRows]=await Promise.all([
     db("clubs?id=eq."+clubId+"&select=id,name,slug,owner_id,treasure_enabled,payout_threshold,is_legacy,created_at,updated_at"),
     db("club_members?club_id=eq."+clubId+"&select=user_id,role,joined_at&order=joined_at.asc"),
     db("club_players?club_id=eq."+clubId+"&select=id,user_id,display_name,sl_username,sort_order,is_active,is_payer,is_beneficiary,stafi_collected_count,stafi_available_count,stafi_last_success_at,created_at,updated_at&order=sort_order.asc,created_at.asc"),
@@ -162,9 +162,10 @@ async function loadClub(clubId:string,userId:string){
     runIds.length?db("club_run_participants?select=run_id,player_id,joined_at&run_id=in.("+runIds.join(",")+")"):Promise.resolve([]),
     db("club_stamp_progress?club_id=eq."+clubId+"&select=player_id,stamp_id,source,completed_at"),
     db("club_rewards?club_id=eq."+clubId+"&select=*&order=awarded_at.desc"),
-    db("club_collect_requests?club_id=eq."+clubId+"&select=*&order=created_at.desc&limit=50")
+    db("club_collect_requests?club_id=eq."+clubId+"&select=*&order=created_at.desc&limit=50"),
+    db("app_runtime_state?id=eq.1&select=passport_available_count,updated_at")
   ]);
-  return {club:clubs?.[0],membership:m,members,players,board:boards?.[0],runs,participants,stamps,rewards,collect_requests:collectRequests};
+  return {club:clubs?.[0],membership:m,members,players,board:boards?.[0],runs,participants,stamps,rewards,collect_requests:collectRequests,passport_total:Number(runtimeRows?.[0]?.passport_available_count||0)||null};
 }
 
 async function syncStaFi(userId:string,clubId:string,force=false){
@@ -186,6 +187,9 @@ async function syncStaFi(userId:string,clubId:string,force=false){
   const now=new Date().toISOString();
   try{
     const page=await fetchStaFi(settings.stafi_url),summary=stafiSummary(page.text);
+    if(summary.available!==null){
+      await db("app_runtime_state?id=eq.1",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({passport_available_count:summary.available,updated_at:now})});
+    }
     const countPatch:any={};
     if(summary.collected!==null)countPatch.stafi_last_stamp_count=summary.collected;
     if(summary.uncollected!==null)countPatch.stafi_uncollected_count=summary.uncollected;
@@ -230,26 +234,28 @@ async function syncStaFi(userId:string,clubId:string,force=false){
 }
 
 async function scheduledStaFiRefresh(){
-  const enabled=await db("user_private_settings?stafi_sync_enabled=eq.true&stafi_url=not.is.null&select=user_id&limit=50");
+  const cutoff=encodeURIComponent(new Date(Date.now()-10*60*1000).toISOString());
+  const boards=await db("club_board_state?last_active_at=gte."+cutoff+"&current_adventure=gt.0&select=club_id,current_adventure,last_active_at&limit=100");
   let users=0,clubsChecked=0,imported=0,errors=0,passportTotal=0;
-  for(const row of enabled||[]){
-    const userId=uuid(row.user_id);if(!userId)continue;
-    const playerRows=await db("club_players?user_id=eq."+userId+"&is_active=eq.true&select=club_id");
-    const clubIds=[...new Set((playerRows||[]).map((p:any)=>uuid(p.club_id)).filter(Boolean))];
+  const seenPairs=new Set<string>();
+  for(const board of boards||[]){
+    const clubId=uuid(board.club_id),adventureId=Number(board.current_adventure||0);
+    if(!clubId||!Number.isSafeInteger(adventureId)||adventureId<1)continue;
+    const active=(await db("club_adventure_runs?club_id=eq."+clubId+"&adventure_id=eq."+adventureId+"&status=eq.active&select=id&limit=1"))?.[0];
+    if(!active)continue;
+    const players=await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&user_id=not.is.null&select=user_id");
     let touched=false;
-    for(const clubId of clubIds){
-      const board=(await db("club_board_state?club_id=eq."+clubId+"&select=current_adventure"))?.[0],adventureId=Number(board?.current_adventure||0);
-      if(!Number.isSafeInteger(adventureId)||adventureId<1)continue;
-      const active=(await db("club_adventure_runs?club_id=eq."+clubId+"&adventure_id=eq."+adventureId+"&status=eq.active&select=id&limit=1"))?.[0];
-      if(!active)continue;
-      touched=true;clubsChecked++;
+    for(const p of players||[]){
+      const userId=uuid(p.user_id);if(!userId)continue;
+      const pair=userId+":"+clubId;if(seenPairs.has(pair))continue;seenPairs.add(pair);
       const out=await syncStaFi(userId,clubId,false);
-      imported+=Number(out.imported||0);if(out.error)errors++;
+      if(out.error==="stafi_sync_disabled"||out.error==="stafi_url_required")continue;
+      touched=true;users++;imported+=Number(out.imported||0);if(out.error)errors++;
       passportTotal=Math.max(passportTotal,Number(out.summary?.available||0));
     }
-    if(touched)users++;
+    if(touched)clubsChecked++;
   }
-  return {users,clubs_checked:clubsChecked,imported,errors,passport_total:passportTotal,at:new Date().toISOString()};
+  return {users,clubs_checked:clubsChecked,imported,errors,passport_total:passportTotal,active_window_minutes:10,at:new Date().toISOString()};
 }
 async function validJobSecret(req:Request){
   const supplied=req.headers.get("x-bbb-job-secret")||"";
@@ -275,7 +281,8 @@ Deno.serve(async(req:Request)=>{
       const clubs=ids.length?await db("clubs?id=in.("+ids.join(",")+")&select=id,name,slug,owner_id,treasure_enabled,payout_threshold,is_legacy,created_at,updated_at"):[];
       const profile=(await db("profiles?user_id=eq."+user.id+"&select=user_id,display_name,sl_username"))?.[0]||null;
       const privateSettings=(await db("user_private_settings?user_id=eq."+user.id+"&select=stafi_url,stafi_sync_enabled,stafi_verified_at,stafi_last_sync_at,stafi_last_success_at,stafi_last_error,stafi_last_stamp_count,stafi_uncollected_count,stafi_available_count"))?.[0]||null;
-      return reply({ok:true,user:{id:user.id,sl_username:user.sl_username,display_name:user.display_name},profile,private_settings:privateSettings,clubs:clubs.map((c:any)=>({...c,role:memberships.find((m:any)=>m.club_id===c.id)?.role||"member"}))});
+      const runtime=(await db("app_runtime_state?id=eq.1&select=passport_available_count"))?.[0]||null;
+      return reply({ok:true,user:{id:user.id,sl_username:user.sl_username,display_name:user.display_name},profile,private_settings:privateSettings,passport_total:Number(runtime?.passport_available_count||0)||null,clubs:clubs.map((c:any)=>({...c,role:memberships.find((m:any)=>m.club_id===c.id)?.role||"member"}))});
     }
     if(action==="load")return reply({ok:true,...await loadClub(uuid(body.club_id),user.id)});
 
@@ -320,6 +327,10 @@ Deno.serve(async(req:Request)=>{
     const clubId=uuid(body.club_id);if(!clubId)return reply({ok:false,error:"club_required"},400);
     const m=await requireMember(clubId,user.id);
 
+    if(action==="activity"){
+      await db("club_board_state?club_id=eq."+clubId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({last_active_at:new Date().toISOString()})});
+      return reply({ok:true});
+    }
     if(action==="verify_stafi"||action==="sync_stafi")return reply({ok:true,...await syncStaFi(user.id,clubId,action==="verify_stafi")});
 
     if(action==="rotate_invite"){
@@ -410,7 +421,7 @@ Deno.serve(async(req:Request)=>{
       return reply({ok:true});
     }
     if(action==="save_board"){
-      const patch:any={updated_by:user.id};
+      const patch:any={updated_by:user.id,last_active_at:new Date().toISOString()};
       if(body.started!==undefined)patch.started=ints(body.started);
       if(body.current_adventure!==undefined)patch.current_adventure=Math.max(0,Number(body.current_adventure)||0);
       if(body.adventure_locked!==undefined)patch.adventure_locked=body.adventure_locked===true;
@@ -446,7 +457,7 @@ Deno.serve(async(req:Request)=>{
       await db("club_run_participants?run_id=eq."+run.id,{method:"DELETE",headers:{Prefer:"return=minimal"}});
       if(playerIds.length)await db("club_run_participants",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify(playerIds.map((player_id:string)=>({run_id:run.id,player_id})))});
       const board=(await db("club_board_state?club_id=eq."+clubId+"&select=started"))?.[0]||{};
-      await db("club_board_state?club_id=eq."+clubId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({started:[...new Set([...(board.started||[]),adventureId])],current_adventure:adventureId,adventure_locked:true,updated_by:user.id})});
+      await db("club_board_state?club_id=eq."+clubId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({started:[...new Set([...(board.started||[]),adventureId])],current_adventure:adventureId,adventure_locked:true,updated_by:user.id,last_active_at:new Date().toISOString()})});
       return reply({ok:true,run_id:run.id,participants:playerIds.length,finalized:await finalizeRun(clubId,adventureId)});
     }
     if(action==="set_stamp"){
