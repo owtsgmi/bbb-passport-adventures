@@ -120,7 +120,7 @@ main{max-width:900px;margin:auto;padding:26px 4vw 60px}.card{background:linear-g
 
       <div id="active-club-tools" class="hidden">
         <div class="memberlist" id="member-list"></div>
-        <div class="actions" id="manager-actions"><button id="new-invite">🔗 Invite players</button><button id="add-guest">＋ Add guest player</button><button id="club-treasure">🎁 Treasure: OFF</button></div>
+        <div class="actions" id="manager-actions"><button id="new-invite">🔗 Invite players</button><button id="club-treasure">🎁 Treasure: OFF</button></div>
         <div class="actions" id="personal-club-actions"><button id="leave-club">Leave this club</button></div>
         <div id="invite-box" class="codebox hidden"></div>
       </div>
@@ -205,10 +205,6 @@ async function verifyStaFi(){
  await PassportCloud.call('update_profile',{display_name:$('#profile-name').value,sl_username:$('#profile-sl').value,stafi_url:$('#profile-stafi').value});
  const out=await PassportCloud.call('verify_stafi',{club_id:clubId});await loadAccount();accountStatus(out.verified?'StaFi page verified. Automatic stamp sync is enabled.':'StaFi could not be verified: '+(out.error||'unavailable'),out.verified);
 }
-async function addGuest(){
- const display=prompt('Player display name:');if(!display)return;
- const sl=prompt('Second Life username (optional):')||'';await PassportCloud.call('add_guest',{club_id:PassportCloud.activeClub(),display_name:display,sl_username:sl});await loadClubTools(PassportCloud.activeClub());
-}
 async function setPlayerRole(playerId,kind){await PassportCloud.call('update_player',{club_id:PassportCloud.activeClub(),player_id:playerId,[kind==='payer'?'is_payer':'is_beneficiary']:true});await loadClubTools(PassportCloud.activeClub());clubStatus(kind==='payer'?'Club payer updated.':'Treasure recipient updated.',true)}
 async function togglePlayerActive(playerId,isActive){await PassportCloud.call('update_player',{club_id:PassportCloud.activeClub(),player_id:playerId,is_active:isActive});await loadClubTools(PassportCloud.activeClub());clubStatus('Player roster updated.',true)}
 async function setMemberRole(userId,role){await PassportCloud.call('set_member_role',{club_id:PassportCloud.activeClub(),user_id:userId,role});await loadClubTools(PassportCloud.activeClub());clubStatus('Club role updated.',true)}
@@ -233,7 +229,6 @@ $('#show-join-club').onclick=()=>setClubAction($('#join-club-panel').classList.c
 $('#create-club').onclick=()=>createClub().catch(e=>clubStatus(e.message));
 $('#join-club').onclick=()=>joinClub().catch(e=>clubStatus(e.message==='join_code_not_found'?'That invite code was not found.':e.message==='join_rate_limited'?'Too many invite attempts. Wait about 10 minutes, then try again.':e.message));
 $('#new-invite').onclick=async()=>{try{const out=await PassportCloud.call('rotate_invite',{club_id:PassportCloud.activeClub()});showInvite(out.join_code);clubStatus('New invite ready. Older invite links no longer work.',true)}catch(e){accountStatus(e.message)}};
-$('#add-guest').onclick=()=>addGuest().catch(e=>clubStatus(e.message));
 $('#club-treasure').onclick=async()=>{try{const enabled=!activeClubData.club.treasure_enabled;await PassportCloud.call('update_club',{club_id:PassportCloud.activeClub(),treasure_enabled:enabled});await loadClubTools(PassportCloud.activeClub());clubStatus('Adventure Treasure is '+(enabled?'ON':'OFF')+' for this club.',true)}catch(e){accountStatus(e.message)}};
 $('#leave-club').onclick=()=>leaveClub().catch(e=>clubStatus(e.message==='owner_cannot_leave'?'The owner must transfer or remove the club before leaving.':e.message));
 window.addEventListener('passport-auth-ready',()=>loadAccount().catch(e=>accountStatus('Account service: '+e.message)));
