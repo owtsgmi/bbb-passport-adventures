@@ -54,13 +54,15 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 </details>
 
 
-<section class="adventurebrowser" id="adventure-browser">
-  <div class="browserbar">
-    <select id="zone" aria-label="Filter adventures by area"><option value="">All areas</option></select>
-    <span class="small" id="pending-count"></span>
+<details class="compactdetails" id="potential-adventures">
+  <summary><span class="light green"></span>Potential Adventures <span class="small" id="pending-count"></span></summary>
+  <div class="inside">
+    <div class="browserbar">
+      <select id="zone" aria-label="Filter adventures by area"><option value="">All areas</option></select>
+    </div>
+    <div id="pending"></div>
   </div>
-  <div id="pending"></div>
-</section>
+</details>
 
 <details class="compactdetails">
   <summary><span class="light red"></span>Our Finished Adventures <span class="small" id="completed-count"></span></summary>
@@ -476,7 +478,8 @@ function render(){
  if(pinned&&lastAdventure!==pinned.id){lastAdventure=pinned.id;localStorage.setItem('bbb-last-adventure',pinned.id)}
  $('#pinned').innerHTML=pinned?pinnedHtml(pinned):'<div class="pinempty"><b>No adventure selected yet.</b><div class="small" style="margin-top:4px">Browse the adventure list or let us choose one for you.</div><div class="emptyactions"><button class="primary" onclick="surpriseUs()">✨ Pick Random Adventure</button></div></div>';if(pinned)setTimeout(()=>renderRunMap(pinned),0);
  const currentDetails=document.getElementById('current-adventure');
- if(currentDetails)currentDetails.open=true;
+ if(currentDetails&&pinned&&currentDetails.dataset.autopened!=='1'){currentDetails.open=true;currentDetails.dataset.autopened='1'}
+ if(currentDetails&&!pinned)delete currentDetails.dataset.autopened;
  const lockBox=document.getElementById('current-lock'),lockLabel=document.getElementById('current-lock-label'),lockText=document.getElementById('current-lock-text');
  if(lockBox){lockBox.checked=!!(pinned&&adventureLocked);lockBox.disabled=!pinned}
  if(lockLabel){lockLabel.style.display=pinned?'flex':'none';lockLabel.classList.toggle('locked',!!(pinned&&adventureLocked))}
