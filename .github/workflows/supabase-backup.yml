@@ -1,0 +1,91 @@
+name: Supabase Encrypted Backup
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+
+    steps:
+      - name: Check required secrets
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_DB_URL" || { echo "Missing SUPABASE_DB_URL repository secret"; exit 1; }
+          test -n "$BACKUP_ENCRYPTION_KEY" || { echo "Missing BACKUP_ENCRYPTION_KEY repository secret"; exit 1; }
+          test "${#BACKUP_ENCRYPTION_KEY}" -ge 32 || { echo "BACKUP_ENCRYPTION_KEY must be at least 32 characters"; exit 1; }
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
+      - name: Create logical database dump
+        run: |
+          set -euo pipefail
+          pg_dump "$SUPABASE_DB_URL" \
+            --format=custom \
+            --no-owner \
+            --no-privileges \
+            --file=/tmp/passport-adventures.dump
+          test -s /tmp/passport-adventures.dump
+
+      - name: Encrypt dump
+        run: |
+          set -euo pipefail
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt \
+            -in /tmp/passport-adventures.dump \
+            -out /tmp/passport-adventures.dump.enc \
+            -pass env:BACKUP_ENCRYPTION_KEY
+          test -s /tmp/passport-adventures.dump.enc
+          rm -f /tmp/passport-adventures.dump
+
+      - name: Save encrypted backup on backup branch
+        run: |
+          set -euo pipefail
+          stamp="$(date -u +'%Y-%m-%dT%H-%M-%SZ')"
+          git config user.name "Passport Adventures Backup"
+          git config user.email "actions@users.noreply.github.com"
+
+          if git ls-remote --exit-code --heads origin database-backups >/dev/null 2>&1; then
+            git fetch origin database-backups
+            git switch -C database-backups origin/database-backups
+          else
+            git switch --orphan database-backups
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+
+          mkdir -p backups
+          cp /tmp/passport-adventures.dump.enc "backups/passport-adventures-${stamp}.dump.enc"
+
+          cat > backups/README.md <<'EOF'
+          # Encrypted Supabase backups
+
+          These files are AES-256 encrypted PostgreSQL custom-format dumps.
+
+          They cannot be restored without the separately stored BACKUP_ENCRYPTION_KEY.
+          Never commit the database URL or encryption key to this repository.
+
+          Restore outline:
+          1. Decrypt with OpenSSL AES-256-CBC + PBKDF2, 200000 iterations.
+          2. Restore the decrypted custom dump with pg_restore.
+          EOF
+
+          # Keep roughly the newest 12 weekly snapshots.
+          ls -1t backups/*.dump.enc 2>/dev/null | tail -n +13 | xargs -r rm -f
+
+          git add backups
+          git commit -m "Encrypted database backup ${stamp}"
+          git push origin database-backups
