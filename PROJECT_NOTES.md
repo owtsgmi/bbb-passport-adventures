@@ -15,10 +15,11 @@ This file is the persistent source of truth for future edits to this project.
 - Stable adventure dataset: **381 stamps = 127 adventures**. The live BBB/StaFi passport total can be higher and changes independently.
 - Clubs have an explicit `game_mode`:
   - **Solo**: exactly 1 active player; no Treasure; that player reaching 3/3 completes the adventure.
-  - **Babygirl**: exactly 2 active players; one locked **Payer** and one **Babygirl**; **both passports must have all 3 stamps** before the adventure completes and its 20–100 L$ reward is earned.
+  - **Babygirl**: exactly 2 active players; one **Daddy Warbucks** and one **Babygirl**; **both passports must have all 3 stamps** before the adventure completes and its 20–100 L$ reward is earned.
   - **Group**: 2+ active players; no Treasure; the first participant to reach 3/3 completes the adventure.
-- **Shotgun** is a future fourth race mode and is not implemented yet.
-- Starting an adventure snapshots all active players. Mode changes are blocked while an adventure is active so completion rules cannot change mid-run.
+- Club mode is chosen **once at creation and is immutable**. Settings shows four creation tiles: Solo, Babygirl, Group, and disabled **Shotgun — coming later**.
+- **Shotgun** is the future fourth race mode and is not implemented yet.
+- Starting an adventure snapshots all active players.
 - Babygirl rewards are backend-generated once, persist per completed run, and accumulate toward the 1,000 L$ manual-payment threshold.
 
 ## UI
@@ -43,7 +44,7 @@ This file is the persistent source of truth for future edits to this project.
 - Do not reintroduce the inline Settings panel on `index.html`; the main Adventures page should remain focused on gameplay.
 - Settings is organized as two distinct steps: **1) User Account** and **2) Clubs**. After sign-in, account/profile/StaFi controls collapse into a compact **Account details & StaFi** disclosure so club creation/joining is the obvious next step. StaFi remains optional; manual stamp tracking works without it.
 - In the Clubs step, the **club picker comes first**. A narrow scrollable box immediately to its right lists the selected club's members by **Second Life username** and updates when the club changes.
-- **Create a new club** and **Join an existing club** are compact mutually-exclusive expanders.
+- **Create a new club** and **Join an existing club** are compact mutually-exclusive expanders. New-club mode selection is a 2×2 tile grid; the selected club only displays its permanent mode and never offers a mode changer.
 - Invites have **two separate contexts**:
   - the currently selected club has its own obvious **Invite players** button beside **Open Adventures**; that action always generates/rotates an invite for the currently selected club;
   - a newly created club shows its initial invite separately inside the **Create a new club** panel immediately after creation.
@@ -241,19 +242,11 @@ This file is the persistent source of truth for future edits to this project.
 
 
 ## Player reward experience + Settings payout workflow
-- The optional reward feature is named **Adventure Treasure** and remains scoped per club.
-- Adventure Treasure defaults **OFF** for newly created clubs.
-- Any active club member may turn Treasure **ON** from Settings. The member who turns it on becomes the **locked Payer** for that Treasure session.
-- While Treasure is ON, only that locked payer may turn it OFF, change **Paid to**, or record **Mark 1,000 L$ paid**. Another player cannot take over until the current payer turns Treasure OFF.
-- Turning Treasure OFF releases both Treasure role flags. The next member who turns it ON becomes the new payer. If the payer leaves or is removed from the club, Treasure automatically turns OFF so the club cannot become permanently stuck.
-- Payer and Paid to are always different players. The payer is shown as a locked value, not a dropdown; if another active player exists, that payer may choose the **Paid to** player from the remaining players.
-- When Treasure is ON, Settings shows the current unpaid balance and progress toward the next 1,000 L$ payment.
-- No automatic L$ transfer occurs. The configured payer sends L$ manually in Second Life.
-- When at least **1,000 L$** is ready, **Mark 1,000 L$ paid** appears only for the locked payer. It records exactly one 1,000 L$ payment after the real payment has been sent.
-- The player-facing Adventures page may show the friendly Treasure experience, but payment bookkeeping stays in Settings.
-- The standalone Admin page is retired. `admin.html` redirects to `settings.html`.
-- Browser-push, Pay-link, test-money, and Second Life IM/bot setup are not part of the current Treasure workflow. Legacy backend/code may remain dormant but must not be required for normal use.
-
+- **Current rule:** this exists only in immutable **Babygirl mode**.
+- Roles are **Daddy Warbucks** and **Babygirl**; there is no generic Treasure ON/OFF switch and no later mode switching.
+- Both passports must reach 3/3 before the 20–100 L$ reward is earned.
+- Rewards accumulate for Babygirl; Daddy Warbucks manually sends L$ and records **Mark 1,000 L$ as paid** when due.
+- Older payer-lock / Treasure-toggle notes are historical and must not be reintroduced.
 
 ## Immediate next work
 1. **Make StaFi automation the next major focus**
