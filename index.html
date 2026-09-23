@@ -31,7 +31,7 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 <header>
 <div class="headrow">
   <div class="navwrap" id="main-nav"><button class="navbtn" title="Menu" aria-label="Menu" onclick="document.getElementById('main-nav').classList.toggle('open')">☰</button><div class="navmenu"><a class="here" href="index.html">🎮 Adventures</a><a href="settings.html">⚙ Settings</a><a href="instructions.html">📖 Instructions</a><a href="bbb.html">📍 BBB Passport Stops</a><a href="feedback.html">💬 Comments & Bugs</a></div></div>
-  <div class="brand"><h1><img class="brandmark" src="passport-icon.svg" alt="Navy and gold passport">Bellisseria Passport Adventures</h1><div class="sub">Pick a 3-stop adventure, collect BBB stamps, and explore Second Life.</div></div>
+  <div class="brand"><h1><img class="brandmark" src="passport-icon.svg" alt="Navy and gold passport">Bellisseria Passport Adventures</h1><div class="sub">Pick an adventure, collect BBB stamps, and explore Second Life.</div></div>
   <div class="goalstack">
     <div class="passportgoal" aria-label="Passport stamp progress"><strong id="passport-progress">0 / …</strong><span>Passport stamps</span><em id="passport-remaining">Loading…</em></div>
     <div id="treasure-mini"></div>
@@ -421,13 +421,13 @@ function pinnedHtml(a){
  const mine=progressFor(a,meDone),hers=progressFor(a,partnerDone),best=Math.max(mine,hers);
  const shown=currentView==='partner'?hers:mine;
  const treasureBadge=adventureTreasureEnabled?' <span class="badge mystery">🎁 Mystery L$</span>':'';
- const treasureNote=adventureTreasureEnabled?' · prize reveals when any passport reaches 3/3':'';
+ const treasureNote=adventureTreasureEnabled?' · prize reveals when the required stops are complete':'';
  return `<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>${esc(a.title)}${treasureBadge}</h3><div class="meta">${esc(a.zone)} · about ${a.minutes} min · ${a.stamps.length} stop${a.stamps.length===1?'':'s'}</div><div class="progress"><div class="bar" style="width:${Math.round((shown/a.stamps.length)*100)}%"></div></div><div class="small">${currentView==='partner'?tabPartnerName:tabMeName} passport: ${shown}/${a.stamps.length} · Best passport: ${best}/${a.stamps.length}${treasureNote}</div></div></div><div style="padding:0 17px 17px">${missionRows(a,true)}</div><div class="runmap"><div id="run-map"></div></div></div>`;
 }
 function collapsedTrip(a,completed=false){
  const r=completed?rewardFor(a):0;
  const rewardText=adventureTreasureEnabled?(completed&&r?`🎁 ${r} L$`:'🎁 mystery'):'';
- return `<details class="trip ${completed?'completed-row':''}"><summary><div class="summary-main"><span class="light ${completed?'red':'green'}"></span><strong>${esc(a.title)}</strong> <span class="small">· 3 stops · ~${a.minutes} min</span></div><div class="summary-right">${rewardText}</div></summary><div class="tripbody">${missionRows(a)}<div class="actions" style="margin-top:10px">${completed?'':`<button class="primary" onclick="startAdventure(${a.id})">Make this our adventure</button>`}</div></div></details>`;
+ return `<details class="trip ${completed?'completed-row':''}"><summary><div class="summary-main"><span class="light ${completed?'red':'green'}"></span><strong>${esc(a.title)}</strong> <span class="small">· ${a.stamps.length} stop${a.stamps.length===1?'':'s'} · ~${a.minutes} min</span></div><div class="summary-right">${rewardText}</div></summary><div class="tripbody">${missionRows(a)}<div class="actions" style="margin-top:10px">${completed?'':`<button class="primary" onclick="startAdventure(${a.id})">Make this our adventure</button>`}</div></div></details>`;
 }
 function rewardOwnerName(){return tabMeName}
 function completedFor(set){return adventures.filter(a=>personComplete(a,set)).length}
