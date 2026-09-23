@@ -41,7 +41,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
 <section class="card">
 <h3>3. Everyone finishes together</h3>
 <p>One person can get ahead, but the adventure is not complete until <b>every active player included in that adventure has all three stamps</b>. The player tabs show each passport separately, while each stop reports how many group members have it.</p>
-<p>The <b>NEXT</b> marker points to the first stop the whole group has not finished. A linked player’s verified private StaFi page is checked automatically while the club game is open. <b>Mark stamp</b> remains available for a player’s own passport when manual tracking is needed.</p>
+<p>The <b>NEXT</b> marker points to the first stop the whole group has not finished. After a player uses <b>Test &amp; enable StaFi</b> once, the server checks that private StaFi page automatically about every two minutes while the club has a current adventure; opening or returning to Adventures also triggers a quick refresh. <b>Mark stamp</b> remains available when manual tracking is needed.</p>
 </section>
 
 <section class="card">
@@ -60,9 +60,9 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
 
 <section class="card">
 <h3>6. Passport progress</h3>
-<p>The top stamp counter is meant to show the <b>whole passport total</b>, not only the adventure subset.</p>
-<p>Example: <b>1 / 382 stamps · 381 to go</b>.</p>
-<p class="small">After saving a private StaFi link, use <b>Test &amp; enable StaFi sync</b> once. Only confidently identified collected stamps from active adventures are imported; an unavailable or unfamiliar page never marks stamps.</p>
+<p>The top stamp counter shows the <b>whole passport total</b>, not only the fixed adventure subset. When StaFi is connected, the app reads the live BBB summary from that player's private page, including collected, uncollected, and all currently available stamps.</p>
+<p>For example, if StaFi reports 1 collected and 390 currently available, the header shows <b>1 / 390 stamps · 389 to go</b>.</p>
+<p class="small">After saving a private StaFi link, use <b>Test &amp; enable StaFi</b> once. Only confidently identified collected stamps from the current adventure are imported; ambiguous page content never marks a stamp.</p>
 </section>
 </div>
 
@@ -82,8 +82,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
       <p>The app is a static GitHub Pages site built from plain HTML, CSS, and JavaScript.</p>
       <ul>
         <li><b>Adventures:</b> the active club's game board with dynamic player tabs and a deliberately simple player-facing header.</li>
-        <li><b>Admin:</b> setup, Adventure Treasure controls, notifications, and payout bookkeeping.</li>
-        <li><b>Instructions:</b> user guide plus this architecture reference.</li>
+                <li><b>Instructions:</b> user guide plus this architecture reference.</li>
         <li><b>BBB Stops:</b> searchable live-aware stop catalog, nearby-stop tools, images, and Second Life map display.</li>
         <li><b>Comments & Bugs:</b> public suggestions and bug reports.</li>
       </ul>
@@ -95,14 +94,9 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
     </section>
     <section class="archcard">
       <h3>Shared state & rewards</h3>
-      <p>Supabase stores a separate current adventure, participant list, per-player campaign progress, reward history, and payout state for each club.</p>
-      <p>An adventure completes only when every selected participant has all three stamps. When enabled, the club beneficiary receives one hidden random 20–100 L$ prize per completed adventure. The prize is persisted once revealed and accumulates only in that club.</p>
-      <p>The player-facing Adventures page deliberately keeps technical status and payout setup out of the header. The large <b>passport stamp counter out of 382</b> remains the main goal, with optional Treasure compactly beside it.</p>
-      <p>All reward administration lives on <a href="admin.html">Admin</a>: the Adventure Treasure on/off switch, player-name setup checks, browser payout alerts, notification testing, an admin-only 1,000 L$ test-money simulation, the optional Second Life Pay shortcut, the optional backend Second Life IM messenger, current amount owed, and the fixed 1,000 L$ manual-payment record.</p>
-      <p>The browser must allow <b>Notifications</b> for payout alerts to appear. The optional Firestorm Pay shortcut may also require allowing an external-app launch when the browser asks.</p>
-      <p>The admin test-money control is deliberately separate from real rewards: adding 1,000 L$ of test money changes no adventure history, no real reward balance, and no L$. The test payout alert explicitly names the Second Life username that would be paid.</p>
-      <p>The optional Second Life IM messenger is fully backend-managed for players: no prims, no LSL, no HUD, and no in-world setup. A dedicated scripted-agent avatar runs on the owner's VPS and sends the payer a real SL IM when a payout is ready.</p>
-      <p>The background threshold check runs every five minutes through Supabase cron and also after app state writes. Real payout alerts are paused while Adventure Treasure is off. The Linden API key used for the optional username-to-UUID lookup is used only for that lookup and is not stored.</p>
+      <p>Supabase stores each club's current adventure, participant snapshot, per-player stamp progress, Treasure rewards, and payment history.</p>
+      <p>Adventure Treasure is controlled from <b>Settings</b>. The first active member who turns it on becomes the locked payer until that person turns it off. The payer sends L$ manually in Second Life and records each completed 1,000 L$ payment in Settings.</p>
+      <p>The player-facing Adventures page keeps bookkeeping out of the way and focuses on the current adventure, passport progress, and optional Treasure total.</p>
     </section>
     <section class="archcard">
       <h3>Private settings</h3>
@@ -117,7 +111,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
     </section>
     <section class="archcard">
       <h3>StaFi passport progress</h3>
-      <p>Each player's personal BBB StaFi page is saved privately and never returned in a club roster. After the player tests the link, the signed-in game checks it periodically and imports confidently matched collected stamps for that player’s active adventures. Manual marking remains available if the external page is unavailable.</p>
+      <p>Each player's personal BBB StaFi page is saved privately and never returned in a club roster. After the player tests the link, a protected Supabase job checks it about every two minutes while that player has a current adventure. The page's summary also supplies the live collected/available passport totals. Adventures performs an additional refresh when opened or brought back to the foreground. Manual marking remains available if the external page is unavailable.</p>
     </section>
     <section class="archcard">
       <h3>Feedback system</h3>
@@ -128,18 +122,18 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
     <section class="archcard">
       <h3>Multiuser clubs today</h3>
       <p>SL-username/password accounts, independent clubs, invite links, owner/admin/member roles, and club switching are live. A couple is simply a two-player club; larger groups can keep a bigger roster and choose the participants for each adventure.</p>
-      <p>Every adventure run snapshots its selected participants. Per-player stamps, run completion, Treasure rewards, collection requests, and payment records remain inside that club.</p>
-      <p>Treasure roles are explicit: a club owner/admin chooses one payer and one Treasure recipient. Reward amounts are generated by the authenticated backend only after all selected participants finish the run; browsers cannot submit or alter reward amounts.</p>
+      <p>Every new adventure snapshots all currently active club players. Per-player stamps, run completion, Treasure rewards, collection requests, and payment records remain inside that club.</p>
+      <p>Treasure uses a first-enabler lock: the first active member who turns it on becomes payer until that same person turns it off. Reward amounts are generated by the authenticated backend only after all snapshotted participants finish the adventure; browsers cannot submit or alter reward amounts.</p>
       <p class="small">The shared public BBB catalog stays global/read-only; private passport progress and club gameplay stay isolated per user and club.</p>
     </section>
     <section class="archcard">
       <h3>Current boundaries</h3>
       <ul>
-        <li>The app does not automate Linden-dollar transfers. Real payments are made manually in Second Life, and all payout controls live on the Admin page rather than the player-facing Adventures screen.</li>
+        <li>The app does not automate Linden-dollar transfers. Real payments are made manually in Second Life, and payment controls live in Settings rather than the player-facing Adventures screen.</li>
         <li>The public BBB mirror and the private StaFi progress system are separate.</li>
         <li>Feedback submission is public, but curation is owner-only through a separate private Owner Passphrase.</li>
         <li>Nearby-stop ranking is best-effort until complete grid-wide coordinates are available.</li>
-        <li>StaFi sync checks the private progress page while the signed-in club game is open. It fails closed: ambiguous page content is not treated as a collected stamp.</li>
+        <li>StaFi sync runs server-side on a schedule while a current adventure is active, with extra foreground checks from Adventures. It fails closed: ambiguous page content is not treated as a collected stamp.</li>
         <li>Owner-only moderation is code-based rather than account-based: anyone who possesses the private Owner Passphrase would have curator rights, so that code must remain private.</li>
       </ul>
     </section>
