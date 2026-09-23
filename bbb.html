@@ -190,10 +190,11 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
     var button=qs('#detail-nearby');
     if(button){button.disabled=true;button.textContent='Finding nearby…'}
     try{
-      nearbyResults=await fiveNearby(st);
+      var five=await fiveNearby(st);
+      nearbyResults=[st].concat(five);
       renderList();
-      showMap(st,nearbyResults);
-      if(!nearbyResults.length)qs('#result-count').textContent='No nearby stops found';
+      showMap(st,five);
+      if(!five.length)qs('#result-count').textContent='Selected stop only';
     }finally{
       button=qs('#detail-nearby');
       if(button){button.disabled=false;button.textContent='📍 5 Nearby'}
