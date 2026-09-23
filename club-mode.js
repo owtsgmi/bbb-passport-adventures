@@ -162,11 +162,11 @@ async function maybeTrimRetiredActiveRun(){
  if(!run)return false;
  const a=adventures.find(function(x){return Number(x.id)===Number(run.adventure_id)});if(!a)return false;
  const current=a.stamps||[],oldIds=(run.stamp_ids||[]).map(Number),currentIds=current.map(function(st){return Number(st.id)});
- if(!currentIds.length||oldIds.length<=currentIds.length||currentIds.some(function(id){return !oldIds.includes(id)}))return false;
+ if(oldIds.length<=currentIds.length||currentIds.some(function(id){return !oldIds.includes(id)}))return false;
  retiredRunTrimBusy=true;
  try{
-   await PassportCloud.call('trim_adventure_stamps',{club_id:clubData.club.id,adventure_id:Number(a.id),stamp_ids:currentIds,stamps:current.map(function(st){return {id:st.id,name:st.name,region:st.region,x:Number(st.x),y:Number(st.y),z:Number(st.z)}})});
-   await pollClub(true);toast('Retired stop removed — this adventure is now '+stopWord(currentIds.length)+'.');return true;
+   const out=await PassportCloud.call('trim_adventure_stamps',{club_id:clubData.club.id,adventure_id:Number(a.id),stamp_ids:currentIds,stamps:current.map(function(st){return {id:st.id,name:st.name,region:st.region,x:Number(st.x),y:Number(st.y),z:Number(st.z)}})});
+   await pollClub(true);toast(out.retired?'All stops retired — that adventure was archived.':'Retired stop removed — this adventure is now '+stopWord(currentIds.length)+'.');return true;
  }catch(e){return false}finally{retiredRunTrimBusy=false}
 }
 
