@@ -193,7 +193,7 @@ async function syncStaFi(userId:string,clubId:string,force=false){
     const playerPatch:any={stafi_last_success_at:now};
     if(summary.collected!==null)playerPatch.stafi_collected_count=summary.collected;
     if(summary.available!==null)playerPatch.stafi_available_count=summary.available;
-    await db("club_players?id=eq."+player.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(playerPatch)});
+    await db("club_players?user_id=eq."+userId+"&is_active=eq.true",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(playerPatch)});
 
     if(!run){
       const status={stafi_sync_enabled:true,stafi_verified_at:now,stafi_last_sync_at:now,stafi_last_success_at:now,stafi_last_error:null,...countPatch};
@@ -285,7 +285,7 @@ Deno.serve(async(req:Request)=>{
       const stafi=body.stafi_url===undefined?undefined:(body.stafi_url?stafiUrl(body.stafi_url):null);if(body.stafi_url&&!stafi)return reply({ok:false,error:"invalid_stafi_url"},400);
       const rows=await db("profiles?user_id=eq."+user.id,{method:"PATCH",headers:{Prefer:"return=representation"},body:JSON.stringify({display_name:display,sl_username:sl})});
       await db("club_players?user_id=eq."+user.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({display_name:display,sl_username:sl})});
-      if(stafi!==undefined){const current=(await db("user_private_settings?user_id=eq."+user.id+"&select=stafi_url"))?.[0];const changed=(current?.stafi_url||null)!==stafi;await db("user_private_settings?on_conflict=user_id",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({user_id:user.id,stafi_url:stafi,...(changed?{stafi_sync_enabled:false,stafi_verified_at:null,stafi_last_error:null}:{})})})}
+      if(stafi!==undefined){const current=(await db("user_private_settings?user_id=eq."+user.id+"&select=stafi_url"))?.[0];const changed=(current?.stafi_url||null)!==stafi;await db("user_private_settings?on_conflict=user_id",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({user_id:user.id,stafi_url:stafi,...(changed?{stafi_sync_enabled:false,stafi_verified_at:null,stafi_last_error:null,stafi_last_stamp_count:null,stafi_uncollected_count:null,stafi_available_count:null}:{})})});if(changed)await db("club_players?user_id=eq."+user.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({stafi_collected_count:null,stafi_available_count:null,stafi_last_success_at:null})})}
       return reply({ok:true,profile:rows?.[0]});
     }
 
