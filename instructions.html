@@ -30,23 +30,22 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
 
 <section class="card">
 <h3>2. Pick an adventure</h3>
-<p>Use <b>✨ Pick Random Adventure</b> or open the collapsed <b>Potential Adventures</b> section and filter by area. Every adventure has exactly <b>3 stops</b>.</p>
-<p>Starting an adventure snapshots all currently active club players, so later roster changes do not alter that adventure.</p>
-<p><b>Current Adventure</b> stays at the top and opens automatically when active. It is locked by default; unlock it to switch, confirm the change, and the replacement locks again.</p>
-<p>Each stop shows its BBB photo, place, status, and Firestorm copy button. The map shows all three stops; use <b>Fit</b>, <b>World</b>, or <b>🎯 Focus</b> on a stop.</p>
+<p>Use <b>✨ Pick Random Adventure</b> or open <b>Potential Adventures</b> and filter by area. Adventures begin as 3-stop sets, but retired BBB stops are removed rather than replaced.</p>
+<p>Starting an adventure snapshots its players and required stops. Completed runs stay unchanged; an active run is shortened automatically if one of its stops later retires.</p>
+<p><b>Current Adventure</b> stays at the top and is locked by default. Each active stop keeps its photo, location, Firestorm copy button, and map marker.</p>
 </section>
 
 <section class="card">
 <h3>3. Finish the adventure</h3>
-<p><b>Solo:</b> you reach 3/3. <b>Group:</b> the first participant to reach 3/3 finishes the adventure. <b>Babygirl:</b> both passports must reach 3/3, so the mode rewards teamwork. Player tabs still show each passport separately.</p>
-<p><b>NEXT</b> follows the viewed player in Solo/Group; in Babygirl it points to the first stop either partner still needs.</p>
+<p><b>Solo:</b> complete every active stop. <b>Group:</b> the first participant to complete every active stop finishes. <b>Babygirl:</b> both passports must complete every active stop, so the mode rewards teamwork.</p>
+<p><b>NEXT</b> follows the viewed player in Solo/Group; in Babygirl it points to the first active stop either partner still needs.</p>
 <p>After <b>Test &amp; enable StaFi</b>, the server checks that player's private StaFi page about every 2 minutes while the club is recently active. Checks stop after about 10 inactive minutes and resume when Adventures is opened or revisited. <b>Mark stamp</b> remains available manually.</p>
 </section>
 
 <section class="card">
 <h3>4. Babygirl Treasure</h3>
 <p>Treasure exists only in <b>Babygirl mode</b>. The club has exactly two roles: <b>Daddy Warbucks</b> and <b>Babygirl</b>.</p>
-<p>Each adventure reveals one saved random <b>20–100 L$</b> reward only after <b>both passports have all 3 stamps</b>. Rewards accumulate for the Babygirl toward 1,000 L$.</p>
+<p>Each adventure reveals one saved random <b>20–100 L$</b> reward only after <b>both passports complete every active stop</b>. Rewards accumulate for the Babygirl toward 1,000 L$.</p>
 <p><b>Daddy Warbucks</b> sends real L$ manually in Second Life, then uses <b>Mark 1,000 L$ as paid</b>. Solo and Group have no money system.</p>
 </section>
 
@@ -88,7 +87,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
 
     <section class="archcard">
       <h3>Game data</h3>
-      <p>The adventure set is a stable <b>381-stop / 127-adventure</b> snapshot. Live BBB changes can update the searchable catalog without silently rearranging adventures or reward history. The whole-passport total can be larger.</p>
+      <p>The 127 adventure IDs are stable and are never reshuffled. New BBB stops can appear in the live catalog; retired stops simply fall out of future play, so an old 3-stop adventure can become 2 or 1 stop. Completed run snapshots remain unchanged.</p>
     </section>
 
     <section class="archcard">
@@ -105,7 +104,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
     <section class="archcard">
       <h3>BBB catalog & maps</h3>
       <p>A Supabase Edge Function parses and caches the public BBB catalog, including locations and available photos. New public stops may appear as <b>BBB Live</b> without changing the fixed adventure set.</p>
-      <p>The shared SL grid map uses Linden tiles with drag, zoom, Fit, and World. BBB Stops fits the selected stop plus 6 nearby markers; Current Adventure maps its 3 stops. Failed tiles are retried once, then shown as clean placeholders.</p>
+      <p>The shared SL grid map uses Linden tiles with drag, zoom, Fit, and World. BBB Stops fits the selected stop plus 6 nearby markers; Current Adventure maps its active stops. Failed tiles are retried once, then shown as clean placeholders.</p>
     </section>
 
     <section class="archcard">
