@@ -16,15 +16,15 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
 <header><div class="top"><div class="navwrap" id="nav"><button class="navbtn" title="Menu" aria-label="Menu" onclick="document.getElementById('nav').classList.toggle('open')">☰</button><div class="navmenu"><a href="index.html">🎮 Adventures</a><a href="settings.html">⚙ Settings</a><a href="instructions.html">📖 Instructions</a><a class="here" href="bbb.html">📍 BBB Passport Stops</a><a href="feedback.html">💬 Comments & Bugs</a></div></div><div class="brand"><h1>📍 BBB Passport Stops</h1><div>A cleaner, searchable catalog for the passport hunt</div></div></div></header>
 
 <main>
-<section class="hero"><div><h2>Explore the Stop Catalog</h2><p>Search by text or narrow the list with quick dropdowns. Choose a stop to see 6 nearby suggestions.</p></div><div><div class="count" id="catalog-count">381</div><div class="small">passport stops indexed</div><div class="livestatus" id="live-status">🔄 Checking BBB for updates…</div></div></section>
-<div class="toolbar"><input id="search" placeholder="Search stops, regions, areas…"><select id="browse"><option value="">All 20 browse groups</option></select><select id="zone"><option value="">All areas</option></select><select id="status"><option value="">All statuses</option><option value="needed">Needed</option><option value="got">Collected</option></select><button class="randomBtn" id="random-five">🎲 5 Nearby</button></div><div id="random-set"></div>
-<div class="layout"><section class="panel"><div class="panelhead"><h3>Passport stops</h3><span class="pill" id="result-count"></span></div><div class="results" id="results"></div></section><aside class="panel detail" id="detail"><div class="empty">Choose a passport stop to see its location, copy a Firestorm destination, and discover 6 nearby stops.</div></aside></div>
+<section class="hero"><div><h2>Explore the Stop Catalog</h2><p>Search by text or narrow the list with quick dropdowns. Select a stop to see its details, then use <b>5 Nearby</b> when you want nearby choices.</p></div><div><div class="count" id="catalog-count">381</div><div class="small">passport stops indexed</div><div class="livestatus" id="live-status">🔄 Checking BBB for updates…</div></div></section>
+<div class="toolbar"><input id="search" placeholder="Search stops, regions, areas…"><select id="browse"><option value="">All 20 browse groups</option></select><select id="zone"><option value="">All areas</option></select><select id="status"><option value="">All statuses</option><option value="needed">Needed</option><option value="got">Collected</option></select><button class="randomBtn" id="random-five" disabled>📍 5 Nearby</button></div>
+<div class="layout"><section class="panel"><div class="panelhead"><h3>Passport stops</h3><span class="pill" id="result-count"></span></div><div class="results" id="results"></div></section><aside class="panel detail" id="detail"><div class="empty">Choose a passport stop to see its location and copy a Firestorm destination.</div></aside></div>
 <section class="mappanel" id="map-panel">
-  <div class="maphead"><div><h3>🗺 Selected + Nearby Map</h3><div class="small" id="map-caption">Choose any stop above. You can zoom from region detail all the way out to a broad Second Life world view.</div></div><button id="map-open" style="display:none">Open SLURL map</button></div>
+  <div class="maphead"><div><h3>🗺 Selected Stop Map</h3><div class="small" id="map-caption">Choose any stop above. You can zoom from region detail all the way out to a broad Second Life world view.</div></div><button id="map-open" style="display:none">Open SLURL map</button></div>
   <div id="map-empty" class="mapempty">No stop selected yet.</div>
   <div id="bbb-map" style="display:none"></div>
 </section>
-<div class="tip"><b>Nearby logic:</b> same-region stops are ranked first by coordinate distance. After that, stops in the same broader area are preferred. This is intentionally conservative until we have reliable grid-wide map coordinates for every region.</div>
+<div class="tip"><b>5 Nearby:</b> uses actual Second Life region-grid coordinates within the selected stop's area instead of adventure-number or list-order proximity.</div>
 </main>
 
 <script src="data1.js"></script><script src="data2.js"></script><script src="data3.js"></script><script src="data4.js"></script><script src="data5.js"></script><script src="data6.js"></script><script src="data7.js"></script><script src="slmap.js?v=4"></script>
@@ -83,17 +83,52 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
     for(var i=0;i<groups.length;i++) if(groups[i][1].indexOf(ch)!==-1) return groups[i][1];
     return 'Z#';
   }
-  function score(a,b){
-    if(a.id===b.id) return Number.MAX_SAFE_INTEGER;
-    if(String(a.region).toLowerCase()===String(b.region).toLowerCase()){
-      var dx=a.x-b.x,dy=a.y-b.y,dz=(a.z-b.z)*.15;
-      return Math.sqrt(dx*dx+dy*dy+dz*dz);
+  var selectedStopId=0,nearbyResults=null;
+  var regionGridCache=new Map();
+  try{
+    var savedGrid=JSON.parse(localStorage.getItem('bbb-region-grid-cache')||'{}');
+    Object.keys(savedGrid).forEach(function(k){
+      var v=savedGrid[k];
+      if(v&&Number.isFinite(Number(v.x))&&Number.isFinite(Number(v.y)))regionGridCache.set(k,{x:Number(v.x),y:Number(v.y)});
+    });
+  }catch(e){}
+  function regionKey(region){return String(region||'').trim().toLowerCase()}
+  async function regionGrid(region){
+    var key=regionKey(region);
+    if(regionGridCache.has(key))return regionGridCache.get(key);
+    if(!window.SLGridLookupRegion)return null;
+    var pos=await window.SLGridLookupRegion(region);
+    if(pos&&Number.isFinite(Number(pos.x))&&Number.isFinite(Number(pos.y))){
+      var clean={x:Number(pos.x),y:Number(pos.y)};
+      regionGridCache.set(key,clean);
+      try{
+        var obj={};regionGridCache.forEach(function(v,k){obj[k]=v});
+        localStorage.setItem('bbb-region-grid-cache',JSON.stringify(obj));
+      }catch(e){}
+      return clean;
     }
-    if(a.zone===b.zone) return 10000+Math.abs((a.adventureId||0)-(b.adventureId||0))*20;
-    return 100000+Math.abs((a.adventureId||0)-(b.adventureId||0))*50;
+    return null;
   }
-  function nearest(s,n){
-    return stops.filter(function(x){return x.id!==s.id}).sort(function(a,b){return score(s,a)-score(s,b)}).slice(0,n);
+  async function locateStop(st){
+    var g=await regionGrid(st.region);if(!g)return null;
+    return {x:g.x+Number(st.x||128)/256,y:g.y+Number(st.y||128)/256};
+  }
+  async function fiveNearby(st){
+    var candidates=stops.filter(function(x){return x.id!==st.id&&x.zone===st.zone});
+    if(candidates.length<5)candidates=stops.filter(function(x){return x.id!==st.id});
+    var origin=await locateStop(st);if(!origin)return [];
+    var regions=Array.from(new Set(candidates.map(function(x){return x.region})));
+    var cursor=0;
+    async function worker(){
+      while(cursor<regions.length){var region=regions[cursor++];await regionGrid(region)}
+    }
+    await Promise.all(Array.from({length:Math.min(8,regions.length)},function(){return worker()}));
+    return candidates.map(function(x){
+      var g=regionGridCache.get(regionKey(x.region));if(!g)return null;
+      var px=g.x+Number(x.x||128)/256,py=g.y+Number(x.y||128)/256;
+      var dx=px-origin.x,dy=py-origin.y;
+      return {stop:x,distance:Math.sqrt(dx*dx+dy*dy)};
+    }).filter(Boolean).sort(function(a,b){return a.distance-b.distance}).slice(0,5).map(function(x){return x.stop});
   }
   function filtered(){
     var q=qs('#search').value.trim().toLowerCase();
@@ -114,8 +149,8 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
     });
   }
   function renderList(){
-    var arr=filtered().sort(function(a,b){return a.name.localeCompare(b.name)});
-    qs('#result-count').textContent=arr.length+' shown';
+    var arr=nearbyResults?nearbyResults.slice():filtered().sort(function(a,b){return a.name.localeCompare(b.name)});
+    qs('#result-count').textContent=nearbyResults?arr.length+' nearby':arr.length+' shown';
     qs('#catalog-count').textContent=stops.length;
     qs('#results').innerHTML=arr.length?arr.map(function(s){
       return '<div class="stoprow" data-row="'+s.id+'">'+stopImageHtml(s)+'<div><div class="stopname">'+esc(s.name)+' <span class="zone">'+esc(s.zone)+'</span></div><div class="meta">'+esc(s.region)+' · '+s.x+', '+s.y+', '+s.z+'</div></div><div class="rowactions"><div class="status '+(done.has(s.id)?'yes':'no')+'">'+(done.has(s.id)?'✅ Got it':'○ Needed')+'</div><button class="copymini" data-copy="'+s.id+'">Copy SLURL</button></div></div>';
@@ -124,51 +159,42 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
     document.querySelectorAll('[data-copy]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();var s=byId.get(Number(b.dataset.copy));if(s)copyText(fsUrl(s))})});
   }
   var stopMap=null;
-  function showMap(s,near){
-    var webUrl=s.url||('https://maps.secondlife.com/secondlife/'+encodeURIComponent(s.region)+'/'+s.x+'/'+s.y+'/'+s.z);
-    var nearby=Array.isArray(near)?near:[];
-    qs('#map-caption').textContent=s.name+' + '+nearby.length+' nearby stops · map fitted to the group';
+  function showMap(st){
+    var webUrl=st.url||('https://maps.secondlife.com/secondlife/'+encodeURIComponent(st.region)+'/'+st.x+'/'+st.y+'/'+st.z);
+    qs('#map-caption').textContent=st.name+' · selected stop';
     qs('#map-open').style.display='inline-block';
     qs('#map-open').onclick=function(){window.open(webUrl,'_blank','noopener')};
     qs('#map-empty').style.display='none';
     qs('#bbb-map').style.display='block';
-    if(!stopMap)stopMap=new SLGridMap(qs('#bbb-map'),{title:'Second Life grid · selected stop and nearby stops'});
-    var locations=[{name:s.name,region:s.region,x:s.x,y:s.y,z:s.z,label:'★'}].concat(nearby.map(function(n,i){
-      return {name:n.name,region:n.region,x:n.x,y:n.y,z:n.z,label:String(i+1)};
-    }));
-    stopMap.setLocations(locations,{fit:true});
+    if(!stopMap)stopMap=new SLGridMap(qs('#bbb-map'),{title:'Second Life grid · selected stop'});
+    stopMap.setLocations([{name:st.name,region:st.region,x:st.x,y:st.y,z:st.z,label:'★'}],{fit:true});
   }
   function showStop(id){
-    var s=byId.get(Number(id));if(!s)return;
-    var near=nearest(s,6);
-    showMap(s,near);
-    document.querySelectorAll('[data-row]').forEach(function(r){r.classList.toggle('active',Number(r.dataset.row)===s.id)});
-    var h='<div class="small">'+esc(s.zone)+' · '+esc(s.adventure)+'</div><h2>'+esc(s.name)+'</h2><div class="where">'+esc(s.region)+' · '+s.x+', '+s.y+', '+s.z+'</div>';var pic=stampImages.get(s.id);if(pic)h+='<img class="detailimg" src="'+esc(proxyImage(pic))+'" alt="">';
-    h+='<div class="status '+(done.has(s.id)?'yes':'no')+'">'+(done.has(s.id)?'✅ Collected':'○ Needed')+' on '+esc(currentName)+'\'s campaign</div>';
-    h+='<div class="actionrow"><button class="primary" id="detail-copy">🔥 Copy SLURL</button></div><div class="near"><h3>6 nearby stops</h3>';
-    near.forEach(function(n,i){
-      h+='<div class="nearitem">'+nearImageHtml(n)+'<div><b>'+(i+1)+'. '+esc(n.name)+'</b><br><span>'+esc(n.region)+' · '+n.x+', '+n.y+', '+n.z+' · '+esc(n.zone)+'</span></div><button data-near="'+n.id+'">View</button></div>';
-    });
-    h+='</div>';
+    var st=byId.get(Number(id));if(!st)return;
+    selectedStopId=st.id;
+    qs('#random-five').disabled=false;
+    showMap(st);
+    document.querySelectorAll('[data-row]').forEach(function(r){r.classList.toggle('active',Number(r.dataset.row)===st.id)});
+    var h='<div class="small">'+esc(st.zone)+' · '+esc(st.adventure)+'</div><h2>'+esc(st.name)+'</h2><div class="where">'+esc(st.region)+' · '+st.x+', '+st.y+', '+st.z+'</div>';
+    var pic=stampImages.get(st.id);if(pic)h+='<img class="detailimg" src="'+esc(proxyImage(pic))+'" alt="">';
+    h+='<div class="status '+(done.has(st.id)?'yes':'no')+'">'+(done.has(st.id)?'✅ Collected':'○ Needed')+' on '+esc(currentName)+'\'s campaign</div>';
+    h+='<div class="actionrow"><button class="primary" id="detail-copy">🔥 Copy SLURL</button><button id="detail-nearby">📍 5 Nearby</button></div>';
     qs('#detail').innerHTML=h;
-    qs('#detail-copy').addEventListener('click',function(){copyText(fsUrl(s))});
-    document.querySelectorAll('[data-near]').forEach(function(b){b.addEventListener('click',function(){showStop(Number(b.dataset.near))})});
-    history.replaceState(null,'','#stop-'+s.id);
+    qs('#detail-copy').addEventListener('click',function(){copyText(fsUrl(st))});
+    qs('#detail-nearby').addEventListener('click',loadNearbyForSelected);
+    history.replaceState(null,'','#stop-'+st.id);
   }
-  function randomFive(){
-    var pool=filtered();
-    if(!pool.length){qs('#random-set').innerHTML='<div class="tip">No stops match the current filters.</div>';return}
-    var first=pool[Math.floor(Math.random()*pool.length)];
-    var five=[first].concat(nearest(first,4));
-    var h='<div class="randomset"><h3>🎲 Five nearby passport stops</h3><div class="small">The first stop is random from your current search/filter. The other four are filled in nearby. Click the button again for another set.</div><div class="randomgrid">';
-    five.forEach(function(s,i){
-      h+='<div class="randomcard" data-five-card="'+s.id+'">'+randomImageHtml(s)+'<b>'+(i+1)+'. '+esc(s.name)+'</b><span>'+esc(s.region)+' · '+s.x+', '+s.y+', '+s.z+'</span><div class="actionrow"><button data-five-view="'+s.id+'">View</button><button data-five-copy="'+s.id+'">Copy SLURL</button></div></div>';
-    });
-    h+='</div></div>';
-    qs('#random-set').innerHTML=h;
-    document.querySelectorAll('[data-five-card]').forEach(function(card){card.addEventListener('click',function(){showStop(Number(card.dataset.fiveCard))})});
-    document.querySelectorAll('[data-five-view]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();showStop(Number(b.dataset.fiveView))})});
-    document.querySelectorAll('[data-five-copy]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();var s=byId.get(Number(b.dataset.fiveCopy));if(s)copyText(fsUrl(s))})});
+  async function loadNearbyForSelected(){
+    var st=byId.get(Number(selectedStopId));if(!st)return;
+    var buttons=[qs('#random-five'),qs('#detail-nearby')].filter(Boolean);
+    buttons.forEach(function(b){b.disabled=true;b.textContent='Finding nearby…'});
+    try{
+      nearbyResults=await fiveNearby(st);
+      renderList();
+      if(!nearbyResults.length)qs('#result-count').textContent='No nearby stops found';
+    }finally{
+      buttons.forEach(function(b){b.disabled=false;b.textContent='📍 5 Nearby'});
+    }
   }
 
   function sameLocation(a,b){
@@ -262,7 +288,7 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
   qs('#browse').addEventListener('change',renderList);
   qs('#zone').addEventListener('change',renderList);
   qs('#status').addEventListener('change',renderList);
-  qs('#random-five').addEventListener('click',randomFive);
+  qs('#random-five').addEventListener('click',loadNearbyForSelected);
   document.addEventListener('click',function(e){var n=document.getElementById('nav');if(n&&!n.contains(e.target))n.classList.remove('open')});
   renderList();syncLiveBBB();
   var m=location.hash.match(/stop-(\d+)/);if(m)showStop(Number(m[1]));
