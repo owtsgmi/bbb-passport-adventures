@@ -75,7 +75,7 @@ requestCollectRewards=async function(btn){
 };
 const legacyRender=render;
 render=function(){
- legacyRender();const done=viewedDone(),passportDone=Math.min(TOTAL_PASSPORT_STAMPS,done.size),toGo=Math.max(0,TOTAL_PASSPORT_STAMPS-passportDone);
+ legacyRender();const done=viewedDone();
  const player=viewedPlayer(),stafiTotal=Number(player&&player.stafi_available_count||0),stafiDone=Number(player&&player.stafi_collected_count),hasStaFiTotals=!!(player&&player.stafi_last_success_at&&stafiTotal>0&&Number.isFinite(stafiDone)),shownTotal=hasStaFiTotals?stafiTotal:TOTAL_PASSPORT_STAMPS,shownDone=hasStaFiTotals?Math.min(shownTotal,Math.max(0,stafiDone)):Math.min(shownTotal,done.size),toGo=Math.max(0,shownTotal-shownDone);
  const progressEl=$('#passport-progress'),remainingEl=$('#passport-remaining');if(progressEl)progressEl.textContent=shownDone+' / '+shownTotal;if(remainingEl)remainingEl.textContent=toGo?toGo+' to go':'Passport complete!';
  const tabs=document.getElementById('player-tabs');if(clubMode&&tabs)tabs.innerHTML=activePlayers().map(function(p,i){return '<button class="viewtab '+(currentView===p.id?'active':'')+'" onclick="setView(&quot;'+p.id+'&quot;)">'+(i===0?'🗡️':i===1?'👽':'🧭')+' '+esc(p.display_name)+'</button>'}).join('');
