@@ -256,6 +256,8 @@ This file is the persistent source of truth for future edits to this project.
   - benefactor SL username;
   - a generic **Admin** link.
 - Unified admin page: `admin.html`.
+- Settings exposes a **🔧 Admin / Setup** link for the signed-in app setup workflow. Keep this entry point; do not let cleanup passes orphan `admin.html` again.
+- Admin contains browser notification setup/troubleshooting (local popup + server push tests), SL bot setup/status, payout diagnostics, and a **StaFi diagnostics** card for the signed-in account. StaFi diagnostics show whether the private URL is saved, whether sync is enabled, verification/attempt/success timestamps, stamp count, last error, and provide **Test & enable StaFi**.
 - Legacy `bank.html` and `payout-admin.html` redirect to `admin.html`.
 - Admin page contains the complete setup checklist:
   1. save both actual SL usernames;
@@ -374,5 +376,6 @@ This file is the persistent source of truth for future edits to this project.
 - Adventure Treasure is configured per club and defaults OFF for newly created clubs. Reward/payout logs stay club-scoped.
 - Treasure payer and recipient must always be different players. The first/owner player defaults to **Payer**; once another active player exists, Settings exposes manager-only **Payer** and **Paid to** dropdowns. The **Paid to** tooltip explains that an in-world reminder will be sent to the payer at the payout milestone. A 1,000 L$ bonus creates a `club_collect_requests` record; club owner/admin manually pays in Second Life and uses Admin to mark exactly 1,000 L$ paid. No automatic L$ debit exists.
 - `admin.html` shows an additional active-club payout card for owner/admin accounts. The existing global notification/bot controls remain available for the original installation and global infrastructure; do not expose bot/VPS/token plumbing to ordinary club owners.
+- Settings must make unverified StaFi obvious: saved-but-unverified URLs show **StaFi needs test** and a visible amber status box; successful sync shows **StaFi connected** with last success/stamp count; errors show a visible failure state. The primary action is **Test & enable StaFi**.
 - Per-user StaFi validation and conservative active-adventure importing are live in `club-api`. Players save their private StaFi URL, use **Test & enable StaFi sync**, and the Adventures page checks periodically. Only confidently identified stamps from the active adventure are imported; manual **Mark stamp** remains available. Do not claim a particular player's sync works until that player's real URL passes validation.
 - Version-controlled backend sources live under `supabase/migrations/` and `supabase/functions/club-api/`.
