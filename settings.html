@@ -254,7 +254,7 @@ async function loadClubTools(clubId){
    $('#treasure-lock-note').textContent=players.length<2
      ?'Invite your Babygirl to start. Treasure is earned only after both passports collect all 3 adventure stamps.'
      :'Teamwork rule: both passports must collect all 3 adventure stamps before the reward is earned.';
-   $('#treasure-payer-name').textContent=(payerPlayer?.sl_username||payerPlayer?.display_name||'Payer not set')+' 🔒';
+   $('#treasure-payer-name').textContent=(payerPlayer?.sl_username||payerPlayer?.display_name||'Daddy Warbucks not set')+' 🔒';
    $('#treasure-babygirl-name').textContent=recipientPlayer?(recipientPlayer.sl_username||recipientPlayer.display_name):'Waiting for second player';
 
    const balance=(activeClubData.rewards||[]).filter(r=>!recipientPlayer||r.beneficiary_player_id===recipientPlayer.id).reduce((sum,r)=>sum+Math.max(0,Number(r.amount||0)-Math.max(0,Number(r.paid_amount||0))),0);
