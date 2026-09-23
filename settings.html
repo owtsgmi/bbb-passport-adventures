@@ -104,7 +104,11 @@ main{max-width:900px;margin:auto;padding:26px 4vw 60px}.card{background:linear-g
         <div class="clubselectline">
           <div class="clubselectleft">
             <select id="club-select"></select>
-            <div class="actions" style="margin-top:8px"><a class="btn primary" href="index.html">Open Adventures</a></div>
+            <div class="actions" style="margin-top:8px">
+              <a class="btn primary" href="index.html">Open Adventures</a>
+              <button id="invite-selected-club">🔗 Invite players</button>
+            </div>
+            <div id="selected-invite-box" class="codebox hidden"></div>
           </div>
           <div class="membermini" id="member-list" title="Members in the selected club"></div>
         </div>
@@ -117,9 +121,8 @@ main{max-width:900px;margin:auto;padding:26px 4vw 60px}.card{background:linear-g
 
           <div class="clubpanel hidden" id="create-club-panel">
             <div class="field"><label>Club name</label><input id="new-club-name" maxlength="80" placeholder="Our Passport Crew"></div>
-            <div class="actions"><button class="primary" id="create-club">Create club</button><span class="tip" tabindex="0" data-tip="You become the club owner. After creation, invite the people you want to join.">?</span></div>
-            <div class="actions hidden" id="invite-current-wrap"><button id="new-invite">🔗 Invite players to selected club</button></div>
-            <div id="invite-box" class="codebox hidden"></div>
+            <div class="actions"><button class="primary" id="create-club">Create club</button><span class="tip" tabindex="0" data-tip="You become the club owner. After creation, an invite for that new club appears here.">?</span></div>
+            <div id="new-club-invite-box" class="codebox hidden"></div>
           </div>
 
           <div class="clubpanel hidden" id="join-club-panel">
@@ -182,10 +185,10 @@ function setClubAction(mode){
  $('#show-create-club').classList.toggle('active',create);
  $('#show-join-club').classList.toggle('active',join);
 }
-function showInvite(code){
- const link=location.origin+location.pathname+'?join='+encodeURIComponent(code),box=$('#invite-box');
- box.innerHTML='<b>Invite code:</b> '+html(code)+'<br><span class="small">'+html(link)+'</span><div class="actions"><button id="copy-invite">Copy invite link</button></div>';
- box.classList.remove('hidden');$('#copy-invite').onclick=()=>navigator.clipboard.writeText(link).then(()=>clubStatus('Invite link copied.',true));
+function showInvite(code,boxSelector,copyId,label){
+ const link=location.origin+location.pathname+'?join='+encodeURIComponent(code),box=$(boxSelector);
+ box.innerHTML='<b>'+html(label||'Club invite')+'</b><br><span class="small">'+html(link)+'</span><div class="actions"><button id="'+copyId+'">Copy invite link</button></div>';
+ box.classList.remove('hidden');$('#'+copyId).onclick=()=>navigator.clipboard.writeText(link).then(()=>clubStatus('Invite link copied.',true));
 }
 async function loadClubTools(clubId){
  if(!clubId){$('#active-club-tools').classList.add('hidden');$('#treasure-card').classList.add('hidden');clubStatus('');return}
@@ -202,8 +205,8 @@ async function loadClubTools(clubId){
  $('#active-club-tools').classList.remove('hidden');
  $('#treasure-card').classList.remove('hidden');
  $('#treasure-club-name').textContent=activeClubData.club.name;
- $('#invite-current-wrap').classList.toggle('hidden',!canManage);
- $('#new-invite').textContent='🔗 Invite players to '+activeClubData.club.name;
+ $('#invite-selected-club').classList.toggle('hidden',!canManage);
+ $('#invite-selected-club').title='Invite another Second Life user to '+activeClubData.club.name;
  $('#personal-club-actions').classList.toggle('hidden',mine.role==='owner');
 
  const activeMembers=players.filter(p=>p.user_id).map(p=>{
@@ -305,7 +308,7 @@ async function loadAccount(){
 }
 async function createClub(){
  const name=$('#new-club-name').value.trim();if(!name)return clubStatus('Enter a club name.');
- const out=await PassportCloud.call('create',{name});PassportCloud.setActiveClub(out.club.id);await loadAccount();setClubAction('create');showInvite(out.join_code);clubStatus('Club created. Invite link is ready.',true);
+ const out=await PassportCloud.call('create',{name});PassportCloud.setActiveClub(out.club.id);await loadAccount();setClubAction('create');showInvite(out.join_code,'#new-club-invite-box','copy-new-club-invite','Invite to your new club: '+out.club.name);clubStatus('Club created. Its invite link is ready below.',true);
 }
 async function joinClub(){
  const code=$('#join-code').value.trim()||new URLSearchParams(location.search).get('join')||'';if(!code)return clubStatus('Paste an invite code.');
@@ -346,12 +349,12 @@ $('#create-account').onclick=()=>accountAuth('register');
 $('#sign-out').onclick=()=>PassportCloud.signOut();
 $('#save-profile').onclick=async()=>{try{const hasStaFi=!!$('#profile-stafi').value.trim();await PassportCloud.call('update_profile',{display_name:$('#profile-name').value,sl_username:$('#profile-sl').value,stafi_url:$('#profile-stafi').value});await loadAccount();$('#account-details').open=true;accountStatus(hasStaFi?'Saved. If StaFi says “needs test,” click Test & enable StaFi.':'Profile saved. Manual stamp tracking is active.',true)}catch(e){accountStatus(e.message)}};
 $('#verify-stafi').onclick=()=>verifyStaFi().catch(e=>accountStatus(e.message==='invalid_stafi_url'?'Use the private thebbbbug.com/UTILS/YourStamps.php?Ref=… link supplied by the StaFi HUD.':e.message));
-$('#club-select').onchange=async e=>{PassportCloud.setActiveClub(e.target.value);await loadClubTools(e.target.value)};
-$('#show-create-club').onclick=()=>{const opening=$('#create-club-panel').classList.contains('hidden');setClubAction(opening?'create':null);if(opening)$('#invite-box').classList.add('hidden')};
+$('#club-select').onchange=async e=>{$('#selected-invite-box').classList.add('hidden');PassportCloud.setActiveClub(e.target.value);await loadClubTools(e.target.value)};
+$('#show-create-club').onclick=()=>{const opening=$('#create-club-panel').classList.contains('hidden');setClubAction(opening?'create':null);if(opening)$('#new-club-invite-box').classList.add('hidden')};
 $('#show-join-club').onclick=()=>setClubAction($('#join-club-panel').classList.contains('hidden')?'join':null);
 $('#create-club').onclick=()=>createClub().catch(e=>clubStatus(e.message));
 $('#join-club').onclick=()=>joinClub().catch(e=>clubStatus(e.message==='join_code_not_found'?'That invite code was not found.':e.message==='join_rate_limited'?'Too many invite attempts. Wait about 10 minutes, then try again.':e.message));
-$('#new-invite').onclick=async()=>{try{setClubAction('create');const out=await PassportCloud.call('rotate_invite',{club_id:PassportCloud.activeClub()});showInvite(out.join_code);clubStatus('Invite ready for '+activeClubData.club.name+'. Older invite links no longer work.',true)}catch(e){accountStatus(e.message)}};
+$('#invite-selected-club').onclick=async()=>{try{const out=await PassportCloud.call('rotate_invite',{club_id:PassportCloud.activeClub()});showInvite(out.join_code,'#selected-invite-box','copy-selected-club-invite','Invite to '+activeClubData.club.name);clubStatus('Invite ready for '+activeClubData.club.name+'. Older invite links no longer work.',true)}catch(e){accountStatus(e.message)}};
 $('#treasure-recipient').onchange=()=>saveTreasureRecipient().catch(e=>clubStatus(e.message==='treasure_locked_to_payer'?'Only the locked payer can change who is paid.':e.message));
 $('#mark-treasure-paid').onclick=()=>markTreasurePaid().catch(e=>clubStatus(e.message==='threshold_not_met'?'The Treasure balance is below 1,000 L$.':e.message==='payer_required'?'Only the locked payer can record the payment.':e.message));
 $('#club-treasure').onchange=async()=>{try{
