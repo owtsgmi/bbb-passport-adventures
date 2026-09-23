@@ -13,12 +13,13 @@ This file is the persistent source of truth for future edits to this project.
 ## Current game rules
 - Adventures are exactly **3 passport stops** each.
 - Stable adventure dataset: **381 stamps = 127 adventures**. The live BBB/StaFi passport total can be higher and changes independently.
-- A run completes when **any snapshotted participant gets all 3 stamps**. Solo clubs work normally, and multi-player clubs do not require everyone to finish.
-- Each completed 3-stop adventure can reveal one **random 20–100 L$ mystery reward** when Adventure Treasure is enabled.
-- The reward recipient is the **second/player-two SL username** (👽 tab), while the **first/player-one SL username** (🗡️ tab) is the sponsor/payer.
-- The L$ amount stays hidden until the first participating player reaches 3/3. A completed adventure gets one persisted random reward; reopening or switching devices must not reroll it.
-- Reward ownership does not change when switching tabs.
-- Both tabs show passport progress. Reward ownership stays with the second SL username; revealed prizes accumulate toward the next fixed 1,000 L$ payout.
+- Clubs have an explicit `game_mode`:
+  - **Solo**: exactly 1 active player; no Treasure; that player reaching 3/3 completes the adventure.
+  - **Babygirl**: exactly 2 active players; one locked **Payer** and one **Babygirl**; **both passports must have all 3 stamps** before the adventure completes and its 20–100 L$ reward is earned.
+  - **Group**: 2+ active players; no Treasure; the first participant to reach 3/3 completes the adventure.
+- **Shotgun** is a future fourth race mode and is not implemented yet.
+- Starting an adventure snapshots all active players. Mode changes are blocked while an adventure is active so completion rules cannot change mid-run.
+- Babygirl rewards are backend-generated once, persist per completed run, and accumulate toward the 1,000 L$ manual-payment threshold.
 
 ## UI
 - Two configurable player tabs use the players' **actual Second Life usernames** as their labels.
@@ -152,7 +153,7 @@ This file is the persistent source of truth for future edits to this project.
 ## Multi-user direction
 - The discarded email/magic-link and original-game claim designs must not be reintroduced.
 - Player identity is the actual Second Life username plus a password. No real email address is requested or stored, and there is intentionally no password-recovery flow.
-- Couples and larger groups play in independent clubs with owner/admin/member roles, private state, invite links, configurable player rosters, and club-scoped Treasure records.
+- Independent clubs use owner/admin/member roles and one of three live modes: Solo, Babygirl, or Group. Only Babygirl has Treasure.
 - Each member owns one private StaFi URL. Club members may see derived stamp progress but never another member's raw StaFi reference URL.
 - The global BBB catalog remains shared and read-only; player, club, reward, and payout data remain tenant-scoped.
 
@@ -304,8 +305,8 @@ This file is the persistent source of truth for future edits to this project.
 - Tenant tables have RLS enabled with direct browser access revoked. All reads and mutations run through `club-api`, which validates the opaque Passport session and repeats membership/role checks server-side. `club-api` has gateway JWT verification disabled only because it performs this custom authentication itself.
 - A user may create or join multiple independent clubs and switch the active club from Settings. Club join codes are random 128-bit values; only SHA-256 hashes are stored. Rotating an invite invalidates the previous code.
 - Clubs can have any number of active signed-in players. New guest-player creation and player pause/reactivate controls are intentionally **not exposed in Settings**; the normal model is one Second Life username account per player. Legacy guest/inactive rows may remain in stored data for compatibility.
-- When a new adventure starts, **all active club players are snapshotted as participants**, so later roster changes do not rewrite who was part of that adventure.
-- In club mode, the Adventures header keeps the existing visual hierarchy and dynamically renders one compact tab per player. **Any one snapshotted participant reaching all three stamps completes the adventure.** Members may mark their own stamps when manual tracking is needed.
+- When a new adventure starts, **all active club players are snapshotted as participants**, so later roster changes do not rewrite who was part of it.
+- Completion is mode-specific: Solo = the solo player reaches 3/3; Babygirl = both snapshotted players reach 3/3; Group = any snapshotted player reaches 3/3. Members may mark their own stamps when manual tracking is needed.
 - Pre-cutover board/account rows remain stored as an archive, but they are not reachable from normal navigation and have no claim/migration UI. New play starts with a fresh SL-username account and club.
 - Adventure Treasure is configured per club and defaults OFF for newly created clubs. Reward/payout logs stay club-scoped.
 - Treasure payer and recipient must always be different players. Treasure roles are unclaimed while OFF. Settings uses a simple **Treasure checkbox**: the first active member who checks it becomes the locked **Payer**; only that payer may uncheck it, choose **Paid to**, and record **Mark 1,000 L$ as paid**. The payment button stays visible to the payer while Treasure is ON and remains disabled until at least 1,000 L$ is due. Another player can take over only after the current payer unchecks Treasure. No automatic L$ debit exists.
