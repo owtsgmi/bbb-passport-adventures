@@ -55,7 +55,7 @@ jobs:
             -out /tmp/passport-adventures.dump.enc \
             -pass env:BACKUP_ENCRYPTION_KEY
           test -s /tmp/passport-adventures.dump.enc
-          rm -f /tmp/passport-adventures.dump
+          sudo rm -f /tmp/passport-adventures.dump
 
       - name: Save encrypted backup on backup branch
         run: |
