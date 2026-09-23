@@ -1,4 +1,17 @@
 let clubMode=false,clubData=null,clubPlayers=[],clubProgress=new Map(),clubRuns=[],clubParticipants=[],clubParticipantSelection=new Set(),clubStaFiSyncBusy=false,lastClubStaFiSync=0,lastClubActivity=0;
+let manualPassportAdjustments={};
+try{manualPassportAdjustments=JSON.parse(localStorage.getItem('bbb-manual-passport-adjustments')||'{}')||{}}catch(e){manualPassportAdjustments={}}
+function saveManualPassportAdjustments(){try{localStorage.setItem('bbb-manual-passport-adjustments',JSON.stringify(manualPassportAdjustments))}catch(e){}}
+function effectivePassportCount(player,done,total){
+ const stafiDone=Number(player&&player.stafi_collected_count),hasStaFi=!!(player&&player.stafi_last_success_at&&Number.isFinite(stafiDone)&&stafiDone>=0);
+ if(!hasStaFi)return Math.min(total,done.size);
+ const key=String(player.id),adj=manualPassportAdjustments[key];
+ if(!adj)return Math.min(total,stafiDone);
+ const base=Number(adj.base),delta=Math.max(0,Number(adj.delta)||0),caughtUp=Math.max(0,stafiDone-base),remaining=Math.max(0,delta-caughtUp);
+ if(remaining!==delta){manualPassportAdjustments[key]={base:stafiDone,delta:remaining};if(!remaining)delete manualPassportAdjustments[key];saveManualPassportAdjustments()}
+ return Math.min(total,stafiDone+remaining);
+}
+
 function activePlayers(){return clubMode?clubPlayers.filter(function(p){return p.is_active}):[]}
 function clubGameMode(){return clubMode&&clubData&&clubData.club?String(clubData.club.game_mode||'group'):'group'}
 function adventureRun(a){return clubMode&&a?clubRuns.find(function(r){return Number(r.adventure_id)===Number(a.id)}):null}
@@ -13,7 +26,7 @@ function retiredCountForAdventure(a){const all=Array.isArray(a&&a.allStamps)?a.a
 function stopWord(n){return n+' stop'+(n===1?'':'s')}
 function copyClubAdventureStop(advId,stampId){
  const a=adventures.find(function(x){return Number(x.id)===Number(advId)}),all=a&&(a.allStamps||a.stamps)||[],st=all.find(function(x){return Number(x.id)===Number(stampId)});
- if(st)copy(fsUrl(st),'Destination copied for Firestorm');
+ if(st)copy(fsUrl(st),'SLURL copied — paste into Firestorm chat or location bar');
 }
 function viewedPlayer(){return clubMode?(clubPlayers.find(function(p){return p.id===currentView})||activePlayers()[0]||null):null}
 function viewedDone(){if(!clubMode)return currentView==='partner'?partnerDone:meDone;return clubProgress.get((viewedPlayer()||{}).id)||new Set()}
@@ -79,8 +92,27 @@ async function maybeAutoStaFiSync(force){
 function canEditViewedPlayer(){const p=viewedPlayer(),session=window.PassportCloud&&PassportCloud.session(),u=session&&session.user&&session.user.id,role=clubData&&clubData.membership&&clubData.membership.role;return !!(clubMode&&p&&(p.user_id===u||(!p.user_id&&(role==='owner'||role==='admin'))))}
 async function toggleClubStamp(advId,stampId){
  const p=viewedPlayer(),set=viewedDone();if(!clubMode||!p)return;
- const completed=!set.has(stampId);if(completed)set.add(stampId);else set.delete(stampId);render();
- try{await PassportCloud.call('set_stamp',{club_id:clubData.club.id,player_id:p.id,stamp_id:stampId,adventure_id:Number(advId),completed:completed});await pollClub(true)}catch(e){if(completed)set.delete(stampId);else set.add(stampId);render();toast('Could not update that stamp.')}
+ const completed=!set.has(stampId),key=String(p.id),stafiDone=Number(p.stafi_collected_count),hasStaFi=!!(p.stafi_last_success_at&&Number.isFinite(stafiDone)&&stafiDone>=0);
+ if(completed)set.add(stampId);else set.delete(stampId);
+ if(hasStaFi){
+   const adj=manualPassportAdjustments[key]||{base:stafiDone,delta:0};
+   if(completed)adj.delta=Math.max(0,Number(adj.delta)||0)+1;
+   else adj.delta=Math.max(0,(Number(adj.delta)||0)-1);
+   if(adj.delta)manualPassportAdjustments[key]=adj;else delete manualPassportAdjustments[key];
+   saveManualPassportAdjustments();
+ }
+ render();
+ try{await PassportCloud.call('set_stamp',{club_id:clubData.club.id,player_id:p.id,stamp_id:stampId,adventure_id:Number(advId),completed:completed});await pollClub(true)}catch(e){
+   if(completed)set.delete(stampId);else set.add(stampId);
+   if(hasStaFi){
+     const adj=manualPassportAdjustments[key]||{base:stafiDone,delta:0};
+     if(completed)adj.delta=Math.max(0,(Number(adj.delta)||0)-1);
+     else adj.delta=Math.max(0,Number(adj.delta)||0)+1;
+     if(adj.delta)manualPassportAdjustments[key]=adj;else delete manualPassportAdjustments[key];
+     saveManualPassportAdjustments();
+   }
+   render();toast('Could not update that stamp.');
+ }
 }
 const legacyMissionRows=missionRows;
 missionRows=function(a,mapInteractive){
@@ -90,9 +122,9 @@ missionRows=function(a,mapInteractive){
  stamps.forEach(function(st,i){
    const personDone=selected.has(st.id),nr=i===next&&!togetherComplete(a),count=people.filter(function(p){return (clubProgress.get(p.id)||new Set()).has(st.id)}).length;
    const cls=(nr?'nextrow ':'')+(mapInteractive?'mapselectable':''),rowClick=mapInteractive?' onclick="selectAdventureStop('+a.id+','+i+')"':'';
-   const mapButton=mapInteractive?'<button class="sl mapbtn" title="Reset map and zoom to this stop" onclick="event.stopPropagation();selectAdventureStop('+a.id+','+i+')">🎯 Focus</button>':'';
+   const mapButton='';
    const stampButton=canMark?'<br><button class="stampbtn" onclick="event.stopPropagation();toggleClubStamp('+a.id+','+st.id+')">'+(personDone?'Undo':'Mark stamp')+'</button>':'';
-   h+='<tr class="'+cls+'" data-map-row="'+(mapInteractive?i:'')+'" id="trip-'+a.id+'-stop-'+(i+1)+'"'+rowClick+'><td>'+(i+1)+'</td><td><div class="stopinfo">'+stampThumbHtml(st)+'<div><div class="place">'+esc(st.name)+(nr?'<span class="nexttag">NEXT</span>':'')+'</div><div class="where">'+esc(st.region)+' · '+st.x+', '+st.y+', '+st.z+'</div></div></div></td><td class="who">'+(personDone?'✅ Got it':'○ Needed')+'<span class="small"> · '+count+'/'+people.length+' players</span>'+stampButton+'</td><td class="act"><button class="sl" onclick="event.stopPropagation();copyClubAdventureStop('+a.id+','+st.id+')">🔥 Copy</button>'+mapButton+'</td></tr>';
+   h+='<tr class="'+cls+'" data-map-row="'+(mapInteractive?i:'')+'" id="trip-'+a.id+'-stop-'+(i+1)+'"'+rowClick+'><td>'+(i+1)+'</td><td><div class="stopinfo">'+stampThumbHtml(st)+'<div><div class="place">'+esc(st.name)+(nr?'<span class="nexttag">NEXT</span>':'')+'</div><div class="where">'+esc(st.region)+' · '+st.x+', '+st.y+', '+st.z+'</div></div></div></td><td class="who">'+(personDone?'✅ Got it':'○ Needed')+'<span class="small"> · '+count+'/'+people.length+' players</span>'+stampButton+'</td><td class="act"><button class="sl" onclick="event.stopPropagation();copyClubAdventureStop('+a.id+','+st.id+')">🔥 Copy SLURL</button>'+mapButton+'</td></tr>';
  });
  return h+'</tbody></table>';
 };
@@ -173,7 +205,7 @@ async function maybeTrimRetiredActiveRun(){
 const legacyRender=render;
 render=function(){
  legacyRender();const done=viewedDone();
- const player=viewedPlayer(),globalTotal=Number(clubData&&clubData.passport_total||0),stafiDone=Number(player&&player.stafi_collected_count),hasStaFiDone=!!(player&&player.stafi_last_success_at&&Number.isFinite(stafiDone)&&stafiDone>=0),shownTotal=globalTotal>0?globalTotal:TOTAL_PASSPORT_STAMPS,shownDone=hasStaFiDone?Math.min(shownTotal,stafiDone):Math.min(shownTotal,done.size),toGo=Math.max(0,shownTotal-shownDone);
+ const player=viewedPlayer(),globalTotal=Number(clubData&&clubData.passport_total||0),shownTotal=globalTotal>0?globalTotal:TOTAL_PASSPORT_STAMPS,shownDone=effectivePassportCount(player,done,shownTotal),toGo=Math.max(0,shownTotal-shownDone);
  const progressEl=$('#passport-progress'),remainingEl=$('#passport-remaining');if(progressEl)progressEl.textContent=shownDone+' / '+shownTotal;if(remainingEl)remainingEl.textContent=toGo?toGo+' to go':'Passport complete!';
  const tabs=document.getElementById('player-tabs');if(clubMode&&tabs)tabs.innerHTML=activePlayers().map(function(p,i){return '<button class="viewtab '+(currentView===p.id?'active':'')+'" onclick="setView(&quot;'+p.id+'&quot;)">'+(i===0?'🗡️':i===1?'👽':'🧭')+' '+esc(p.display_name)+'</button>'}).join('');
  const context=document.getElementById('club-context');if(context){const mode=clubGameMode(),label=mode==='solo'?'🧭 Solo':mode==='babygirl'?'💗 Babygirl':'👥 Group';context.innerHTML=clubMode?'Playing <b>'+label+'</b> with <b>'+esc(clubData.club.name)+'</b> · <a href="settings.html">club settings</a>':'';}
