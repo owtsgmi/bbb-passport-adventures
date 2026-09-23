@@ -135,20 +135,20 @@ async function finalizeRun(clubId:string,adventureId:number){
   const participants=await db("club_run_participants?run_id=eq."+run.id+"&select=player_id");
   const playerIds=participants.map((p:any)=>p.player_id);if(!playerIds.length)return null;
   const progress=await db("club_stamp_progress?club_id=eq."+clubId+"&player_id=in.("+playerIds.join(",")+")&stamp_id=in.("+stampIds.join(",")+")&select=player_id,stamp_id");
-  const complete=playerIds.every((playerId:string)=>stampIds.every((stampId:number)=>progress.some((p:any)=>p.player_id===playerId&&Number(p.stamp_id)===stampId)));
-  if(!complete)return null;
+  const completingPlayerId=playerIds.find((playerId:string)=>stampIds.every((stampId:number)=>progress.some((p:any)=>p.player_id===playerId&&Number(p.stamp_id)===stampId)));
+  if(!completingPlayerId)return null;
   const now=new Date().toISOString();
   await db("club_adventure_runs?id=eq."+run.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"completed",completed_at:now})});
   const club=(await db("clubs?id=eq."+clubId+"&select=treasure_enabled"))?.[0];
-  if(!club?.treasure_enabled)return {completed:true,reward:null};
+  if(!club?.treasure_enabled)return {completed:true,completed_by_player_id:completingPlayerId,reward:null};
   const existing=(await db("club_rewards?run_id=eq."+run.id+"&select=*"))?.[0];
-  if(existing)return {completed:true,reward:existing};
+  if(existing)return {completed:true,completed_by_player_id:completingPlayerId,reward:existing};
   const beneficiary=(await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&is_beneficiary=eq.true&is_payer=eq.false&select=id&limit=1"))?.[0]
     ||(await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&is_payer=eq.false&select=id&order=sort_order.asc,created_at.asc&limit=1"))?.[0];
-  if(!beneficiary)return {completed:true,reward:null};
+  if(!beneficiary)return {completed:true,completed_by_player_id:completingPlayerId,reward:null};
   const created=(await db("club_rewards?on_conflict=run_id",{method:"POST",headers:{Prefer:"resolution=ignore-duplicates,return=representation"},body:JSON.stringify({club_id:clubId,run_id:run.id,beneficiary_player_id:beneficiary.id,amount:randomReward()})}))?.[0];
   const reward=created||(await db("club_rewards?run_id=eq."+run.id+"&select=*"))?.[0]||null;
-  return {completed:true,reward};
+  return {completed:true,completed_by_player_id:completingPlayerId,reward};
 }
 async function loadClub(clubId:string,userId:string){
   const m=await requireMember(clubId,userId);
