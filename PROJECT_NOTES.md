@@ -14,6 +14,7 @@ This file is the persistent source of truth for future edits to this project.
 - Adventure IDs are a stable set of **127 immutable adventure identities** built from the original 381-stop campaign snapshot. They start as 3-stop adventures, but a retirement can reduce an uncompleted adventure to 2 or 1 active stop; do not reshuffle or substitute stops.
 - Completed run snapshots stay unchanged. Active runs may only be shortened when known retirement dates pass. If all stops retire, the active run is archived and the adventure is unavailable for new play.
 - The live BBB/StaFi passport total can be higher than the original campaign snapshot and changes independently.
+- **Passport scoring uses the current obtainable universe, not lifetime stamps.** StaFi's raw "My collected stamps" may include retired history and is not authoritative for scoring. The active numerator is derived as **all currently available − currently available uncollected**; the denominator is **all currently available**. Therefore a retired stamp disappears from both sides of current progress, while completed adventure history remains intact.
 - Clubs have an explicit `game_mode`:
   - **Solo**: exactly 1 active player; no Treasure; that player completing every active stop finishes the adventure.
   - **Babygirl**: exactly 2 active players; one **Daddy Warbucks** and one **Babygirl**; **both passports must complete every active stop** before the adventure completes and its 20–100 L$ reward is earned.
