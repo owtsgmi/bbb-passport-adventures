@@ -30,13 +30,13 @@ This file is the persistent source of truth for future edits to this project.
   - **Settings** lives in the hamburger menu, not beside the passport counter;
   - keep a prominent top-right passport completion counter for the selected player, e.g. **1 / 382**, with the remaining stamp count below it. This is the primary game goal and should remain visually prominent;
   - no cloud-sync text, StaFi-link count, payout status, notification diagnostics, or other technical/admin status in the header.
-- Adventure selection is intentionally consolidated rather than duplicated: there is no separate top CTA bar. With no current adventure, the Current Adventure empty state offers **Browse Adventures** and **Pick Random**; the chooser is titled **Choose an Adventure** and opens by default. Once an adventure is active, the chooser becomes **Choose Another Adventure** and collapses by default.
-- Random selection button text: **Pick Random Adventure**. It appears only inside the expanded **Choose Another Adventure** section.
-- Adventure-selection controls are grouped inside the chooser: **Pick Random Adventure**, text search, area filter, participant selection, and the pending adventure list.
-- The participant picker is hidden when only one active player exists; with 2+ active players it appears as **Who is playing?**.
-- The random button must be visually obvious at the top of the expanded chooser, above the pending adventure cards.
+- Adventure selection is deliberately flat and simple: there is **no Pick/Choose Adventure container or accordion**.
+- Directly below Current Adventure, show **Pick Random Adventure**, the **area dropdown**, the pending adventure count, and then the adventure list.
+- There is **no adventure text-search field** on the Adventures page; keep the area dropdown.
+- There is **no per-adventure participant picker**. Starting an adventure automatically snapshots **all currently active club players** as that adventure's participants.
+- **Pick Random Adventure** remains the prominent quick-start action above the pending adventure list.
 - Keep adventure stop lists clean: do **not** render the old `missionSetup` Travel / Next stop / Copy destination strip above stop rows. Per-stop Copy buttons are enough.
-- Current adventure loads collapsed.
+- Current Adventure loads open.
 - Adult-playful purple/pink/gold style with subtle alien graphics.
 - Settings is a standalone page at `settings.html`, linked from the hamburger menu on Adventures and supporting pages.
 - Do not reintroduce the inline Settings panel on `index.html`; the main Adventures page should remain focused on gameplay.
@@ -225,7 +225,7 @@ This file is the persistent source of truth for future edits to this project.
 ## Current adventure protection
 - The active Current Adventure is **locked by default**.
 - Shared lock state is stored in `bbb_board_state.adventure_locked` and synchronized across devices.
-- While locked, both **Pick an Adventure** and lower **Make this our adventure** actions must refuse to replace the current incomplete adventure.
+- While locked, both **Pick Random Adventure** and any **Make this our adventure** action in the adventure list must refuse to replace the current incomplete adventure.
 - The Current Adventure summary contains an **Adventure locked** checkbox so switching requires an intentional unlock.
 - Even after unlocking, switching to a different adventure requires an **Are you sure?** confirmation.
 - Existing stamp progress in the old adventure is preserved if the user intentionally switches.
@@ -367,8 +367,9 @@ This file is the persistent source of truth for future edits to this project.
 - Tenant tables are `profiles`, `clubs`, `club_members`, `club_players`, `club_board_state`, `club_adventure_runs`, `club_run_participants`, `club_stamp_progress`, `club_rewards`, `club_collect_requests`, and `user_private_settings`.
 - Tenant tables have RLS enabled with direct browser access revoked. All reads and mutations run through `club-api`, which validates the opaque Passport session and repeats membership/role checks server-side. `club-api` has gateway JWT verification disabled only because it performs this custom authentication itself.
 - A user may create or join multiple independent clubs and switch the active club from Settings. Club join codes are random 128-bit values; only SHA-256 hashes are stored. Rotating an invite invalidates the previous code.
-- Clubs can have any number of active players. Signed-in members get linked player slots; owners/admins may add guest player slots. Adventure runs snapshot their participants so later roster changes do not rewrite old completion rules.
-- In club mode, the Adventures header keeps the existing visual hierarchy and dynamically renders one compact tab per player. Completion requires every run participant to have all three stamps. Members may mark their own stamps; owner/admin roles may update guest players.
+- Clubs can have any number of active signed-in players. New guest-player creation is intentionally **not exposed in Settings**; the normal model is one Second Life username account per player. Legacy guest rows may remain in stored data for compatibility.
+- When a new adventure starts, **all active club players are snapshotted as participants**, so later roster changes do not rewrite that adventure's completion rules.
+- In club mode, the Adventures header keeps the existing visual hierarchy and dynamically renders one compact tab per player. Completion requires every snapshotted participant to have all three stamps. Members may mark their own stamps when manual tracking is needed.
 - Pre-cutover board/account rows remain stored as an archive, but they are not reachable from normal navigation and have no claim/migration UI. New play starts with a fresh SL-username account and club.
 - Adventure Treasure is configured per club and defaults OFF for newly created clubs. Reward/payout logs stay club-scoped. A 1,000 L$ bonus creates a `club_collect_requests` record; club owner/admin manually pays in Second Life and uses Admin to mark exactly 1,000 L$ paid. No automatic L$ debit exists.
 - `admin.html` shows an additional active-club payout card for owner/admin accounts. The existing global notification/bot controls remain available for the original installation and global infrastructure; do not expose bot/VPS/token plumbing to ordinary club owners.
