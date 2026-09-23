@@ -23,9 +23,9 @@ startAdventure=function(id){
  if(ok&&clubMode&&adventure)PassportCloud.call('start_adventure',{club_id:clubData.club.id,adventure_id:Number(id),stamp_ids:adventure.stamps.map(function(st){return st.id}),stamps:adventure.stamps.map(function(st){return {id:st.id,name:st.name,region:st.region,x:Number(st.x),y:Number(st.y),z:Number(st.z)}}),player_ids:players}).then(function(){return pollClub(true)}).catch(function(){toast('Adventure saved here; club sync will retry.')});return ok
 };
 async function maybeAutoStaFiSync(force){
- if(!clubMode||clubStaFiSyncBusy||(!force&&Date.now()-lastClubStaFiSync<5*60*1000))return false;
+ if(!clubMode||clubStaFiSyncBusy||(!force&&Date.now()-lastClubStaFiSync<60*1000))return false;
  clubStaFiSyncBusy=true;lastClubStaFiSync=Date.now();
- try{const out=await PassportCloud.call('sync_stafi',{club_id:clubData.club.id});if(out.imported>0)toast('✓ StaFi added '+out.imported+' new stamp'+(out.imported===1?'':'s')+'.');return out.imported>0}catch(e){return false}finally{clubStaFiSyncBusy=false}
+ try{const out=await PassportCloud.call('sync_stafi',{club_id:clubData.club.id});if(out.imported>0)toast('✓ StaFi added '+out.imported+' new stamp'+(out.imported===1?'':'s')+'.');return out.verified===true}catch(e){return false}finally{clubStaFiSyncBusy=false}
 }
 function canEditViewedPlayer(){const p=viewedPlayer(),session=window.PassportCloud&&PassportCloud.session(),u=session&&session.user&&session.user.id,role=clubData&&clubData.membership&&clubData.membership.role;return !!(clubMode&&p&&(p.user_id===u||(!p.user_id&&(role==='owner'||role==='admin'))))}
 async function toggleClubStamp(advId,stampId){
@@ -71,12 +71,13 @@ requestCollectRewards=async function(btn){
  if(!clubMode)return legacyRequestCollectRewards(btn);const beneficiary=beneficiaryPlayer();if(currentView!==(beneficiary&&beneficiary.id))return;
  if(unpaidLinden()<1000){toast('Keep adventuring — Collect Rewards unlocks at 1,000 L$.');return}
  const old=btn&&btn.textContent||'Get Your Bonus';if(btn){btn.disabled=true;btn.textContent='Sending…'}
- try{const out=await PassportCloud.call('request_collect',{club_id:clubData.club.id,player_id:beneficiary.id});toast(out.already_requested?'Your 1,000 L$ bonus request is already waiting for the club payer.':'🎉 Nice! Your club payer can now see the 1,000 L$ bonus request in Admin.')}catch(e){toast(e.message==='threshold_not_met'?'Keep adventuring — you need 1,000 L$ to collect.':'Could not send collection request.')}finally{if(btn){btn.disabled=false;btn.textContent=old}}
+ try{const out=await PassportCloud.call('request_collect',{club_id:clubData.club.id,player_id:beneficiary.id});toast(out.already_requested?'Your 1,000 L$ bonus request is already waiting for the club payer.':'🎉 Nice! Your club payer can see the 1,000 L$ payment in Settings.')}catch(e){toast(e.message==='threshold_not_met'?'Keep adventuring — you need 1,000 L$ to collect.':'Could not send collection request.')}finally{if(btn){btn.disabled=false;btn.textContent=old}}
 };
 const legacyRender=render;
 render=function(){
  legacyRender();const done=viewedDone(),passportDone=Math.min(TOTAL_PASSPORT_STAMPS,done.size),toGo=Math.max(0,TOTAL_PASSPORT_STAMPS-passportDone);
- const progressEl=$('#passport-progress'),remainingEl=$('#passport-remaining');if(progressEl)progressEl.textContent=passportDone+' / '+TOTAL_PASSPORT_STAMPS;if(remainingEl)remainingEl.textContent=toGo?toGo+' to go':'Passport complete!';
+ const player=viewedPlayer(),stafiTotal=Number(player&&player.stafi_available_count||0),stafiDone=Number(player&&player.stafi_collected_count),hasStaFiTotals=!!(player&&player.stafi_last_success_at&&stafiTotal>0&&Number.isFinite(stafiDone)),shownTotal=hasStaFiTotals?stafiTotal:TOTAL_PASSPORT_STAMPS,shownDone=hasStaFiTotals?Math.min(shownTotal,Math.max(0,stafiDone)):Math.min(shownTotal,done.size),toGo=Math.max(0,shownTotal-shownDone);
+ const progressEl=$('#passport-progress'),remainingEl=$('#passport-remaining');if(progressEl)progressEl.textContent=shownDone+' / '+shownTotal;if(remainingEl)remainingEl.textContent=toGo?toGo+' to go':'Passport complete!';
  const tabs=document.getElementById('player-tabs');if(clubMode&&tabs)tabs.innerHTML=activePlayers().map(function(p,i){return '<button class="viewtab '+(currentView===p.id?'active':'')+'" onclick="setView(&quot;'+p.id+'&quot;)">'+(i===0?'🗡️':i===1?'👽':'🧭')+' '+esc(p.display_name)+'</button>'}).join('');
  const context=document.getElementById('club-context');if(context)context.innerHTML=clubMode?'Playing with <b>'+esc(clubData.club.name)+'</b> · <a href="settings.html">switch or invite players</a>':'';
  renderParticipantPicker();
