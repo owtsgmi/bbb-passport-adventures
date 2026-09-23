@@ -268,10 +268,10 @@ async function loadAccount(){
    syncPill.textContent='Manual stamps';
    box.textContent='○ StaFi not connected. Manual stamp tracking is active.';
  }else if(ss.stafi_sync_enabled&&ss.stafi_last_success_at){
-   const when=new Date(ss.stafi_last_success_at).toLocaleString(),count=ss.stafi_last_stamp_count;
+   const when=new Date(ss.stafi_last_success_at).toLocaleString(),count=Number(ss.stafi_last_stamp_count),total=Number(ss.stafi_available_count),hasTotals=Number.isFinite(count)&&count>=0&&Number.isFinite(total)&&total>0;
    sync.textContent='Automatic StaFi sync is enabled.';
-   syncPill.textContent='StaFi connected';syncPill.classList.add('on');
-   box.classList.add('good');box.textContent='✓ StaFi connected · last successful check '+when+(count!=null?' · '+count+' stamps found':'');
+   syncPill.textContent=hasTotals?'StaFi '+count+'/'+total:'StaFi connected';syncPill.classList.add('on');
+   box.classList.add('good');box.textContent='✓ StaFi connected'+(hasTotals?' · '+count+' / '+total+' passport stamps':'')+' · last successful check '+when;
  }else if(ss.stafi_last_error){
    sync.textContent='StaFi needs attention.';
    syncPill.textContent='StaFi error';syncPill.classList.add('bad');
