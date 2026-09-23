@@ -290,7 +290,7 @@ function toast(m){const n=$('#toast');n.textContent=m;n.style.display='block';se
 function copy(t,msg='Copied — paste into Firestorm'){navigator.clipboard.writeText(t).then(()=>toast(msg)).catch(()=>prompt('Copy this into Firestorm:',t))}
 function startedAdventure(a){return started.has(a.id)||a.stamps.some(s=>meDone.has(s.id)||partnerDone.has(s.id))}
 function personComplete(a,set){return a.stamps.every(s=>set.has(s.id))}
-function togetherComplete(a){return personComplete(a,meDone)&&personComplete(a,partnerDone)}
+function togetherComplete(a){return personComplete(a,meDone)||personComplete(a,partnerDone)}
 function randomLindenReward(){const a=new Uint32Array(1);crypto.getRandomValues(a);return 20+(a[0]%81)}
 function ensureAdventureRewards(){
  let changed=false;
@@ -322,7 +322,7 @@ function syncCompletedRewardsToPayouts(){
  return changed;
 }
 function progressFor(a,set){return a.stamps.filter(s=>set.has(s.id)).length}
-function sharedNextIndex(a){let i=a.stamps.findIndex(s=>!(meDone.has(s.id)&&partnerDone.has(s.id)));return i<0?0:i}
+function sharedNextIndex(a){const set=currentView==='partner'?partnerDone:meDone;let i=a.stamps.findIndex(s=>!set.has(s.id));return i<0?0:i}
 function activeAdventure(){
  let a=adventures.find(x=>x.id===lastAdventure&&!togetherComplete(x));
  if(!a)a=adventures.find(x=>startedAdventure(x)&&!togetherComplete(x));
@@ -512,7 +512,7 @@ function init(){
 }
 init();
 </script>
-<script src="club-mode.js?v=6"></script>
+<script src="club-mode.js?v=7"></script>
 
 <script>
 /* Shared Supabase sync: publishable key is intentionally safe for browser use.
