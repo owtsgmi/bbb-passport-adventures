@@ -1,5 +1,6 @@
 let clubMode=false,clubData=null,clubPlayers=[],clubProgress=new Map(),clubRuns=[],clubParticipants=[],clubParticipantSelection=new Set(),clubStaFiSyncBusy=false,lastClubStaFiSync=0,lastClubActivity=0;
 function activePlayers(){return clubMode?clubPlayers.filter(function(p){return p.is_active}):[]}
+function clubGameMode(){return clubMode&&clubData&&clubData.club?String(clubData.club.game_mode||'group'):'group'}
 function viewedPlayer(){return clubMode?(clubPlayers.find(function(p){return p.id===currentView})||activePlayers()[0]||null):null}
 function viewedDone(){if(!clubMode)return currentView==='partner'?partnerDone:meDone;return clubProgress.get((viewedPlayer()||{}).id)||new Set()}
 function participantPlayers(a){
@@ -9,18 +10,42 @@ function participantPlayers(a){
 }
 setView=function(v){currentView=v;if(clubMode)localStorage.setItem('bbb-club-view-'+clubData.club.id,v);else localStorage.setItem('bbb-view',v);render()};
 startedAdventure=function(a){return started.has(a.id)||(clubMode?activePlayers().some(function(p){return a.stamps.some(function(st){return (clubProgress.get(p.id)||new Set()).has(st.id)})}):a.stamps.some(function(st){return meDone.has(st.id)||partnerDone.has(st.id)}))};
-togetherComplete=function(a){if(!clubMode)return personComplete(a,meDone)||personComplete(a,partnerDone);const people=participantPlayers(a);return people.length>0&&people.some(function(p){return personComplete(a,clubProgress.get(p.id)||new Set())})};
-sharedNextIndex=function(a){if(!clubMode){const set=currentView==='partner'?partnerDone:meDone;const i=a.stamps.findIndex(function(st){return !set.has(st.id)});return i<0?0:i}const set=viewedDone(),i=a.stamps.findIndex(function(st){return !set.has(st.id)});return i<0?0:i};
+togetherComplete=function(a){
+ if(!clubMode)return personComplete(a,meDone)||personComplete(a,partnerDone);
+ const people=participantPlayers(a);if(!people.length)return false;
+ return clubGameMode()==='babygirl'
+   ?people.length===2&&people.every(function(p){return personComplete(a,clubProgress.get(p.id)||new Set())})
+   :people.some(function(p){return personComplete(a,clubProgress.get(p.id)||new Set())});
+};
+sharedNextIndex=function(a){
+ if(!clubMode){const set=currentView==='partner'?partnerDone:meDone,i=a.stamps.findIndex(function(st){return !set.has(st.id)});return i<0?0:i}
+ const people=participantPlayers(a);
+ if(clubGameMode()==='babygirl'){
+   const i=a.stamps.findIndex(function(st){return !people.length||people.some(function(p){return !(clubProgress.get(p.id)||new Set()).has(st.id)})});
+   return i<0?0:i;
+ }
+ const set=viewedDone(),i=a.stamps.findIndex(function(st){return !set.has(st.id)});return i<0?0:i;
+};
 const legacySyncCompletedRewardsToPayouts=syncCompletedRewardsToPayouts;
 syncCompletedRewardsToPayouts=function(){return clubMode?false:legacySyncCompletedRewardsToPayouts()};
 function selectedParticipantIds(){return activePlayers().map(function(p){return p.id})}
 function renderParticipantPicker(){}
 const legacyStartAdventure=startAdventure;
 startAdventure=function(id){
- const adventure=adventures.find(function(a){return a.id===Number(id)}),players=selectedParticipantIds();
- if(clubMode&&!players.length){toast('Choose at least one player for this adventure.');return false}
+ const adventure=adventures.find(function(a){return a.id===Number(id)}),players=selectedParticipantIds(),mode=clubGameMode();
+ if(clubMode){
+   if(mode==='solo'&&players.length!==1){toast('Solo mode needs exactly one active player.');return false}
+   if(mode==='babygirl'&&players.length!==2){toast('💗 Invite your Babygirl first — this mode needs exactly two players.');return false}
+   if(mode==='group'&&players.length<2){toast('👥 Group mode needs at least two players.');return false}
+ }
  const ok=legacyStartAdventure(id);
- if(ok&&clubMode&&adventure)PassportCloud.call('start_adventure',{club_id:clubData.club.id,adventure_id:Number(id),stamp_ids:adventure.stamps.map(function(st){return st.id}),stamps:adventure.stamps.map(function(st){return {id:st.id,name:st.name,region:st.region,x:Number(st.x),y:Number(st.y),z:Number(st.z)}}),player_ids:players}).then(function(){return pollClub(true)}).catch(function(){toast('Adventure saved here; club sync will retry.')});return ok
+ if(ok&&clubMode&&adventure)PassportCloud.call('start_adventure',{club_id:clubData.club.id,adventure_id:Number(id),stamp_ids:adventure.stamps.map(function(st){return st.id}),stamps:adventure.stamps.map(function(st){return {id:st.id,name:st.name,region:st.region,x:Number(st.x),y:Number(st.y),z:Number(st.z)}}),player_ids:players}).then(function(){return pollClub(true)}).catch(function(e){
+   const msg=e.message==='babygirl_needs_two'?'💗 Babygirl mode needs exactly two players.'
+     :e.message==='group_needs_two'?'👥 Group mode needs at least two players.'
+     :e.message==='solo_requires_one_player'?'🧭 Solo mode needs exactly one player.'
+     :'Could not start that adventure.';
+   toast(msg);
+ });return ok
 };
 async function touchClubActivity(force){
  if(!clubMode||document.hidden||(!force&&Date.now()-lastClubActivity<2*60*1000))return false;
@@ -55,16 +80,21 @@ missionRows=function(a,mapInteractive){
 const legacyPinnedHtml=pinnedHtml;
 pinnedHtml=function(a){
  if(!clubMode)return legacyPinnedHtml(a);
- const selected=viewedDone(),shown=progressFor(a,selected),people=participantPlayers(a),best=people.reduce(function(m,p){return Math.max(m,progressFor(a,clubProgress.get(p.id)||new Set()))},0);
- const treasureBadge=adventureTreasureEnabled?' <span class="badge mystery">🎁 Mystery L$</span>':'',treasureNote=adventureTreasureEnabled?' · prize reveals when any player reaches 3/3':'',person=(viewedPlayer()||{}).display_name||'Player';
- return '<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>'+esc(a.title)+treasureBadge+'</h3><div class="meta">'+esc(a.zone)+' · about '+a.minutes+' min · 3 stops · '+people.length+' player'+(people.length===1?'':'s')+'</div><div class="progress"><div class="bar" style="width:'+Math.round((shown/a.stamps.length)*100)+'%"></div></div><div class="small">'+esc(person)+' passport: '+shown+'/'+a.stamps.length+' · Best passport: '+best+'/'+a.stamps.length+treasureNote+'</div></div></div><div style="padding:0 17px 17px">'+missionRows(a,true)+'</div><div class="runmap"><div id="run-map"></div></div></div>';
+ const selected=viewedDone(),shown=progressFor(a,selected),people=participantPlayers(a),mode=clubGameMode(),person=(viewedPlayer()||{}).display_name||'Player';
+ const best=people.reduce(function(m,p){return Math.max(m,progressFor(a,clubProgress.get(p.id)||new Set()))},0);
+ const together=a.stamps.filter(function(st){return people.length===2&&people.every(function(p){return (clubProgress.get(p.id)||new Set()).has(st.id)})}).length;
+ const treasureBadge=mode==='babygirl'?' <span class="badge mystery">💗 Mystery L$</span>':'';
+ const modeProgress=mode==='babygirl'?' · Together: '+together+'/'+a.stamps.length+' · reward after both reach 3/3'
+   :mode==='group'?' · Best passport: '+best+'/'+a.stamps.length
+   :'';
+ return '<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>'+esc(a.title)+treasureBadge+'</h3><div class="meta">'+esc(a.zone)+' · about '+a.minutes+' min · 3 stops · '+(mode==='solo'?'🧭 Solo':mode==='babygirl'?'💗 Babygirl':'👥 Group')+'</div><div class="progress"><div class="bar" style="width:'+Math.round((shown/a.stamps.length)*100)+'%"></div></div><div class="small">'+esc(person)+' passport: '+shown+'/'+a.stamps.length+modeProgress+'</div></div></div><div style="padding:0 17px 17px">'+missionRows(a,true)+'</div><div class="runmap"><div id="run-map"></div></div></div>';
 };
 function beneficiaryPlayer(){return clubMode?(activePlayers().find(function(p){return p.is_beneficiary})||activePlayers().find(function(p){return !p.is_payer})||activePlayers()[0]):null}
 const legacyPartnerAheadCount=partnerAheadCount;
 partnerAheadCount=function(){if(!clubMode)return legacyPartnerAheadCount();return 0};
 const legacyRewardHtml=rewardHtml;
 rewardHtml=function(){
- if(!clubMode)return legacyRewardHtml();if(!adventureTreasureEnabled)return '';
+ if(!clubMode)return legacyRewardHtml();if(clubGameMode()!=='babygirl'||!adventureTreasureEnabled)return '';
  syncCompletedRewardsToPayouts();const pending=partnerAheadCount(),due=unpaidLinden(),lifetime=payoutLog.reduce(function(n,r){return n+Math.max(0,Number(r&&r.linden||0))},0),toMilestone=due>=1000?0:1000-due;
  const activeRewards=payoutLog.filter(function(r){return rewardRemaining(r)>0}).slice(0,6),rewardLines=activeRewards.map(function(r){return '<div class="recentline">🎁 '+Number(r.linden||0)+' L$'+(r.title?' · '+esc(r.title):'')+'</div>'}).join('')||'<div class="recentline">No prizes yet.</div>';
  const beneficiary=beneficiaryPlayer(),benefactor=currentView===(beneficiary&&beneficiary.id),beneficiaryName=beneficiary&&beneficiary.display_name||'Player',label=benefactor?'Your Treasure':esc(beneficiaryName)+"'s Treasure",milestone=due>=1000?'🎉 1,000 L$ milestone reached!':toMilestone+' L$ to next 1,000';
@@ -84,7 +114,7 @@ render=function(){
  const player=viewedPlayer(),globalTotal=Number(clubData&&clubData.passport_total||0),stafiDone=Number(player&&player.stafi_collected_count),hasStaFiDone=!!(player&&player.stafi_last_success_at&&Number.isFinite(stafiDone)&&stafiDone>=0),shownTotal=globalTotal>0?globalTotal:TOTAL_PASSPORT_STAMPS,shownDone=hasStaFiDone?Math.min(shownTotal,stafiDone):Math.min(shownTotal,done.size),toGo=Math.max(0,shownTotal-shownDone);
  const progressEl=$('#passport-progress'),remainingEl=$('#passport-remaining');if(progressEl)progressEl.textContent=shownDone+' / '+shownTotal;if(remainingEl)remainingEl.textContent=toGo?toGo+' to go':'Passport complete!';
  const tabs=document.getElementById('player-tabs');if(clubMode&&tabs)tabs.innerHTML=activePlayers().map(function(p,i){return '<button class="viewtab '+(currentView===p.id?'active':'')+'" onclick="setView(&quot;'+p.id+'&quot;)">'+(i===0?'🗡️':i===1?'👽':'🧭')+' '+esc(p.display_name)+'</button>'}).join('');
- const context=document.getElementById('club-context');if(context)context.innerHTML=clubMode?'Playing with <b>'+esc(clubData.club.name)+'</b> · <a href="settings.html">switch or invite players</a>':'';
+ const context=document.getElementById('club-context');if(context){const mode=clubGameMode(),label=mode==='solo'?'🧭 Solo':mode==='babygirl'?'💗 Babygirl':'👥 Group';context.innerHTML=clubMode?'Playing <b>'+label+'</b> with <b>'+esc(clubData.club.name)+'</b> · <a href="settings.html">club settings</a>':'';}
  renderParticipantPicker();
 };
 render();
