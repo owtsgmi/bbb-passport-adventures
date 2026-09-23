@@ -44,6 +44,11 @@ main{max-width:900px;margin:auto;padding:26px 4vw 60px}.card{background:linear-g
     <div class="accountgrid"><div class="field"><label>Email address</label><input id="auth-email" type="email" autocomplete="email" placeholder="you@example.com"></div></div>
     <div class="actions"><button class="primary" id="send-link">✉ Send secure sign-in link</button></div>
     <div class="note">No password to remember. Open the link in the email on this device.</div>
+    <details style="margin-top:10px"><summary>Email opened localhost or says expired?</summary>
+      <div class="note">Request a fresh email, then <b>copy the sign-in link address without opening it</b>. Paste it below. The one-time token is exchanged directly in this browser and immediately removed from the field.</div>
+      <div class="accountgrid"><div class="field"><label>Copied email sign-in link</label><input id="auth-link" type="password" autocomplete="off" placeholder="https://tzxlrglgwzinefutledx.supabase.co/auth/v1/verify?..."></div></div>
+      <div class="actions"><button id="complete-link">Complete sign-in</button></div>
+    </details>
   </div>
   <div id="signed-in" class="hidden">
     <div class="clubrow"><b id="account-email"></b><button id="sign-out">Sign out</button></div>
@@ -106,7 +111,7 @@ main{max-width:900px;margin:auto;padding:26px 4vw 60px}.card{background:linear-g
 </section>
 </main>
 
-<script src="club-session.js?v=1"></script>
+<script src="club-session.js?v=2"></script>
 <script>
 const SUPA_URL='https://tzxlrglgwzinefutledx.supabase.co';
 const SUPA_KEY='sb_publishable_s54v4rmFk_BjHoweE7mliA_w64vK6WR';
@@ -328,6 +333,7 @@ $('#copy-code').onclick=()=>copyCode();
 $('#open-first').onclick=()=>openStaFi('partner');
 $('#open-second').onclick=()=>openStaFi('me');
 $('#send-link').onclick=async()=>{try{const email=$('#auth-email').value.trim();if(!email)return accountStatus('Enter your email address.');localStorage.setItem('bbb-pending-join',new URLSearchParams(location.search).get('join')||'');await PassportCloud.magicLink(email,location.origin+location.pathname+location.search);accountStatus('Sign-in link sent — check your email.',true)}catch(e){accountStatus(e.message)}};
+$('#complete-link').onclick=async()=>{const field=$('#auth-link'),raw=field.value;field.value='';try{await PassportCloud.completeMagicLink(raw);await loadAccount();accountStatus('Signed in securely. You can now claim your passport.',true)}catch(e){accountStatus(e.message==='invalid_email_link'?'That is not a valid Passport Adventures sign-in link.':'That link is invalid or already used. Request a fresh email and copy its link without opening it.')}};
 $('#sign-out').onclick=()=>PassportCloud.signOut();
 $('#save-profile').onclick=async()=>{try{await PassportCloud.call('update_profile',{display_name:$('#profile-name').value,sl_username:$('#profile-sl').value,stafi_url:$('#profile-stafi').value});await loadAccount();accountStatus('Profile and private StaFi page saved.',true)}catch(e){accountStatus(e.message)}};
 $('#verify-stafi').onclick=()=>verifyStaFi().catch(e=>accountStatus(e.message==='invalid_stafi_url'?'Use the private thebbbbug.com/UTILS/YourStamps.php?Ref=… link supplied by the StaFi HUD.':e.message));
