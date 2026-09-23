@@ -43,7 +43,11 @@ This file is the persistent source of truth for future edits to this project.
 - Do not reintroduce the inline Settings panel on `index.html`; the main Adventures page should remain focused on gameplay.
 - Settings is organized as two distinct steps: **1) User Account** and **2) Clubs**. After sign-in, account/profile/StaFi controls collapse into a compact **Account details & StaFi** disclosure so club creation/joining is the obvious next step. StaFi remains optional; manual stamp tracking works without it.
 - In the Clubs step, the **club picker comes first**. A narrow scrollable box immediately to its right lists the selected club's members by **Second Life username** and updates when the club changes.
-- **Create a new club** and **Join an existing club** are compact mutually-exclusive expanders. Invite generation belongs inside the **Create a new club** panel so it is visually tied to the club-creation/invite workflow; after creation, keep that panel open with the invite ready.
+- **Create a new club** and **Join an existing club** are compact mutually-exclusive expanders.
+- Invites have **two separate contexts**:
+  - the currently selected club has its own obvious **Invite players** button beside **Open Adventures**; that action always generates/rotates an invite for the currently selected club;
+  - a newly created club shows its initial invite separately inside the **Create a new club** panel immediately after creation.
+- Never share the same invite box/button between those two contexts; users must be able to tell whether they are inviting to the currently selected club or viewing the invite generated for a brand-new club.
 - The standalone Settings page is player-oriented and allows:
   - first and second player Second Life usernames (also used as tab names)
   - each person's BBB StaFi progress-page URL
