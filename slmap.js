@@ -262,18 +262,12 @@
           update();
           return;
         }
-        let retried=false;
         img.onload=()=>{
           failedTiles.delete(url);
           this.tileStats.loaded++;
           update();
         };
         img.onerror=()=>{
-          if(!retried){
-            retried=true;
-            setTimeout(()=>{if(img.isConnected)img.src=url+(url.includes('?')?'&':'?')+'retry='+Date.now()},650);
-            return;
-          }
           rememberFailedTile(url);
           cell.classList.add('missing');
           img.remove();
