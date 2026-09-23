@@ -168,6 +168,7 @@ async function loadAccount(){
  $('#signed-out').classList.toggle('hidden',signed);$('#signed-in').classList.toggle('hidden',!signed);$('#clubs-locked').classList.toggle('hidden',signed);$('#clubs-signed-in').classList.toggle('hidden',!signed);$('#account-card').classList.toggle('signedcompact',signed);
  if(!signed){accountStatus('Create an account or sign in.');clubStatus('');return}
  $('#account-username').textContent=session.user.sl_username||'Signed in';
+ accountStatus('Account ready.',true);
  accountData=await PassportCloud.call('list');
  $('#profile-name').value=accountData.profile?.display_name||'';$('#profile-sl').value=accountData.profile?.sl_username||'';$('#profile-stafi').value=accountData.private_settings?.stafi_url||'';
  const ss=accountData.private_settings||{},sync=$('#stafi-status');
