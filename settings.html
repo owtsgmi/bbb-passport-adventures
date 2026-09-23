@@ -210,7 +210,7 @@ async function loadClubTools(clubId){
    return {player:p,role:member?.role||'member'};
  });
  const manageable=activeMembers.filter(x=>x.player.user_id!==currentUserId&&x.role!=='owner');
- $('#member-list').innerHTML=activeMembers.map(x=>'<div class="memberminirow">'+html(x.player.display_name)+'</div>').join('')||'<div class="memberminirow">—</div>';
+ $('#member-list').innerHTML=activeMembers.map(x=>'<div class="memberminirow">'+html(x.player.sl_username||x.player.display_name)+'</div>').join('')||'<div class="memberminirow">—</div>';
  let manageHtml='';
  if(canManage&&manageable.length){
    manageHtml='<details class="membermanage"><summary>Manage members</summary><div class="membermanagebody">'+manageable.map(x=>{
