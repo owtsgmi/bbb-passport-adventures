@@ -20,7 +20,7 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
 <div class="toolbar"><input id="search" placeholder="Search stops, regions, areas…"><select id="browse"><option value="">All 20 browse groups</option></select><select id="zone"><option value="">All areas</option></select><select id="status"><option value="">All statuses</option><option value="needed">Needed</option><option value="got">Collected</option></select><button class="randomBtn" id="random-five">🎲 5 Nearby</button></div><div id="random-set"></div>
 <div class="layout"><section class="panel"><div class="panelhead"><h3>Passport stops</h3><span class="pill" id="result-count"></span></div><div class="results" id="results"></div></section><aside class="panel detail" id="detail"><div class="empty">Choose a passport stop to see its location, copy a Firestorm destination, and discover 6 nearby stops.</div></aside></div>
 <section class="mappanel" id="map-panel">
-  <div class="maphead"><div><h3>🗺 Selected Stop Map</h3><div class="small" id="map-caption">Choose any stop above. You can zoom from region detail all the way out to a broad Second Life world view.</div></div><button id="map-open" style="display:none">Open SLURL map</button></div>
+  <div class="maphead"><div><h3>🗺 Selected + Nearby Map</h3><div class="small" id="map-caption">Choose any stop above. You can zoom from region detail all the way out to a broad Second Life world view.</div></div><button id="map-open" style="display:none">Open SLURL map</button></div>
   <div id="map-empty" class="mapempty">No stop selected yet.</div>
   <div id="bbb-map" style="display:none"></div>
 </section>
@@ -119,21 +119,25 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
     document.querySelectorAll('[data-copy]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();var s=byId.get(Number(b.dataset.copy));if(s)copyText(fsUrl(s))})});
   }
   var stopMap=null;
-  function showMap(s){
+  function showMap(s,near){
     var webUrl=s.url||('https://maps.secondlife.com/secondlife/'+encodeURIComponent(s.region)+'/'+s.x+'/'+s.y+'/'+s.z);
-    qs('#map-caption').textContent=s.name+' · '+s.region+' · '+s.x+', '+s.y+', '+s.z+' · use World to zoom out across SL';
+    var nearby=Array.isArray(near)?near:[];
+    qs('#map-caption').textContent=s.name+' + '+nearby.length+' nearby stops · map fitted to the group';
     qs('#map-open').style.display='inline-block';
     qs('#map-open').onclick=function(){window.open(webUrl,'_blank','noopener')};
     qs('#map-empty').style.display='none';
     qs('#bbb-map').style.display='block';
-    if(!stopMap)stopMap=new SLGridMap(qs('#bbb-map'),{title:'Second Life grid · selected stop'});
-    stopMap.setLocations([{name:s.name,region:s.region,x:s.x,y:s.y,z:s.z,label:'●'}],{fit:false,level:3});
+    if(!stopMap)stopMap=new SLGridMap(qs('#bbb-map'),{title:'Second Life grid · selected stop and nearby stops'});
+    var locations=[{name:s.name,region:s.region,x:s.x,y:s.y,z:s.z,label:'★'}].concat(nearby.map(function(n,i){
+      return {name:n.name,region:n.region,x:n.x,y:n.y,z:n.z,label:String(i+1)};
+    }));
+    stopMap.setLocations(locations,{fit:true});
   }
   function showStop(id){
     var s=byId.get(Number(id));if(!s)return;
-    showMap(s);
-    document.querySelectorAll('[data-row]').forEach(function(r){r.classList.toggle('active',Number(r.dataset.row)===s.id)});
     var near=nearest(s,6);
+    showMap(s,near);
+    document.querySelectorAll('[data-row]').forEach(function(r){r.classList.toggle('active',Number(r.dataset.row)===s.id)});
     var h='<div class="small">'+esc(s.zone)+' · '+esc(s.adventure)+'</div><h2>'+esc(s.name)+'</h2><div class="where">'+esc(s.region)+' · '+s.x+', '+s.y+', '+s.z+'</div>';var pic=stampImages.get(s.id);if(pic)h+='<img class="detailimg" src="'+esc(proxyImage(pic))+'" alt="">';
     h+='<div class="status '+(done.has(s.id)?'yes':'no')+'">'+(done.has(s.id)?'✅ Collected':'○ Needed')+' on '+esc(currentName)+'\'s campaign</div>';
     h+='<div class="actionrow"><button class="primary" id="detail-copy">🔥 Copy SLURL</button></div><div class="near"><h3>6 nearby stops</h3>';
