@@ -500,11 +500,9 @@ function render(){
      const freshWrap=pinnedHost.querySelector('#pinned-card .runmap');
      if(freshWrap)freshWrap.replaceWith(oldMapWrap);
    }else{
-     setTimeout(async()=>{
-       await renderRunMap(pinned);
-       const wrap=pinnedHost.querySelector('#pinned-card .runmap');
-       if(wrap)wrap.dataset.mapSignature=nextMapSig;
-     },0);
+     const freshWrap=pinnedHost.querySelector('#pinned-card .runmap');
+     if(freshWrap)freshWrap.dataset.mapSignature=nextMapSig;
+     setTimeout(async()=>{await renderRunMap(pinned)},0);
    }
  }
  const currentDetails=document.getElementById('current-adventure');
