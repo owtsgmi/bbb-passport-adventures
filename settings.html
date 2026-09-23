@@ -104,6 +104,15 @@ main{max-width:900px;margin:auto;padding:26px 4vw 60px}.card{background:linear-g
         <div class="clubselectline">
           <div class="clubselectleft">
             <select id="club-select"></select>
+            <div class="field" style="margin-top:8px">
+              <div class="labelrow"><label style="margin:0">Game mode</label><span class="tip" tabindex="0" data-tip="Solo: one player, no money. Babygirl: exactly two players with Treasure and both must finish. Group: two or more players, no money.">?</span></div>
+              <select id="club-mode">
+                <option value="solo">🧭 Solo</option>
+                <option value="babygirl">💗 Babygirl</option>
+                <option value="group">👥 Group</option>
+              </select>
+              <div class="small" id="club-mode-help"></div>
+            </div>
             <div class="actions" style="margin-top:8px">
               <a class="btn primary" href="index.html">Open Adventures</a>
               <button id="invite-selected-club">🔗 Invite players</button>
@@ -121,7 +130,16 @@ main{max-width:900px;margin:auto;padding:26px 4vw 60px}.card{background:linear-g
 
           <div class="clubpanel hidden" id="create-club-panel">
             <div class="field"><label>Club name</label><input id="new-club-name" maxlength="80" placeholder="Our Passport Crew"></div>
-            <div class="actions"><button class="primary" id="create-club">Create club</button><span class="tip" tabindex="0" data-tip="You become the club owner. After creation, an invite for that new club appears here.">?</span></div>
+            <div class="field">
+              <label>Game mode</label>
+              <select id="new-club-mode">
+                <option value="solo">🧭 Solo — 1 player, no L$</option>
+                <option value="babygirl">💗 Babygirl — 2 players, teamwork + Treasure</option>
+                <option value="group">👥 Group — 2+ players, no L$</option>
+              </select>
+              <div class="small">Babygirl rewards unlock only after both passports collect all 3 adventure stamps.</div>
+            </div>
+            <div class="actions"><button class="primary" id="create-club">Create club</button><span class="tip" tabindex="0" data-tip="Choose the play style for this club. Solo needs no invite; Babygirl and Group can invite other SL users.">?</span></div>
             <div id="new-club-invite-box" class="codebox hidden"></div>
           </div>
 
@@ -142,20 +160,19 @@ main{max-width:900px;margin:auto;padding:26px 4vw 60px}.card{background:linear-g
 <section class="card treasurecard hidden" id="treasure-card">
   <div class="treasurebox" style="margin-top:0">
     <div class="treasurehead">
-      <div><b>🎁 Adventure Treasure</b><div class="small" id="treasure-club-name">Selected club</div></div>
-      <label class="treasurecheck" id="treasure-check-wrap"><input id="club-treasure" type="checkbox"> <span>Enabled</span></label>
+      <div><b>💗 Babygirl Treasure</b><div class="small" id="treasure-club-name">Selected club</div></div>
     </div>
-    <div class="treasurelock" id="treasure-lock-note"></div>
+    <div class="treasurelock" id="treasure-lock-note">Both passports must collect all 3 adventure stamps before a reward is earned.</div>
 
-    <div id="treasure-details" class="hidden">
+    <div id="treasure-details">
       <div class="treasureroles">
         <div class="field">
-          <div class="labelrow"><label style="margin:0">Payer</label><span class="tip" tabindex="0" data-tip="The player who turned Treasure on is locked as payer until they turn Treasure off.">?</span></div>
+          <div class="labelrow"><label style="margin:0">Payer</label><span class="tip" tabindex="0" data-tip="The player who creates or switches the club into Babygirl mode is the payer.">?</span></div>
           <div class="lockedpayer" id="treasure-payer-name">—</div>
         </div>
         <div class="field">
-          <div class="labelrow"><label style="margin:0">Paid to</label><span class="tip" tabindex="0" data-tip="Adventure Treasure accumulates for this player. Only the locked payer can change who is paid.">?</span></div>
-          <select id="treasure-recipient"></select>
+          <div class="labelrow"><label style="margin:0">Babygirl</label><span class="tip" tabindex="0" data-tip="The other player receives Adventure Treasure. Both players must collect all 3 stamps before each reward is earned.">?</span></div>
+          <div class="lockedpayer" id="treasure-babygirl-name">—</div>
         </div>
       </div>
       <div class="treasuremeta">
@@ -197,16 +214,24 @@ async function loadClubTools(clubId){
  const players=activeClubData.players.filter(p=>p.is_active);
  const currentUserId=PassportCloud.session()?.user?.id;
  const currentPlayer=players.find(p=>p.user_id===currentUserId)||null;
- const treasureOn=!!activeClubData.club.treasure_enabled;
+ const mode=activeClubData.club.game_mode||'group',babygirl=mode==='babygirl';
  const payerPlayer=players.find(p=>p.is_payer)||null;
  const recipientPlayer=players.find(p=>p.is_beneficiary&&!p.is_payer)||null;
- const isPayer=!!(treasureOn&&payerPlayer&&currentPlayer&&payerPlayer.id===currentPlayer.id);
+ const isPayer=!!(babygirl&&payerPlayer&&currentPlayer&&payerPlayer.id===currentPlayer.id);
 
  $('#active-club-tools').classList.remove('hidden');
- $('#treasure-card').classList.remove('hidden');
- $('#treasure-club-name').textContent=activeClubData.club.name;
- $('#invite-selected-club').classList.toggle('hidden',!canManage);
- $('#invite-selected-club').title='Invite another Second Life user to '+activeClubData.club.name;
+ $('#club-mode').value=mode;
+ $('#club-mode').disabled=!canManage;
+ $('#club-mode-help').textContent=mode==='solo'
+   ?'One player · first passport to 3/3 is you · no L$.'
+   :mode==='babygirl'
+     ?'Exactly two players · Payer + Babygirl · both passports must reach 3/3 before Treasure is earned.'
+     :'Two or more players · first participant to 3/3 completes the adventure · no L$.';
+
+ const canInvite=canManage&&(mode==='group'||(mode==='babygirl'&&players.length<2));
+ $('#invite-selected-club').classList.toggle('hidden',!canInvite);
+ $('#invite-selected-club').textContent=mode==='babygirl'?'💗 Invite Babygirl':'🔗 Invite players';
+ $('#invite-selected-club').title=mode==='babygirl'?'Invite the second SL user to this Babygirl club.':'Invite another Second Life user to '+activeClubData.club.name;
  $('#personal-club-actions').classList.toggle('hidden',mine.role==='owner');
 
  const activeMembers=players.filter(p=>p.user_id).map(p=>{
@@ -222,45 +247,30 @@ async function loadClubTools(clubId){
      let actions='';
      if(mine.role==='owner')actions+='<button onclick="setMemberRole(\''+p.user_id+'\',\''+(role==='admin'?'member':'admin')+'\')">'+(role==='admin'?'Make member':'Make admin')+'</button>';
      if(mine.role==='owner'||role==='member')actions+='<button onclick="removeMember(\''+p.user_id+'\')">Remove</button>';
-     return '<div class="membermanageitem"><span><b>'+html(p.display_name)+'</b> <span class="small">· '+html(role)+'</span></span><div class="actions">'+actions+'</div></div>';
+     return '<div class="membermanageitem"><span><b>'+html(p.sl_username||p.display_name)+'</b> <span class="small">· '+html(role)+'</span></span><div class="actions">'+actions+'</div></div>';
    }).join('')+'</div></details>';
  }
  $('#member-manage').innerHTML=manageHtml;
 
- const toggle=$('#club-treasure'),toggleWrap=$('#treasure-check-wrap'),lockNote=$('#treasure-lock-note');
- toggle.checked=treasureOn;
- $('#treasure-details').classList.toggle('hidden',!treasureOn);
- if(!treasureOn){
-   toggle.disabled=false;toggleWrap.classList.remove('disabled');
-   toggle.title='Check to enable Treasure. You will become the locked payer.';
-   lockNote.textContent='The first player to enable Treasure becomes the payer.';
- }else if(isPayer){
-   toggle.disabled=false;toggleWrap.classList.remove('disabled');
-   toggle.title='Uncheck to turn Treasure off and release the payer lock.';
-   lockNote.textContent='🔒 You are the payer. Uncheck Treasure before another player can take over.';
- }else{
-   toggle.disabled=true;toggleWrap.classList.add('disabled');
-   toggle.title=(payerPlayer?.display_name||'The payer')+' must turn Treasure off before someone else can take over.';
-   lockNote.textContent='🔒 '+(payerPlayer?.display_name||'Another player')+' enabled Treasure and is the locked payer.';
- }
-
- if(treasureOn){
-   $('#treasure-payer-name').textContent=(payerPlayer?.display_name||'Unknown')+' 🔒';
-   const recipient=$('#treasure-recipient');
-   recipient.innerHTML=players.filter(p=>p.id!==payerPlayer?.id).map(p=>'<option value="'+p.id+'">'+html(p.display_name)+'</option>').join('');
-   if(recipientPlayer)recipient.value=recipientPlayer.id;
-   if(players.length<2)recipient.innerHTML='<option value="">Add another player first</option>';
-   recipient.disabled=!isPayer||players.length<2;
+ $('#treasure-card').classList.toggle('hidden',!babygirl);
+ if(babygirl){
+   $('#treasure-club-name').textContent=activeClubData.club.name;
+   $('#treasure-lock-note').textContent=players.length<2
+     ?'Invite your Babygirl to start. Treasure is earned only after both passports collect all 3 adventure stamps.'
+     :'Teamwork rule: both passports must collect all 3 adventure stamps before the reward is earned.';
+   $('#treasure-payer-name').textContent=(payerPlayer?.sl_username||payerPlayer?.display_name||'Payer not set')+' 🔒';
+   $('#treasure-babygirl-name').textContent=recipientPlayer?(recipientPlayer.sl_username||recipientPlayer.display_name):'Waiting for second player';
 
    const balance=(activeClubData.rewards||[]).filter(r=>!recipientPlayer||r.beneficiary_player_id===recipientPlayer.id).reduce((sum,r)=>sum+Math.max(0,Number(r.amount||0)-Math.max(0,Number(r.paid_amount||0))),0);
    $('#treasure-balance').textContent=balance+' L$';
-   $('#treasure-pay-status').textContent=!recipientPlayer?'Add another player before Treasure can be awarded.':balance>=1000?Math.floor(balance/1000)+' × 1,000 L$ payment'+(Math.floor(balance/1000)===1?'':'s')+' ready.':(1000-balance)+' L$ until the next payment.';
+   $('#treasure-pay-status').textContent=!recipientPlayer?'Invite the second player before Treasure can be earned.':balance>=1000?Math.floor(balance/1000)+' × 1,000 L$ payment'+(Math.floor(balance/1000)===1?'':'s')+' ready.':(1000-balance)+' L$ until the next payment.';
    const payActions=$('#treasure-pay-actions'),payButton=$('#mark-treasure-paid');
    payActions.classList.toggle('hidden',!isPayer);
    payButton.disabled=!(recipientPlayer&&balance>=1000);
    payButton.title=payButton.disabled?'This unlocks when at least 1,000 L$ is waiting to be paid.':'Record one 1,000 L$ payment after you send it in Second Life.';
  }
- clubStatus(activeClubData.club.name+' · '+players.length+' active player'+(players.length===1?'':'s'),true);
+ const label=mode==='solo'?'Solo':mode==='babygirl'?'Babygirl':'Group';
+ clubStatus(activeClubData.club.name+' · '+label+' mode · '+players.length+' active player'+(players.length===1?'':'s'),true);
 }
 function stafiErrorText(code){
  const map={
@@ -310,8 +320,11 @@ async function loadAccount(){
  if(pending){$('#join-code').value=pending;setClubAction('join');clubStatus('Invite ready — choose Join club.');}
 }
 async function createClub(){
- const name=$('#new-club-name').value.trim();if(!name)return clubStatus('Enter a club name.');
- const out=await PassportCloud.call('create',{name});PassportCloud.setActiveClub(out.club.id);await loadAccount();setClubAction('create');showInvite(out.join_code,'#new-club-invite-box','copy-new-club-invite','Invite to your new club: '+out.club.name);clubStatus('Club created. Its invite link is ready below.',true);
+ const name=$('#new-club-name').value.trim(),game_mode=$('#new-club-mode').value;if(!name)return clubStatus('Enter a club name.');
+ const out=await PassportCloud.call('create',{name,game_mode});PassportCloud.setActiveClub(out.club.id);await loadAccount();setClubAction('create');
+ if(out.join_code)showInvite(out.join_code,'#new-club-invite-box','copy-new-club-invite',(game_mode==='babygirl'?'Invite your Babygirl to ':'Invite players to ')+out.club.name);
+ else $('#new-club-invite-box').classList.add('hidden');
+ clubStatus(game_mode==='solo'?'Solo club created — ready to adventure.':'Club created. Its invite link is ready below.',true);
 }
 async function joinClub(){
  const code=$('#join-code').value.trim()||new URLSearchParams(location.search).get('join')||'';if(!code)return clubStatus('Paste an invite code.');
@@ -321,12 +334,6 @@ async function verifyStaFi(){
  const clubId=PassportCloud.activeClub();if(!clubId)return accountStatus('Create or join a club first.');
  await PassportCloud.call('update_profile',{display_name:$('#profile-name').value,sl_username:$('#profile-sl').value,stafi_url:$('#profile-stafi').value});
  const out=await PassportCloud.call('verify_stafi',{club_id:clubId});await loadAccount();$('#account-details').open=true;accountStatus(out.verified?'✓ StaFi verified. Automatic stamp sync is enabled.':'StaFi test failed: '+stafiErrorText(out.error||'stafi_unavailable'),out.verified);
-}
-async function saveTreasureRecipient(){
- const recipient=$('#treasure-recipient').value;
- if(!recipient)return clubStatus('Add another player before choosing who gets paid.');
- await PassportCloud.call('set_treasure_recipient',{club_id:PassportCloud.activeClub(),beneficiary_player_id:recipient});
- await loadClubTools(PassportCloud.activeClub());clubStatus('Paid to player updated.',true);
 }
 async function markTreasurePaid(){
  const recipient=activeClubData.players.find(p=>p.is_active&&p.is_beneficiary&&!p.is_payer);
@@ -370,27 +377,34 @@ $('#show-join-club').onclick=()=>{
  if(opening){$('#selected-invite-box').classList.add('hidden');$('#new-club-invite-box').classList.add('hidden')}
 };
 $('#create-club').onclick=()=>createClub().catch(e=>clubStatus(e.message));
-$('#join-club').onclick=()=>joinClub().catch(e=>clubStatus(e.message==='join_code_not_found'?'That invite code was not found.':e.message==='join_rate_limited'?'Too many invite attempts. Wait about 10 minutes, then try again.':e.message));
+$('#join-club').onclick=()=>joinClub().catch(e=>clubStatus(e.message==='join_code_not_found'?'That invite code was not found.':e.message==='join_rate_limited'?'Too many invite attempts. Wait about 10 minutes, then try again.':e.message==='solo_club_no_invites'?'Solo clubs do not accept other players.':e.message==='babygirl_full'?'That Babygirl club already has its two players.':e.message));
 $('#invite-selected-club').onclick=async()=>{try{
  setClubAction(null);
  $('#new-club-invite-box').classList.add('hidden');
  const out=await PassportCloud.call('rotate_invite',{club_id:PassportCloud.activeClub()});
- showInvite(out.join_code,'#selected-invite-box','copy-selected-club-invite','Invite to '+activeClubData.club.name);
+ const label=activeClubData.club.game_mode==='babygirl'?'Invite your Babygirl to ':'Invite players to ';
+ showInvite(out.join_code,'#selected-invite-box','copy-selected-club-invite',label+activeClubData.club.name);
  clubStatus('Invite ready for '+activeClubData.club.name+'. Older invite links no longer work.',true)
-}catch(e){accountStatus(e.message)}};
-$('#treasure-recipient').onchange=()=>saveTreasureRecipient().catch(e=>clubStatus(e.message==='treasure_locked_to_payer'?'Only the locked payer can change who is paid.':e.message));
+}catch(e){clubStatus(e.message==='babygirl_full'?'Babygirl mode is full — exactly two players.':e.message==='solo_club_no_invites'?'Solo mode does not use invites.':e.message)}};
 $('#mark-treasure-paid').onclick=()=>markTreasurePaid().catch(e=>clubStatus(e.message==='threshold_not_met'?'The Treasure balance is below 1,000 L$.':e.message==='payer_required'?'Only the locked payer can record the payment.':e.message));
-$('#club-treasure').onchange=async()=>{try{
- const enabled=$('#club-treasure').checked;
- await PassportCloud.call('update_club',{club_id:PassportCloud.activeClub(),treasure_enabled:enabled});
- await loadClubTools(PassportCloud.activeClub());
- clubStatus(enabled?'Adventure Treasure is ON. You are now the locked payer.':'Adventure Treasure is OFF. The payer lock is released.',true)
-}catch(e){
- if(e.message==='treasure_locked_to_payer')clubStatus((e.data?.payer_name||'The current payer')+' must turn Treasure off first.');
- else if(e.message==='active_player_required')clubStatus('Your account needs an active player slot in this club.');
- else clubStatus(e.message);
- await loadClubTools(PassportCloud.activeClub()).catch(()=>{});
-}};
+$('#club-mode').onchange=async e=>{
+ const prior=activeClubData?.club?.game_mode||'group',next=e.target.value;
+ if(next===prior)return;
+ try{
+   await PassportCloud.call('update_club',{club_id:PassportCloud.activeClub(),game_mode:next});
+   $('#selected-invite-box').classList.add('hidden');
+   await loadAccount();
+   clubStatus('Game mode changed to '+(next==='solo'?'Solo':next==='babygirl'?'Babygirl':'Group')+'.',true);
+ }catch(err){
+   e.target.value=prior;
+   const msg=err.message==='mode_change_active_adventure'?'Finish or replace the current adventure before changing modes.'
+     :err.message==='solo_requires_one_player'?'Solo mode requires the club to have only one active player.'
+     :err.message==='babygirl_max_two'?'Babygirl mode allows exactly two players maximum.'
+     :err.message==='active_player_required'?'Your account must be an active player to become the Babygirl-mode payer.'
+     :err.message;
+   clubStatus(msg);
+ }
+};
 $('#leave-club').onclick=()=>leaveClub().catch(e=>clubStatus(e.message==='owner_cannot_leave'?'The owner must transfer or remove the club before leaving.':e.message));
 window.addEventListener('passport-auth-ready',()=>loadAccount().catch(e=>accountStatus('Account service: '+e.message)));
 PassportCloud.ready().then(()=>loadAccount()).catch(e=>accountStatus('Account service: '+e.message));
