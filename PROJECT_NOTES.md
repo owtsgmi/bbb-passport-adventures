@@ -30,8 +30,9 @@ This file is the persistent source of truth for future edits to this project.
   - **Settings** lives in the hamburger menu, not beside the passport counter;
   - keep a prominent top-right passport completion counter for the selected player. When StaFi is connected, use the live StaFi summary, e.g. **1 / 390**, with the remaining stamp count below it. This is the primary game goal and should remain visually prominent;
   - no cloud-sync text, StaFi-link count, payout status, notification diagnostics, or other technical/admin status in the header.
-- Adventure selection is deliberately flat and simple: there is **no Pick/Choose Adventure container or accordion**.
-- The empty Current Adventure state contains the single **Pick Random Adventure** action. Directly below Current Adventure, show the **area dropdown**, pending adventure count, and then the adventure list; do not duplicate the random button there.
+- **Potential Adventures** is a collapsed section by default, matching the compact behavior of Finished Adventures. Its summary shows the pending count; opening it reveals the area filter and pending list.
+- **Current Adventure** sits above it and auto-opens when a current adventure exists. Do not force it back open on every render after the user manually collapses it.
+- The empty Current Adventure state contains the single **Pick Random Adventure** action; do not duplicate that random button inside Potential Adventures.
 - There is **no adventure text-search field** on the Adventures page; keep the area dropdown.
 - There is **no per-adventure participant picker**. Starting an adventure automatically snapshots **all currently active club players** as that adventure's participants.
 - **Pick Random Adventure** remains the prominent quick-start action above the pending adventure list.
@@ -41,7 +42,8 @@ This file is the persistent source of truth for future edits to this project.
 - Settings is a standalone page at `settings.html`, linked from the hamburger menu on Adventures and supporting pages.
 - Do not reintroduce the inline Settings panel on `index.html`; the main Adventures page should remain focused on gameplay.
 - Settings is organized as two distinct steps: **1) User Account** and **2) Clubs**. After sign-in, account/profile/StaFi controls collapse into a compact **Account details & StaFi** disclosure so club creation/joining is the obvious next step. StaFi remains optional; manual stamp tracking works without it.
-- In the Clubs step, the **club picker comes first**. **Create a new club** and **Join an existing club** are compact mutually-exclusive expanders; opening one closes the other. Active-club roster/management tools remain below the selected club.
+- In the Clubs step, the **club picker comes first**. A narrow scrollable box immediately to its right lists the selected club's members by **Second Life username** and updates when the club changes.
+- **Create a new club** and **Join an existing club** are compact mutually-exclusive expanders. Invite generation belongs inside the **Create a new club** panel so it is visually tied to the club-creation/invite workflow; after creation, keep that panel open with the invite ready.
 - The standalone Settings page is player-oriented and allows:
   - first and second player Second Life usernames (also used as tab names)
   - each person's BBB StaFi progress-page URL
@@ -156,7 +158,7 @@ This file is the persistent source of truth for future edits to this project.
 - Reusable map code lives in `slmap.js`.
 - It uses Linden Lab's documented map tile pyramid: zoom level 1 is region detail and level 8 is the broadest/world view.
 - The map renders a 5×5 tile neighborhood around the current center, supports drag/pan, wheel/buttons for zoom, **Fit**, and **World**.
-- BBB Stops page uses this map for the selected stop and gives it substantial vertical space.
+- BBB Stops page uses this map for the selected stop and gives it substantial vertical space. Selecting a stop maps the **selected stop plus all 6 nearby suggestions** together (7 markers total) and auto-fits the group.
 - The Adventures page places a map at the bottom of the current adventure and marks all 3 stops (1, 2, 3); Fit frames the route and World provides broad SL context.
 - Region names are translated to grid coordinates through Linden Lab's public region-coordinate capability.
 - Do not revert to embedding the maps.secondlife.com SLURL page in an iframe; that approach produced blank embeds.
