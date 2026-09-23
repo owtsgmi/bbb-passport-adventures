@@ -2,6 +2,12 @@ name: Supabase Encrypted Backup
 
 on:
   workflow_dispatch:
+  schedule:
+    # Weekly encrypted off-site snapshot, Sunday morning UTC.
+    - cron: "43 4 * * 0"
+  push:
+    paths:
+      - ".github/workflows/supabase-backup.yml"
 
 permissions:
   contents: write
