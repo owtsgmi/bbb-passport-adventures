@@ -24,16 +24,16 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
 <h3>1. Set up your club</h3>
 <div class="step"><div class="num">1</div><div>Open the ☰ menu, choose <b>Settings</b>, and create an account using your Second Life username and a password.</div></div>
 <div class="step"><div class="num">2</div><div>Create a club for this couple or group. New clubs start with Adventure Treasure off.</div></div>
-<div class="step"><div class="num">3</div><div>Make an invite link and send it to the other players. They sign in and join the same club.</div></div>
+<div class="step"><div class="num">3</div><div>Inside <b>Create a new club</b>, make the invite link and send it to the other players. They sign in and join the same club.</div></div>
 <div class="step"><div class="num">4</div><div>Choose the active club in Settings whenever you want to switch groups.</div></div>
 <p class="small">Each player uses their own Second Life username account. Passport Adventures does not collect player email addresses.</p>
 </section>
 
 <section class="card">
 <h3>2. Pick an adventure</h3>
-<p>Use <b>✨ Pick Random Adventure</b>, filter by <b>area</b>, or open any adventure in the list. Each adventure has exactly <b>3 passport stops</b>.</p>
+<p>Use <b>✨ Pick Random Adventure</b> or open <b>Potential Adventures</b> to browse/filter by area. Potential Adventures starts collapsed to keep the page compact. Each adventure has exactly <b>3 passport stops</b>.</p>
 <p>Every active player in the club is included when a new adventure starts. That player list is saved with the adventure, so later roster changes do not rewrite an adventure already in progress.</p>
-<p>The current adventure stays pinned at the top so you can jump back to it easily while you're moving around Second Life. It is <b>locked by default</b> so an accidental tap on <b>Pick Random Adventure</b> or another adventure cannot replace it.</p><p>To intentionally switch, uncheck <b>Adventure locked</b> on the Current Adventure bar. The app will still ask for confirmation before replacing it, and the newly selected adventure locks itself automatically.</p>
+<p>The current adventure stays pinned at the top and opens automatically when one is active, so you can jump back to it easily while you're moving around Second Life. It is <b>locked by default</b> so an accidental tap on <b>Pick Random Adventure</b> or another adventure cannot replace it.</p><p>To intentionally switch, uncheck <b>Adventure locked</b> on the Current Adventure bar. The app will still ask for confirmation before replacing it, and the newly selected adventure locks itself automatically.</p>
 <p>The adventure stop list stays clean: each stop row shows the BBB location photo, place, status, and its own Firestorm copy button. The old extra Travel / Next stop / Copy destination block above the list has been removed.</p>
 <p>A zoomable Second Life map appears at the bottom of the current adventure and marks all three stops. Use <b>Fit</b> to frame the adventure or <b>World</b> to zoom out across the broader Second Life grid. Every stop in the current adventure is selectable: click the stop row or its <b>🎯 Focus</b> button to reset any previous pan/zoom and jump the map back to region-level detail for that stop.</p>
 </section>
@@ -107,7 +107,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
       <h3>BBB catalog mirror</h3>
       <p>The BBB Stops page checks the public BBB catalog whenever that page opens. A Supabase Edge Function fetches and parses the BBB source, returning current stop locations and available images.</p>
       <p>Matching stops refresh their public location/image information. Those same original BBB location photos are reused beside stops on both the Adventures page and the BBB Passport Stops page, including selected/nearby stop views. The backend keeps a shared catalog cache so pages do not have to wait on the slower BBB site every time they open. Newly discovered stops can appear as <b>BBB Live</b> catalog entries without changing the 127 existing adventures.</p>
-      <p>Both the stop page and the current-adventure page use a shared Second Life grid-map component. It loads Linden Lab map tiles at multiple zoom levels, supports drag/zoom, and can move from local region detail to a broad world view. Mouse-wheel zoom is debounced to avoid request bursts, and unavailable tiles are retried once before falling back to a clean placeholder instead of a broken-image box.</p>
+      <p>Both the stop page and the current-adventure page use a shared Second Life grid-map component. On BBB Stops, selecting a stop maps that stop plus its six nearby suggestions together and fits all seven markers. It loads Linden Lab map tiles at multiple zoom levels, supports drag/zoom, and can move from local region detail to a broad world view. Mouse-wheel zoom is debounced to avoid request bursts, and unavailable tiles are retried once before falling back to a clean placeholder instead of a broken-image box.</p>
     </section>
     <section class="archcard">
       <h3>StaFi passport progress</h3>
