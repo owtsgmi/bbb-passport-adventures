@@ -52,7 +52,8 @@ main{max-width:900px;margin:auto;padding:26px 4vw 60px}.card{background:linear-g
       <div class="field"><label>Your Second Life username</label><input id="profile-sl" maxlength="80" placeholder="avatar.name"></div>
       <div class="field"><label>Your private BBB StaFi progress page</label><input id="profile-stafi" maxlength="1000" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
     </div>
-    <div class="actions"><button id="save-profile">Save my profile</button></div>
+    <div class="actions"><button id="save-profile">Save my profile</button><button id="verify-stafi">✓ Test & enable StaFi sync</button></div>
+    <div class="note" id="stafi-status">Add your private StaFi progress page, then test it to enable automatic stamp updates.</div>
     <div class="clubtools">
       <div class="field"><label>Playing with</label><div class="clubrow"><select id="club-select"></select><a class="btn primary" href="index.html">Open Adventures</a></div></div>
       <div id="active-club-tools" class="hidden">
@@ -68,7 +69,7 @@ main{max-width:900px;margin:auto;padding:26px 4vw 60px}.card{background:linear-g
         </div>
       </details>
       <details style="margin-top:10px"><summary>Claim the original two-player game</summary>
-        <div class="note">Use the existing Secret Club Code once to place the current game under your account. All existing progress is preserved.</div>
+        <div class="note">Each original player uses the existing Secret Club Code once and chooses their preserved passport. The matching encrypted StaFi link is moved into that account without exposing the other player's link.</div>
         <div class="accountgrid"><div class="field"><label>Existing Secret Club Code</label><input id="claim-secret" type="password" autocomplete="current-password"></div><div class="field"><label>I am</label><select id="claim-player"><option value="00000000-0000-4000-8000-000000000101">First player</option><option value="00000000-0000-4000-8000-000000000102">Second player</option></select></div></div>
         <div class="actions"><button id="claim-club">Claim original club</button></div>
       </details>
@@ -280,6 +281,10 @@ async function loadAccount(){
  $('#account-email').textContent=session.user.email||'Signed in';
  accountData=await PassportCloud.call('list');
  $('#profile-name').value=accountData.profile?.display_name||'';$('#profile-sl').value=accountData.profile?.sl_username||'';$('#profile-stafi').value=accountData.private_settings?.stafi_url||'';
+ const ss=accountData.private_settings||{},sync=$('#stafi-status');
+ if(!ss.stafi_url)sync.textContent='Add your private StaFi progress page, then test it to enable automatic stamp updates.';
+ else if(ss.stafi_sync_enabled)sync.textContent='✓ Automatic StaFi sync enabled'+(ss.stafi_last_success_at?' · last checked '+new Date(ss.stafi_last_success_at).toLocaleString():'')+(ss.stafi_last_stamp_count!=null?' · '+ss.stafi_last_stamp_count+' stamps recorded':'');
+ else sync.textContent=ss.stafi_last_error?'StaFi needs attention: '+ss.stafi_last_error:'StaFi page saved privately. Test it once to enable automatic sync.';
  const select=$('#club-select'),remembered=PassportCloud.activeClub();
  select.innerHTML=accountData.clubs.length?accountData.clubs.map(c=>'<option value="'+c.id+'">'+html(c.name)+' · '+html(c.role)+'</option>').join(''):'<option value="">No clubs yet</option>';
  const active=accountData.clubs.some(c=>c.id===remembered)?remembered:(accountData.clubs[0]?.id||'');select.value=active;PassportCloud.setActiveClub(active);
@@ -296,7 +301,16 @@ async function joinClub(){
  const out=await PassportCloud.call('join',{join_code:code});PassportCloud.setActiveClub(out.club_id);localStorage.removeItem('bbb-pending-join');history.replaceState(null,'',location.pathname);await loadAccount();accountStatus('Joined '+out.club_name+'.',true);
 }
 async function claimClub(){
- const out=await PassportCloud.call('claim_legacy',{secret:$('#claim-secret').value,player_id:$('#claim-player').value});PassportCloud.setActiveClub(out.club_id);$('#claim-secret').value='';showInvite(out.join_code);await loadAccount();accountStatus('Original game claimed — all existing progress is safe.',true);
+ const secret=$('#claim-secret').value,playerId=$('#claim-player').value;let migrated='';
+ try{const r=await fetch(PRIVATE_URL+'&select=*',{headers:{apikey:SUPA_KEY}}),rows=await r.json(),p=rows[0]?.ciphertext?await decryptPrivatePayload(rows[0],secret):null;migrated=playerId.endsWith('0101')?(p?.partnerStaFiUrl||''):(p?.meStaFiUrl||'')}catch(e){}
+ const out=await PassportCloud.call('claim_legacy',{secret,player_id:playerId,stafi_url:migrated});PassportCloud.setActiveClub(out.club_id);$('#claim-secret').value='';if(out.join_code)showInvite(out.join_code);await loadAccount();
+ if(out.stafi_migrated){const checked=await PassportCloud.call('verify_stafi',{club_id:out.club_id});await loadAccount();accountStatus(checked.verified?'Original passport and private StaFi page migrated; automatic sync is enabled.':'Original passport claimed. The StaFi link was migrated but could not be reached yet.',checked.verified)}
+ else accountStatus('Original passport claimed. Existing progress is safe; add this player’s StaFi page above to enable automatic updates.',true);
+}
+async function verifyStaFi(){
+ const clubId=PassportCloud.activeClub();if(!clubId)return accountStatus('Create, join, or claim a club first.');
+ await PassportCloud.call('update_profile',{display_name:$('#profile-name').value,sl_username:$('#profile-sl').value,stafi_url:$('#profile-stafi').value});
+ const out=await PassportCloud.call('verify_stafi',{club_id:clubId});await loadAccount();accountStatus(out.verified?'StaFi page verified. Automatic stamp sync is enabled.':'StaFi could not be verified: '+(out.error||'unavailable'),out.verified);
 }
 async function addGuest(){
  const display=prompt('Player display name:');if(!display)return;
@@ -316,6 +330,7 @@ $('#open-second').onclick=()=>openStaFi('me');
 $('#send-link').onclick=async()=>{try{const email=$('#auth-email').value.trim();if(!email)return accountStatus('Enter your email address.');localStorage.setItem('bbb-pending-join',new URLSearchParams(location.search).get('join')||'');await PassportCloud.magicLink(email,location.origin+location.pathname+location.search);accountStatus('Sign-in link sent — check your email.',true)}catch(e){accountStatus(e.message)}};
 $('#sign-out').onclick=()=>PassportCloud.signOut();
 $('#save-profile').onclick=async()=>{try{await PassportCloud.call('update_profile',{display_name:$('#profile-name').value,sl_username:$('#profile-sl').value,stafi_url:$('#profile-stafi').value});await loadAccount();accountStatus('Profile and private StaFi page saved.',true)}catch(e){accountStatus(e.message)}};
+$('#verify-stafi').onclick=()=>verifyStaFi().catch(e=>accountStatus(e.message==='invalid_stafi_url'?'Use the private thebbbbug.com/UTILS/YourStamps.php?Ref=… link supplied by the StaFi HUD.':e.message));
 $('#club-select').onchange=async e=>{PassportCloud.setActiveClub(e.target.value);await loadClubTools(e.target.value)};
 $('#create-club').onclick=()=>createClub().catch(e=>accountStatus(e.message));
 $('#join-club').onclick=()=>joinClub().catch(e=>accountStatus(e.message==='join_code_not_found'?'That invite code was not found.':e.message==='join_rate_limited'?'Too many invite attempts. Wait about 10 minutes, then try again.':e.message));

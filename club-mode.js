@@ -1,4 +1,4 @@
-let clubMode=false,clubData=null,clubPlayers=[],clubProgress=new Map(),clubRuns=[],clubParticipants=[],clubParticipantSelection=new Set();
+let clubMode=false,clubData=null,clubPlayers=[],clubProgress=new Map(),clubRuns=[],clubParticipants=[],clubParticipantSelection=new Set(),clubStaFiSyncBusy=false,lastClubStaFiSync=0;
 function activePlayers(){return clubMode?clubPlayers.filter(function(p){return p.is_active}):[]}
 function viewedPlayer(){return clubMode?(clubPlayers.find(function(p){return p.id===currentView})||activePlayers()[0]||null):null}
 function viewedDone(){if(!clubMode)return currentView==='partner'?partnerDone:meDone;return clubProgress.get((viewedPlayer()||{}).id)||new Set()}
@@ -26,8 +26,13 @@ startAdventure=function(id){
  const adventure=adventures.find(function(a){return a.id===Number(id)}),players=selectedParticipantIds();
  if(clubMode&&!players.length){toast('Choose at least one player for this adventure.');return false}
  const ok=legacyStartAdventure(id);
- if(ok&&clubMode&&adventure)PassportCloud.call('start_adventure',{club_id:clubData.club.id,adventure_id:Number(id),stamp_ids:adventure.stamps.map(function(st){return st.id}),player_ids:players}).then(function(){return pollClub(true)}).catch(function(){toast('Adventure saved here; club sync will retry.')});return ok
+ if(ok&&clubMode&&adventure)PassportCloud.call('start_adventure',{club_id:clubData.club.id,adventure_id:Number(id),stamp_ids:adventure.stamps.map(function(st){return st.id}),stamps:adventure.stamps.map(function(st){return {id:st.id,name:st.name,region:st.region,x:Number(st.x),y:Number(st.y),z:Number(st.z)}}),player_ids:players}).then(function(){return pollClub(true)}).catch(function(){toast('Adventure saved here; club sync will retry.')});return ok
 };
+async function maybeAutoStaFiSync(force){
+ if(!clubMode||clubStaFiSyncBusy||(!force&&Date.now()-lastClubStaFiSync<5*60*1000))return false;
+ clubStaFiSyncBusy=true;lastClubStaFiSync=Date.now();
+ try{const out=await PassportCloud.call('sync_stafi',{club_id:clubData.club.id});if(out.imported>0)toast('✓ StaFi added '+out.imported+' new stamp'+(out.imported===1?'':'s')+'.');return out.imported>0}catch(e){return false}finally{clubStaFiSyncBusy=false}
+}
 function canEditViewedPlayer(){const p=viewedPlayer(),session=window.PassportCloud&&PassportCloud.session(),u=session&&session.user&&session.user.id,role=clubData&&clubData.membership&&clubData.membership.role;return !!(clubMode&&p&&(p.user_id===u||(!p.user_id&&(role==='owner'||role==='admin'))))}
 async function toggleClubStamp(advId,stampId){
  const p=viewedPlayer(),set=viewedDone();if(!clubMode||!p)return;

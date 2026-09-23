@@ -510,7 +510,7 @@ function init(){
 }
 init();
 </script>
-<script src="club-mode.js?v=3"></script>
+<script src="club-mode.js?v=4"></script>
 
 <script>
 /* Shared Supabase sync: publishable key is intentionally safe for browser use.
@@ -688,7 +688,7 @@ function adoptClub(data){
 }
 async function pollClub(force){
  if(cloudBusy&&!force)return;
- try{const data=await PassportCloud.call('load',{club_id:PassportCloud.activeClub()}),fingerprint=clubFingerprint(data);if(force||fingerprint!==lastCloudUpdate)adoptClub(data)}catch(e){syncStatus('Reconnecting to club…',false)}
+ try{let data=await PassportCloud.call('load',{club_id:PassportCloud.activeClub()}),fingerprint=clubFingerprint(data);if(force||fingerprint!==lastCloudUpdate)adoptClub(data);if(await maybeAutoStaFiSync(false)){data=await PassportCloud.call('load',{club_id:PassportCloud.activeClub()});adoptClub(data)}}catch(e){syncStatus('Reconnecting to club…',false)}
 }
 async function startCloudMode(){
  await PassportCloud.ready();const active=PassportCloud.activeClub();

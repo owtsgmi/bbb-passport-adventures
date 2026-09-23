@@ -41,7 +41,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
 <section class="card">
 <h3>3. Everyone finishes together</h3>
 <p>One person can get ahead, but the adventure is not complete until <b>every selected participant has all three stamps</b>. The player tabs show each passport separately, while each stop reports how many group members have it.</p>
-<p>The <b>NEXT</b> marker points to the first stop the whole group has not finished. Until automatic StaFi importing is fully connected, a player can use <b>Mark stamp</b> for their own passport; club owners and admins can also help guest players.</p>
+<p>The <b>NEXT</b> marker points to the first stop the whole group has not finished. A linked player’s verified private StaFi page is checked automatically while the club game is open. <b>Mark stamp</b> remains available for the player’s own passport and for owner/admin help with guest players.</p>
 </section>
 
 <section class="card">
@@ -62,7 +62,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
 <h3>6. Passport progress</h3>
 <p>The top stamp counter is meant to show the <b>whole passport total</b>, not only the adventure subset.</p>
 <p>Example: <b>1 / 382 stamps · 381 to go</b>.</p>
-<p class="small">Automatic StaFi stamp importing is still being connected. Saving the StaFi link currently saves the private setting; it does not yet mean BBB progress has been imported.</p>
+<p class="small">After saving a private StaFi link, use <b>Test &amp; enable StaFi sync</b> once. Only confidently identified collected stamps from active adventures are imported; an unavailable or unfamiliar page never marks stamps.</p>
 </section>
 </div>
 
@@ -107,7 +107,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
     <section class="archcard">
       <h3>Private settings</h3>
       <p>Email magic links provide account identity; club membership and owner/admin roles control access. Row Level Security and the authenticated club service prevent one club from reading another club's private gameplay. A signed-in player's raw StaFi URL stays in that player's private settings and is never included in the club roster payload.</p>
-      <p>The original two-player installation keeps its browser-encrypted StaFi links and Secret Club Code for migration. The Secret Club Code can prove ownership when claiming that original club, but it is no longer used as identity for new clubs.</p>
+      <p>The original two-player installation keeps its browser-encrypted StaFi links and Secret Club Code for migration. Each original player signs in, chooses their preserved passport, and uses that code once. The matching StaFi link moves into that player’s private account record without revealing the other player’s link. The Secret Club Code is not used as identity for new clubs.</p>
     </section>
     <section class="archcard">
       <h3>BBB catalog mirror</h3>
@@ -117,7 +117,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
     </section>
     <section class="archcard">
       <h3>StaFi passport progress</h3>
-      <p>Each player's personal BBB StaFi page can be saved privately. The app is designed to use those pages for passport progress, but automatic personal StaFi stamp importing is still a separate integration until it is fully connected and tested.</p>
+      <p>Each player's personal BBB StaFi page is saved privately and never returned in a club roster. After the player tests the link, the signed-in game checks it periodically and imports confidently matched collected stamps for that player’s active adventures. Manual marking remains available if the external page is unavailable.</p>
     </section>
     <section class="archcard">
       <h3>Feedback system</h3>
@@ -140,7 +140,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
         <li>The public BBB mirror and the private StaFi progress system are separate.</li>
         <li>Feedback submission is public, but curation is owner-only through a separate private Owner Passphrase.</li>
         <li>Nearby-stop ranking is best-effort until complete grid-wide coordinates are available.</li>
-        <li>Automatic personal StaFi importing is still pending; signed-in players currently use the per-stop Mark stamp control.</li>
+        <li>StaFi sync checks the private progress page while the signed-in club game is open. It fails closed: ambiguous page content is not treated as a collected stamp.</li>
         <li>Owner-only moderation is code-based rather than account-based: anyone who possesses the private Owner Passphrase would have curator rights, so that code must remain private.</li>
       </ul>
     </section>
