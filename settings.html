@@ -14,8 +14,8 @@ header{position:sticky;top:0;z-index:20;background:#100c24ee;backdrop-filter:blu
 button,a.btn,input,select{border:1px solid #4b3b61;border-radius:12px;background:#171121;color:var(--ink);padding:10px 12px;font:inherit}
 button,a.btn{cursor:pointer;text-decoration:none;display:inline-block}.primary{background:linear-gradient(135deg,#8b63e8,#c45ca8);border-color:#d7a4e8;font-weight:800}
 main{max-width:900px;margin:auto;padding:26px 4vw 60px}.card{background:linear-gradient(135deg,#171121,#21122a);border:1px solid #674d85;border-radius:20px;padding:20px;box-shadow:0 12px 32px #0003}.card h2{margin:0 0 5px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}.field label{display:block;font-weight:800;margin-bottom:6px}.field input,.field select{width:100%}.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:16px}.note{margin-top:14px;padding:12px 14px;border:1px solid #4a3a61;border-radius:14px;background:#100d1b;color:var(--muted);font-size:12px;line-height:1.45}#status{min-height:20px;margin-top:12px;color:var(--muted)}.ok{color:var(--green)!important}.warn{color:var(--gold)!important}
-.accountcard{margin-bottom:18px}.accountgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.accountgrid input,.accountgrid select{width:100%}.clubtools{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}.clubrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.clubrow select{min-width:230px}.memberlist{display:grid;gap:7px;margin-top:12px}.member{padding:10px 11px;border:1px solid #443754;border-radius:12px;background:#120e20}.memberhead{display:flex;justify-content:space-between;gap:10px;align-items:center}.memberactions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.memberactions button{padding:6px 8px;border-radius:9px;font-size:11px}.rolebadge{display:inline-block;margin-left:5px;padding:2px 6px;border:1px solid #6a5689;border-radius:999px;color:#dfd1ef;font-size:10px}.codebox{margin-top:10px;padding:11px;border:1px solid #80672e;border-radius:12px;background:#241b13;color:#ffe39a;word-break:break-all}.hidden{display:none!important}
-@media(max-width:700px){.grid,.accountgrid{grid-template-columns:1fr}.brand h1{font-size:22px}}
+.accountcard,.clubcard{margin-bottom:18px}.stephead{display:flex;gap:12px;align-items:flex-start}.stepnum{flex:0 0 34px;height:34px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#8b63e8,#c45ca8);border:1px solid #d7a4e8;font-weight:900}.stepcopy h2{margin:0 0 3px}.accountgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.accountgrid input,.accountgrid select{width:100%}.wide{grid-column:1/-1}.labelrow{display:flex;align-items:center;gap:6px}.tip{position:relative;display:inline-grid;place-items:center;width:18px;height:18px;border:1px solid #6d5a84;border-radius:50%;font-size:11px;color:#dbccec;cursor:help}.tip:hover:after,.tip:focus:after{content:attr(data-tip);position:absolute;left:22px;top:-8px;z-index:50;width:245px;padding:8px 10px;border-radius:10px;background:#090711;border:1px solid #6d5a84;color:#eee3f7;font-size:11px;font-weight:500;line-height:1.35;box-shadow:0 8px 24px #0008}.hint{margin-top:5px;color:var(--muted);font-size:11px}.clubstart{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}.mini{padding:14px;border:1px solid #443754;border-radius:14px;background:#120e20}.mini h3{margin:0 0 10px;font-size:15px}.clubtools{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}.clubrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.clubrow select{min-width:230px}.memberlist{display:grid;gap:7px;margin-top:12px}.member{padding:10px 11px;border:1px solid #443754;border-radius:12px;background:#120e20}.memberhead{display:flex;justify-content:space-between;gap:10px;align-items:center}.memberactions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.memberactions button{padding:6px 8px;border-radius:9px;font-size:11px}.rolebadge{display:inline-block;margin-left:5px;padding:2px 6px;border:1px solid #6a5689;border-radius:999px;color:#dfd1ef;font-size:10px}.codebox{margin-top:10px;padding:11px;border:1px solid #80672e;border-radius:12px;background:#241b13;color:#ffe39a;word-break:break-all}.locked{margin-top:16px;padding:13px;border:1px dashed #5a496f;border-radius:14px;color:var(--muted);background:#100d1b}.hidden{display:none!important}
+@media(max-width:700px){.grid,.accountgrid,.clubstart{grid-template-columns:1fr}.wide{grid-column:auto}.brand h1{font-size:22px}.tip:hover:after,.tip:focus:after{left:auto;right:-8px;top:24px;width:220px}}
 </style>
 <link rel="stylesheet" href="shared-nav.css?v=1">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -38,42 +38,85 @@ main{max-width:900px;margin:auto;padding:26px 4vw 60px}.card{background:linear-g
 
 <main>
 <section class="card accountcard" id="account-card">
-  <h2>👥 Your clubs</h2>
-  <div class="small">Each couple or group gets its own private game, players, progress, and Treasure balance.</div>
+  <div class="stephead">
+    <div class="stepnum">1</div>
+    <div class="stepcopy"><h2>User Account</h2><div class="small">Your Second Life username is your login. StaFi is optional.</div></div>
+  </div>
+
   <div id="signed-out">
     <div class="accountgrid">
-      <div class="field"><label>Second Life username</label><input id="auth-username" maxlength="80" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="avatar.name"></div>
-      <div class="field"><label>Password</label><input id="auth-password" type="password" minlength="8" maxlength="128" autocomplete="current-password" placeholder="8 or more characters"></div>
+      <div class="field">
+        <label>Second Life username</label>
+        <input id="auth-username" maxlength="80" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="avatar.name">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input id="auth-password" type="password" minlength="8" maxlength="128" autocomplete="current-password" placeholder="8 or more characters">
+      </div>
     </div>
-    <div class="actions"><button class="primary" id="sign-in">Sign in</button><button id="create-account">Create account</button></div>
-    <div class="note">No email address is collected. Your SL username is your login. There is no password-recovery email, so save your password somewhere safe.</div>
+    <div class="actions"><button class="primary" id="create-account">Create account</button><button id="sign-in">Sign in</button></div>
+    <div class="hint">No email required. There is no password recovery.</div>
   </div>
+
   <div id="signed-in" class="hidden">
-    <div class="clubrow"><b id="account-username"></b><button id="sign-out">Sign out</button></div>
+    <div class="clubrow" style="margin-top:14px"><b id="account-username"></b><button id="sign-out">Sign out</button></div>
     <div class="accountgrid">
-      <div class="field"><label>Your display name</label><input id="profile-name" maxlength="60"></div>
-      <div class="field"><label>Your Second Life username</label><input id="profile-sl" maxlength="80" readonly></div>
-      <div class="field"><label>Your private BBB StaFi progress page</label><input id="profile-stafi" maxlength="1000" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
+      <div class="field">
+        <label>Display name</label>
+        <input id="profile-name" maxlength="60">
+      </div>
+      <div class="field">
+        <label>Second Life username</label>
+        <input id="profile-sl" maxlength="80" readonly>
+      </div>
+      <div class="field wide">
+        <div class="labelrow"><label style="margin:0">BBB StaFi progress URL <span class="small">(optional)</span></label><span class="tip" tabindex="0" data-tip="Connect your private StaFi progress page for automatic stamp updates. Leave it blank and you can mark stamps manually.">?</span></div>
+        <input id="profile-stafi" maxlength="1000" placeholder="Optional StaFi progress-page URL">
+        <div class="hint" id="stafi-status">Leave blank for manual stamp tracking.</div>
+      </div>
     </div>
-    <div class="actions"><button id="save-profile">Save my profile</button><button id="verify-stafi">✓ Test & enable StaFi sync</button></div>
-    <div class="note" id="stafi-status">Add your private StaFi progress page, then test it to enable automatic stamp updates.</div>
+    <div class="actions"><button id="save-profile">Save account</button><button id="verify-stafi">✓ Test StaFi sync</button></div>
+  </div>
+  <div id="account-status" class="small" style="margin-top:12px">Checking account…</div>
+</section>
+
+<section class="card clubcard" id="club-card">
+  <div class="stephead">
+    <div class="stepnum">2</div>
+    <div class="stepcopy"><h2>Clubs</h2><div class="small">Create a new club or join one with an invite.</div></div>
+  </div>
+
+  <div id="clubs-locked" class="locked">Create an account or sign in first.</div>
+
+  <div id="clubs-signed-in" class="hidden">
+    <div class="clubstart">
+      <div class="mini">
+        <h3>✨ Create a new club</h3>
+        <div class="field"><label>Club name</label><input id="new-club-name" maxlength="80" placeholder="Our Passport Crew"></div>
+        <div class="actions"><button class="primary" id="create-club">Create club</button><span class="tip" tabindex="0" data-tip="You become the club owner. After creation, copy the invite link for the people you want to join.">?</span></div>
+      </div>
+      <div class="mini">
+        <h3>🔗 Join an existing club</h3>
+        <div class="field"><label>Invite code</label><input id="join-code" maxlength="200" placeholder="Paste invite code"></div>
+        <div class="actions"><button id="join-club">Join club</button><span class="tip" tabindex="0" data-tip="Use the invite code or link sent by the club owner. Your account can belong to more than one club.">?</span></div>
+      </div>
+    </div>
+
     <div class="clubtools">
-      <div class="field"><label>Playing with</label><div class="clubrow"><select id="club-select"></select><a class="btn primary" href="index.html">Open Adventures</a></div></div>
+      <div class="field">
+        <div class="labelrow"><label style="margin:0">Your clubs</label><span class="tip" tabindex="0" data-tip="Switching clubs changes which private game, roster, progress, and Adventure Treasure you are viewing.">?</span></div>
+        <div class="clubrow" style="margin-top:7px"><select id="club-select"></select><a class="btn primary" href="index.html">Open Adventures</a></div>
+      </div>
+
       <div id="active-club-tools" class="hidden">
         <div class="memberlist" id="member-list"></div>
-        <div class="actions" id="manager-actions"><button id="new-invite">🔗 Make invite link</button><button id="add-guest">＋ Add player without an account</button><button id="club-treasure">🎁 Treasure: OFF</button></div>
+        <div class="actions" id="manager-actions"><button id="new-invite">🔗 Invite players</button><button id="add-guest">＋ Add guest player</button><button id="club-treasure">🎁 Treasure: OFF</button></div>
         <div class="actions" id="personal-club-actions"><button id="leave-club">Leave this club</button></div>
         <div id="invite-box" class="codebox hidden"></div>
       </div>
-      <details style="margin-top:14px"><summary>Create or join another club</summary>
-        <div class="accountgrid">
-          <div class="field"><label>New club name</label><input id="new-club-name" maxlength="80" placeholder="Our Passport Crew"><div class="actions"><button id="create-club">Create club</button></div></div>
-          <div class="field"><label>Invite code</label><input id="join-code" maxlength="40" placeholder="Paste an invite code"><div class="actions"><button id="join-club">Join club</button></div></div>
-        </div>
-      </details>
     </div>
   </div>
-  <div id="account-status" class="small" style="margin-top:12px">Checking account…</div>
+  <div id="club-status" class="small" style="margin-top:12px"></div>
 </section>
 </main>
 
@@ -82,15 +125,17 @@ main{max-width:900px;margin:auto;padding:26px 4vw 60px}.card{background:linear-g
 const $=s=>document.querySelector(s);
 
 let accountData=null,activeClubData=null;
-function accountStatus(message,good=false){const e=$('#account-status');e.textContent=message;e.className=good?'ok':'warn'}
+function setStatus(selector,message,good=false){const e=$(selector);if(!e)return;e.textContent=message;e.className=good?'ok':'warn'}
+function accountStatus(message,good=false){setStatus('#account-status',message,good)}
+function clubStatus(message,good=false){setStatus('#club-status',message,good)}
 function html(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function showInvite(code){
  const link=location.origin+location.pathname+'?join='+encodeURIComponent(code),box=$('#invite-box');
  box.innerHTML='<b>Invite code:</b> '+html(code)+'<br><span class="small">'+html(link)+'</span><div class="actions"><button id="copy-invite">Copy invite link</button></div>';
- box.classList.remove('hidden');$('#copy-invite').onclick=()=>navigator.clipboard.writeText(link).then(()=>accountStatus('Invite link copied.',true));
+ box.classList.remove('hidden');$('#copy-invite').onclick=()=>navigator.clipboard.writeText(link).then(()=>clubStatus('Invite link copied.',true));
 }
 async function loadClubTools(clubId){
- if(!clubId){$('#active-club-tools').classList.add('hidden');return}
+ if(!clubId){$('#active-club-tools').classList.add('hidden');clubStatus('Create a club or paste an invite code.');return}
  activeClubData=await PassportCloud.call('load',{club_id:clubId});
  const mine=activeClubData.membership,canManage=mine.role==='owner'||mine.role==='admin';
  $('#active-club-tools').classList.remove('hidden');$('#manager-actions').classList.toggle('hidden',!canManage);
@@ -108,17 +153,17 @@ async function loadClubTools(clubId){
    }
    return '<div class="member"><div class="memberhead"><span><b>'+html(p.display_name)+'</b>'+(p.sl_username?'<span class="small"> · '+html(p.sl_username)+'</span>':'')+badges+'</span><span class="small">'+(p.user_id?'account connected · '+html(member&&member.role||'member'):'guest player')+'</span></div>'+(actions?'<div class="memberactions">'+actions+'</div>':'')+'</div>';
  }).join('');
- accountStatus(activeClubData.club.name+' is ready for '+activeClubData.players.filter(p=>p.is_active).length+' player'+(activeClubData.players.filter(p=>p.is_active).length===1?'':'s')+'.',true);
+ clubStatus(activeClubData.club.name+' · '+activeClubData.players.filter(p=>p.is_active).length+' active player'+(activeClubData.players.filter(p=>p.is_active).length===1?'':'s'),true);
 }
 async function loadAccount(){
  const session=PassportCloud.session(),signed=!!session?.user;
- $('#signed-out').classList.toggle('hidden',signed);$('#signed-in').classList.toggle('hidden',!signed);
- if(!signed){accountStatus('Sign in to create separate games for different couples or groups.');return}
+ $('#signed-out').classList.toggle('hidden',signed);$('#signed-in').classList.toggle('hidden',!signed);$('#clubs-locked').classList.toggle('hidden',signed);$('#clubs-signed-in').classList.toggle('hidden',!signed);
+ if(!signed){accountStatus('Create an account or sign in.');clubStatus('');return}
  $('#account-username').textContent=session.user.sl_username||'Signed in';
  accountData=await PassportCloud.call('list');
  $('#profile-name').value=accountData.profile?.display_name||'';$('#profile-sl').value=accountData.profile?.sl_username||'';$('#profile-stafi').value=accountData.private_settings?.stafi_url||'';
  const ss=accountData.private_settings||{},sync=$('#stafi-status');
- if(!ss.stafi_url)sync.textContent='Add your private StaFi progress page, then test it to enable automatic stamp updates.';
+ if(!ss.stafi_url)sync.textContent='Leave blank for manual stamp tracking.';
  else if(ss.stafi_sync_enabled)sync.textContent='✓ Automatic StaFi sync enabled'+(ss.stafi_last_success_at?' · last checked '+new Date(ss.stafi_last_success_at).toLocaleString():'')+(ss.stafi_last_stamp_count!=null?' · '+ss.stafi_last_stamp_count+' stamps recorded':'');
  else sync.textContent=ss.stafi_last_error?'StaFi needs attention: '+ss.stafi_last_error:'StaFi page saved privately. Test it once to enable automatic sync.';
  const select=$('#club-select'),remembered=PassportCloud.activeClub();
@@ -126,15 +171,15 @@ async function loadAccount(){
  const active=accountData.clubs.some(c=>c.id===remembered)?remembered:(accountData.clubs[0]?.id||'');select.value=active;PassportCloud.setActiveClub(active);
  await loadClubTools(active);
  const pending=new URLSearchParams(location.search).get('join')||localStorage.getItem('bbb-pending-join')||'';
- if(pending){$('#join-code').value=pending;accountStatus('Invite ready — choose Join club.');}
+ if(pending){$('#join-code').value=pending;clubStatus('Invite ready — choose Join club.');}
 }
 async function createClub(){
- const name=$('#new-club-name').value.trim();if(!name)return accountStatus('Enter a club name.');
- const out=await PassportCloud.call('create',{name});PassportCloud.setActiveClub(out.club.id);showInvite(out.join_code);await loadAccount();accountStatus('Club created. Copy the invite link for the other players.',true);
+ const name=$('#new-club-name').value.trim();if(!name)return clubStatus('Enter a club name.');
+ const out=await PassportCloud.call('create',{name});PassportCloud.setActiveClub(out.club.id);showInvite(out.join_code);await loadAccount();clubStatus('Club created. Invite link is ready.',true);
 }
 async function joinClub(){
- const code=$('#join-code').value.trim()||new URLSearchParams(location.search).get('join')||'';if(!code)return accountStatus('Paste an invite code.');
- const out=await PassportCloud.call('join',{join_code:code});PassportCloud.setActiveClub(out.club_id);localStorage.removeItem('bbb-pending-join');history.replaceState(null,'',location.pathname);await loadAccount();accountStatus('Joined '+out.club_name+'.',true);
+ const code=$('#join-code').value.trim()||new URLSearchParams(location.search).get('join')||'';if(!code)return clubStatus('Paste an invite code.');
+ const out=await PassportCloud.call('join',{join_code:code});PassportCloud.setActiveClub(out.club_id);localStorage.removeItem('bbb-pending-join');history.replaceState(null,'',location.pathname);await loadAccount();clubStatus('Joined '+out.club_name+'.',true);
 }
 async function verifyStaFi(){
  const clubId=PassportCloud.activeClub();if(!clubId)return accountStatus('Create or join a club first.');
@@ -145,11 +190,11 @@ async function addGuest(){
  const display=prompt('Player display name:');if(!display)return;
  const sl=prompt('Second Life username (optional):')||'';await PassportCloud.call('add_guest',{club_id:PassportCloud.activeClub(),display_name:display,sl_username:sl});await loadClubTools(PassportCloud.activeClub());
 }
-async function setPlayerRole(playerId,kind){await PassportCloud.call('update_player',{club_id:PassportCloud.activeClub(),player_id:playerId,[kind==='payer'?'is_payer':'is_beneficiary']:true});await loadClubTools(PassportCloud.activeClub());accountStatus(kind==='payer'?'Club payer updated.':'Treasure recipient updated.',true)}
-async function togglePlayerActive(playerId,isActive){await PassportCloud.call('update_player',{club_id:PassportCloud.activeClub(),player_id:playerId,is_active:isActive});await loadClubTools(PassportCloud.activeClub());accountStatus('Player roster updated.',true)}
-async function setMemberRole(userId,role){await PassportCloud.call('set_member_role',{club_id:PassportCloud.activeClub(),user_id:userId,role});await loadClubTools(PassportCloud.activeClub());accountStatus('Club role updated.',true)}
-async function removeMember(userId){const player=activeClubData.players.find(p=>p.user_id===userId),name=player&&player.display_name||'this player';if(!confirm('Remove '+name+'\'s account from this club? Their player slot and stamp progress will stay as a guest player.'))return;await PassportCloud.call('remove_member',{club_id:PassportCloud.activeClub(),user_id:userId});await loadClubTools(PassportCloud.activeClub());accountStatus('Account removed; the player history was preserved.',true)}
-async function leaveClub(){if(!confirm('Leave this club? Your player history will remain as a guest slot.'))return;await PassportCloud.call('leave_club',{club_id:PassportCloud.activeClub()});PassportCloud.setActiveClub('');await loadAccount();accountStatus('You left the club.',true)}
+async function setPlayerRole(playerId,kind){await PassportCloud.call('update_player',{club_id:PassportCloud.activeClub(),player_id:playerId,[kind==='payer'?'is_payer':'is_beneficiary']:true});await loadClubTools(PassportCloud.activeClub());clubStatus(kind==='payer'?'Club payer updated.':'Treasure recipient updated.',true)}
+async function togglePlayerActive(playerId,isActive){await PassportCloud.call('update_player',{club_id:PassportCloud.activeClub(),player_id:playerId,is_active:isActive});await loadClubTools(PassportCloud.activeClub());clubStatus('Player roster updated.',true)}
+async function setMemberRole(userId,role){await PassportCloud.call('set_member_role',{club_id:PassportCloud.activeClub(),user_id:userId,role});await loadClubTools(PassportCloud.activeClub());clubStatus('Club role updated.',true)}
+async function removeMember(userId){const player=activeClubData.players.find(p=>p.user_id===userId),name=player&&player.display_name||'this player';if(!confirm('Remove '+name+'\'s account from this club? Their player slot and stamp progress will stay as a guest player.'))return;await PassportCloud.call('remove_member',{club_id:PassportCloud.activeClub(),user_id:userId});await loadClubTools(PassportCloud.activeClub());clubStatus('Account removed; player history was preserved.',true)}
+async function leaveClub(){if(!confirm('Leave this club? Your player history will remain as a guest slot.'))return;await PassportCloud.call('leave_club',{club_id:PassportCloud.activeClub()});PassportCloud.setActiveClub('');await loadAccount();clubStatus('You left the club.',true)}
 
 function authMessage(error){return error==='invalid_login'?'SL username or password is incorrect.':error==='username_unavailable'?'That SL username already has an account. Sign in instead.':error==='password_length'?'Use a password with at least 8 characters.':error==='invalid_sl_username'?'Enter your actual Second Life username, such as avatar.name.':error==='too_many_attempts'?'Too many attempts. Wait a little while and try again.':'Account service unavailable. Please try again.'}
 async function accountAuth(kind){
@@ -164,12 +209,12 @@ $('#sign-out').onclick=()=>PassportCloud.signOut();
 $('#save-profile').onclick=async()=>{try{await PassportCloud.call('update_profile',{display_name:$('#profile-name').value,sl_username:$('#profile-sl').value,stafi_url:$('#profile-stafi').value});await loadAccount();accountStatus('Profile and private StaFi page saved.',true)}catch(e){accountStatus(e.message)}};
 $('#verify-stafi').onclick=()=>verifyStaFi().catch(e=>accountStatus(e.message==='invalid_stafi_url'?'Use the private thebbbbug.com/UTILS/YourStamps.php?Ref=… link supplied by the StaFi HUD.':e.message));
 $('#club-select').onchange=async e=>{PassportCloud.setActiveClub(e.target.value);await loadClubTools(e.target.value)};
-$('#create-club').onclick=()=>createClub().catch(e=>accountStatus(e.message));
-$('#join-club').onclick=()=>joinClub().catch(e=>accountStatus(e.message==='join_code_not_found'?'That invite code was not found.':e.message==='join_rate_limited'?'Too many invite attempts. Wait about 10 minutes, then try again.':e.message));
-$('#new-invite').onclick=async()=>{try{const out=await PassportCloud.call('rotate_invite',{club_id:PassportCloud.activeClub()});showInvite(out.join_code);accountStatus('New invite ready. Older invite links no longer work.',true)}catch(e){accountStatus(e.message)}};
-$('#add-guest').onclick=()=>addGuest().catch(e=>accountStatus(e.message));
-$('#club-treasure').onclick=async()=>{try{const enabled=!activeClubData.club.treasure_enabled;await PassportCloud.call('update_club',{club_id:PassportCloud.activeClub(),treasure_enabled:enabled});await loadClubTools(PassportCloud.activeClub());accountStatus('Adventure Treasure is '+(enabled?'ON':'OFF')+' for this club.',true)}catch(e){accountStatus(e.message)}};
-$('#leave-club').onclick=()=>leaveClub().catch(e=>accountStatus(e.message==='owner_cannot_leave'?'The owner must transfer or remove the club before leaving.':e.message));
+$('#create-club').onclick=()=>createClub().catch(e=>clubStatus(e.message));
+$('#join-club').onclick=()=>joinClub().catch(e=>clubStatus(e.message==='join_code_not_found'?'That invite code was not found.':e.message==='join_rate_limited'?'Too many invite attempts. Wait about 10 minutes, then try again.':e.message));
+$('#new-invite').onclick=async()=>{try{const out=await PassportCloud.call('rotate_invite',{club_id:PassportCloud.activeClub()});showInvite(out.join_code);clubStatus('New invite ready. Older invite links no longer work.',true)}catch(e){accountStatus(e.message)}};
+$('#add-guest').onclick=()=>addGuest().catch(e=>clubStatus(e.message));
+$('#club-treasure').onclick=async()=>{try{const enabled=!activeClubData.club.treasure_enabled;await PassportCloud.call('update_club',{club_id:PassportCloud.activeClub(),treasure_enabled:enabled});await loadClubTools(PassportCloud.activeClub());clubStatus('Adventure Treasure is '+(enabled?'ON':'OFF')+' for this club.',true)}catch(e){accountStatus(e.message)}};
+$('#leave-club').onclick=()=>leaveClub().catch(e=>clubStatus(e.message==='owner_cannot_leave'?'The owner must transfer or remove the club before leaving.':e.message));
 window.addEventListener('passport-auth-ready',()=>loadAccount().catch(e=>accountStatus('Account service: '+e.message)));
 PassportCloud.ready().then(()=>loadAccount()).catch(e=>accountStatus('Account service: '+e.message));
 </script>
