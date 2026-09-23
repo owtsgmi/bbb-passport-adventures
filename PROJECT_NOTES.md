@@ -11,12 +11,13 @@ This file is the persistent source of truth for future edits to this project.
 - Do not parallel-write the same file path.
 
 ## Current game rules
-- Adventures are exactly **3 passport stops** each.
-- Stable adventure dataset: **381 stamps = 127 adventures**. The live BBB/StaFi passport total can be higher and changes independently.
+- Adventure IDs are a stable set of **127 immutable adventure identities** built from the original 381-stop campaign snapshot. They start as 3-stop adventures, but a retirement can reduce an uncompleted adventure to 2 or 1 active stop; do not reshuffle or substitute stops.
+- Completed run snapshots stay unchanged. Active runs may only be shortened when known retirement dates pass. If all stops retire, the active run is archived and the adventure is unavailable for new play.
+- The live BBB/StaFi passport total can be higher than the original campaign snapshot and changes independently.
 - Clubs have an explicit `game_mode`:
-  - **Solo**: exactly 1 active player; no Treasure; that player reaching 3/3 completes the adventure.
-  - **Babygirl**: exactly 2 active players; one **Daddy Warbucks** and one **Babygirl**; **both passports must have all 3 stamps** before the adventure completes and its 20–100 L$ reward is earned.
-  - **Group**: 2+ active players; no Treasure; the first participant to reach 3/3 completes the adventure.
+  - **Solo**: exactly 1 active player; no Treasure; that player completing every active stop finishes the adventure.
+  - **Babygirl**: exactly 2 active players; one **Daddy Warbucks** and one **Babygirl**; **both passports must complete every active stop** before the adventure completes and its 20–100 L$ reward is earned.
+  - **Group**: 2+ active players; no Treasure; the first participant to complete every active stop finishes the adventure.
 - Club mode is chosen **once at creation and is immutable**. Settings shows four creation tiles: Solo, Babygirl, Group, and disabled **Shotgun — coming later**.
 - **Shotgun** is the future fourth race mode and is not implemented yet.
 - Starting an adventure snapshots all active players.
@@ -26,7 +27,7 @@ This file is the persistent source of truth for future edits to this project.
 - Two configurable player tabs use the players' **actual Second Life usernames** as their labels.
 - Player-facing header should stay intentionally simple:
   - title: **Bellisseria Passport Adventures**;
-  - short subtitle: **Pick a 3-stop adventure, collect BBB stamps, and explore Second Life.**
+  - short subtitle should not promise every adventure always has 3 active stops; retirements can shorten old adventures.
   - keep the top header free of action buttons;
   - **Settings** lives in the hamburger menu, not beside the passport counter;
   - keep a prominent top-right passport completion counter for the selected player. When StaFi is connected, use the live StaFi summary, e.g. **1 / 390**, with the remaining stamp count below it. This is the primary game goal and should remain visually prominent;
@@ -186,14 +187,14 @@ This file is the persistent source of truth for future edits to this project.
 - Clicking a stop row or its **🎯 Focus** button focuses the shared map on that stop at region-detail zoom.
 - Selecting a stop must reset previous map manipulation (pan/zoom) before focusing the new stop.
 - The automatic **NEXT** indicator is separate from the user's selected map stop. The selected map row gets its own visual highlight / FOCUS tag.
-- The current-adventure overview map initially shows all 3 stops; **Fit** restores the adventure overview and **World** shows broad SL context.
+- The current-adventure overview map shows the run's snapshotted active stops; **Fit** restores the adventure overview and **World** shows broad SL context.
 - Do not make stops in non-current collapsed adventures control the current-adventure map.
 
 
 ## NEXT indicator semantics
-- **NEXT** means the first stop not yet recorded complete for the **currently viewed player**.
-- It advances from that player's stamp state, not from map selection.
-- The intended behavior is: BBB passport accepts a stamp → StaFi sync imports it → that player's progress updates → NEXT advances. Reaching 3/3 completes the adventure immediately.
+- **NEXT** means the first required stop not yet recorded complete for the **currently viewed player** (or the first stop either partner still needs in Babygirl mode).
+- It advances from the run's current required-stop snapshot, not from map selection.
+- The intended behavior is: BBB passport accepts a stamp → StaFi sync imports it → progress updates → NEXT advances. Completion means all currently required stops, which may be 1, 2, or 3 after retirements.
 - StaFi fetching, summary parsing, scheduled refresh, and current-adventure matching are now connected and server-tested. The remaining field test is to collect one of the three current-adventure stamps in Second Life and confirm it is imported automatically and advances NEXT. Until that live stamp test is completed, describe the integration as connected but awaiting final in-world validation.
 
 
