@@ -294,6 +294,11 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
   qs('#status').addEventListener('change',leaveNearbyMode);
   document.addEventListener('click',function(e){var n=document.getElementById('nav');if(n&&!n.contains(e.target))n.classList.remove('open')});
   renderList();syncLiveBBB();
-  var m=location.hash.match(/stop-(\d+)/);if(m)showStop(Number(m[1]));
+  var m=location.hash.match(/stop-(\d+)/);
+  if(m)showStop(Number(m[1]));
+  else{
+    var first=filtered().sort(function(a,b){return a.name.localeCompare(b.name)})[0];
+    if(first)showStop(first.id);
+  }
 })();
 </script></body></html>
