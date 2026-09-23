@@ -70,6 +70,26 @@ main{max-width:980px;margin:auto;padding:26px 4vw 60px}.card{background:#151020;
 <div id="admin-message" class="notice">Loading admin status…</div>
 </section>
 
+<section class="card">
+<h2>📡 StaFi diagnostics</h2>
+<p class="small">StaFi stamp sync is separate from browser notifications. This checks the signed-in Passport Adventures account and its private BBB StaFi connection.</p>
+<div class="statusbox">
+  <div><b>Account:</b> <span id="stafi-admin-account">Checking…</span></div>
+  <div class="small" style="margin-top:7px"><b>Private StaFi URL:</b> <span id="stafi-admin-url">Checking…</span></div>
+  <div class="small"><b>Sync enabled:</b> <span id="stafi-admin-enabled">—</span></div>
+  <div class="small"><b>Verified:</b> <span id="stafi-admin-verified">—</span></div>
+  <div class="small"><b>Last attempt:</b> <span id="stafi-admin-attempt">—</span></div>
+  <div class="small"><b>Last success:</b> <span id="stafi-admin-success">—</span></div>
+  <div class="small"><b>Stamps found:</b> <span id="stafi-admin-count">—</span></div>
+  <div class="small" style="margin-top:7px"><b>Status:</b> <span id="stafi-admin-status">Checking…</span></div>
+</div>
+<div class="actions" style="margin-top:12px">
+  <button class="primary" id="stafi-admin-test">Test &amp; enable StaFi</button>
+  <a class="btn" href="settings.html">Open StaFi settings</a>
+</div>
+<div class="notice" id="stafi-admin-message"></div>
+</section>
+
 <section class="card" id="pay-setup" style="display:none">
 <h3>Optional Pay-link setup</h3>
 <p class="small">Linden Lab's Name-to-Agent-ID API can resolve the saved benefactor username to the avatar UUID needed for a viewer Pay link. The API key is used for this lookup only and is not stored.</p>
@@ -188,6 +208,53 @@ function good(icon,detail,text){
 }
 function needs(icon,detail,text){
  icon.textContent='○';icon.className='checkicon warn';if(detail)detail.textContent=text||'Needs setup';
+}
+function adminWhen(value){return value?new Date(value).toLocaleString():'Never'}
+function adminStafiError(code){
+ const map={
+   invalid_stafi_url:'Invalid BBB YourStamps URL',
+   stafi_redirect_failed:'Unexpected StaFi redirect',
+   stafi_redirect_blocked:'StaFi redirect was blocked',
+   stafi_page_too_large:'StaFi page response was too large',
+   stafi_too_many_redirects:'Too many StaFi redirects',
+   linked_player_required:'Account is not linked to an active player in the selected club',
+   stafi_unavailable:'StaFi page could not be reached'
+ };
+ if(/^stafi_http_\d{3}$/.test(code||''))return 'StaFi returned HTTP '+String(code).split('_').pop();
+ return map[code]||code||'Unknown StaFi error';
+}
+async function refreshStaFiAdmin(){
+ const session=window.PassportCloud&&PassportCloud.session();
+ const btn=$('#stafi-admin-test');
+ if(!session?.user){
+   $('#stafi-admin-account').textContent='Not signed in';
+   $('#stafi-admin-url').textContent='—';$('#stafi-admin-enabled').textContent='—';$('#stafi-admin-verified').textContent='—';$('#stafi-admin-attempt').textContent='—';$('#stafi-admin-success').textContent='—';$('#stafi-admin-count').textContent='—';
+   $('#stafi-admin-status').textContent='Sign in from Settings first.';btn.disabled=true;return;
+ }
+ const data=await PassportCloud.call('list'),ss=data.private_settings||{},active=PassportCloud.activeClub();
+ $('#stafi-admin-account').textContent=data.profile?.sl_username||session.user.sl_username||'Signed in';
+ $('#stafi-admin-url').textContent=ss.stafi_url?'Saved privately':'Not saved';
+ $('#stafi-admin-enabled').textContent=ss.stafi_sync_enabled?'Yes':'No';
+ $('#stafi-admin-verified').textContent=adminWhen(ss.stafi_verified_at);
+ $('#stafi-admin-attempt').textContent=adminWhen(ss.stafi_last_sync_at);
+ $('#stafi-admin-success').textContent=adminWhen(ss.stafi_last_success_at);
+ $('#stafi-admin-count').textContent=ss.stafi_last_stamp_count==null?'—':String(ss.stafi_last_stamp_count);
+ if(!ss.stafi_url)$('#stafi-admin-status').textContent='Not connected — manual stamp tracking only.';
+ else if(ss.stafi_last_error)$('#stafi-admin-status').textContent='⚠ '+adminStafiError(ss.stafi_last_error);
+ else if(ss.stafi_sync_enabled&&ss.stafi_last_success_at)$('#stafi-admin-status').textContent='✓ Connected and syncing.';
+ else $('#stafi-admin-status').textContent='URL is saved but has not been tested/enabled yet.';
+ btn.disabled=!ss.stafi_url||!active;
+ $('#stafi-admin-message').textContent=!active&&ss.stafi_url?'Choose an active club in Settings before testing StaFi.':'';
+}
+async function testStaFiAdmin(){
+ const active=PassportCloud.activeClub();if(!active)return $('#stafi-admin-message').textContent='Choose an active club in Settings first.';
+ const btn=$('#stafi-admin-test');btn.disabled=true;btn.textContent='Testing…';
+ try{
+   const out=await PassportCloud.call('verify_stafi',{club_id:active});
+   $('#stafi-admin-message').textContent=out.verified?'✓ StaFi verified and automatic sync enabled.':'StaFi test failed: '+adminStafiError(out.error);
+   await refreshStaFiAdmin();
+ }catch(e){$('#stafi-admin-message').textContent='StaFi test failed: '+adminStafiError(e.message)}
+ finally{btn.textContent='Test & enable StaFi';btn.disabled=false}
 }
 async function refresh(){
  const s=await call('status');
@@ -383,7 +450,10 @@ $('#local-test').onclick=()=>localTest().catch(e=>say('Local test failed: '+e.me
 $('#show-pay-setup').onclick=()=>{$('#pay-setup').style.display='block';$('#ll-api-key').focus()};
 $('#resolve-recipient').onclick=()=>resolveRecipient().catch(e=>say('Benefactor lookup failed: '+e.message));
 $('#mark-paid').onclick=()=>markPaid().catch(e=>say(e.message==='threshold_not_met'?'The balance is below 1,000 L$.':'Could not record payment: '+e.message));
+$('#stafi-admin-test').onclick=()=>testStaFiAdmin();
 refresh().catch(e=>say('Admin status could not load: '+e.message));
+PassportCloud.ready().then(()=>refreshStaFiAdmin()).catch(e=>{$('#stafi-admin-status').textContent='StaFi diagnostics unavailable: '+e.message});
+window.addEventListener('passport-auth-ready',()=>refreshStaFiAdmin().catch(()=>{}));
 </script>
 <script src="club-admin.js?v=2"></script>
 </body>
