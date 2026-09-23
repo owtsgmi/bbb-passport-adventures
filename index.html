@@ -509,7 +509,7 @@ function init(){
 }
 init();
 </script>
-<script src="club-mode.js?v=5"></script>
+<script src="club-mode.js?v=6"></script>
 
 <script>
 /* Shared Supabase sync: publishable key is intentionally safe for browser use.
@@ -686,6 +686,7 @@ function adoptClub(data){
 }
 async function pollClub(force){
  if(cloudBusy&&!force)return;
+ touchClubActivity(false).catch(()=>{});
  try{let data=await PassportCloud.call('load',{club_id:PassportCloud.activeClub()}),fingerprint=clubFingerprint(data);if(force||fingerprint!==lastCloudUpdate)adoptClub(data);if(await maybeAutoStaFiSync(false)){data=await PassportCloud.call('load',{club_id:PassportCloud.activeClub()});adoptClub(data)}}catch(e){syncStatus('Reconnecting to club…',false)}
 }
 async function startCloudMode(){
@@ -693,6 +694,7 @@ async function startCloudMode(){
  if(PassportCloud.session()&&PassportCloud.session().user&&active){
    try{
      syncStatus('Loading club…');adoptClub(await PassportCloud.call('load',{club_id:active}));
+     await touchClubActivity(true);
      if(await maybeAutoStaFiSync(true))adoptClub(await PassportCloud.call('load',{club_id:active}));
      return;
    }catch(e){PassportCloud.setActiveClub('')}
@@ -701,7 +703,10 @@ async function startCloudMode(){
 }
 
 document.addEventListener('visibilitychange',()=>{
- if(!document.hidden&&clubMode)maybeAutoStaFiSync(true).then(changed=>changed&&pollClub(true)).catch(()=>{});
+ if(!document.hidden&&clubMode){
+   touchClubActivity(true).catch(()=>{});
+   maybeAutoStaFiSync(true).then(changed=>changed&&pollClub(true)).catch(()=>{});
+ }
 });
 startCloudMode();
 loadAdventureStopImages();
