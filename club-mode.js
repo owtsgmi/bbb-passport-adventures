@@ -106,7 +106,7 @@ requestCollectRewards=async function(btn){
  if(!clubMode)return legacyRequestCollectRewards(btn);const beneficiary=beneficiaryPlayer();if(currentView!==(beneficiary&&beneficiary.id))return;
  if(unpaidLinden()<1000){toast('Keep adventuring — Collect Rewards unlocks at 1,000 L$.');return}
  const old=btn&&btn.textContent||'Get Your Bonus';if(btn){btn.disabled=true;btn.textContent='Sending…'}
- try{const out=await PassportCloud.call('request_collect',{club_id:clubData.club.id,player_id:beneficiary.id});toast(out.already_requested?'Your 1,000 L$ bonus request is already waiting for the club payer.':'🎉 Nice! Your club payer can see the 1,000 L$ payment in Settings.')}catch(e){toast(e.message==='threshold_not_met'?'Keep adventuring — you need 1,000 L$ to collect.':'Could not send collection request.')}finally{if(btn){btn.disabled=false;btn.textContent=old}}
+ try{const out=await PassportCloud.call('request_collect',{club_id:clubData.club.id,player_id:beneficiary.id});toast(out.already_requested?'Your 1,000 L$ bonus request is already waiting for the Daddy Warbucks.':'🎉 Nice! Your Daddy Warbucks can see the 1,000 L$ payment in Settings.')}catch(e){toast(e.message==='threshold_not_met'?'Keep adventuring — you need 1,000 L$ to collect.':'Could not send collection request.')}finally{if(btn){btn.disabled=false;btn.textContent=old}}
 };
 const legacyRender=render;
 render=function(){
