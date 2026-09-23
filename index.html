@@ -499,7 +499,7 @@ function render(){
  const linked=(partnerStaFiUrl?1:0)+(meStaFiUrl?1:0);
  const st=document.getElementById('bbb-link-status');
  if(st)st.textContent='• BBB StaFi links: '+linked+'/2'+(familyKey?' · 🔐 saved':' · 🔒 not saved')+' · stamp import pending';
- const treasureEl=$('#treasure-mini');if(treasureEl)treasureEl.innerHTML=adventureTreasureEnabled?rewardHtml():'';$('#pending-count').textContent='('+pending.length+')';$('#completed-count').textContent='('+completed.length+')';
+ const treasureEl=$('#treasure-mini');if(treasureEl)treasureEl.innerHTML=adventureTreasureEnabled?rewardHtml():'';$('#pending-count').textContent=pending.length+' adventure'+(pending.length===1?'':'s');$('#completed-count').textContent='('+completed.length+')';
 }
 function init(){
  [...new Set(adventures.map(a=>a.zone))].sort().forEach(z=>$('#zone').insertAdjacentHTML('beforeend',`<option>${esc(z)}</option>`));
