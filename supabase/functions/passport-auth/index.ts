@@ -24,7 +24,6 @@ async function db(path:string,init:RequestInit={}){
 }
 async function rpc(name:string,body:unknown){return await db("rpc/"+name,{method:"POST",body:JSON.stringify(body)})}
 function bearer(req:Request){const value=req.headers.get("Authorization")||"";return value.startsWith("Bearer pa_")?value.slice(7):""}
-function adminBearer(req:Request){const value=req.headers.get("Authorization")||"";return value.startsWith("Bearer adm_")?value.slice(7):""}
 function clientIp(req:Request){return (req.headers.get("x-forwarded-for")||req.headers.get("cf-connecting-ip")||"unknown").split(",")[0].trim().slice(0,80)}
 
 async function rateKey(req:Request,action:string,username:string){return await sha256(SERVICE+"|"+clientIp(req)+"|"+action+"|"+username)}
@@ -51,24 +50,6 @@ async function sessionUser(req:Request){
   const users=await db("passport_users?id=eq."+session.user_id+"&disabled_at=is.null&select=id,sl_username,display_name");const user=users?.[0];if(!user)return null;
   await db("passport_sessions?token_hash=eq."+hash,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({last_seen_at:new Date().toISOString()})});
   return {hash,expires_at:session.expires_at,user};
-}
-async function isAppAdmin(userId:string){
-  const rows=await db("app_admins?user_id=eq."+userId+"&select=user_id");
-  return !!rows?.[0];
-}
-async function issueAdminSession(user:any,req:Request){
-  const token=randomToken("adm_"),tokenHash=await sha256(token),expires=new Date(Date.now()+2*60*60*1000).toISOString();
-  await db("app_admin_sessions",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({
-    token_hash:tokenHash,user_id:user.id,expires_at:expires,user_agent:clean(req.headers.get("user-agent"),300)||null
-  })});
-  return {admin_token:token,expires_at:expires};
-}
-async function adminSession(req:Request){
-  const token=adminBearer(req);if(!token)return null;const hash=await sha256(token);
-  const rows=await db("app_admin_sessions?token_hash=eq."+hash+"&expires_at=gt."+encodeURIComponent(new Date().toISOString())+"&select=user_id,expires_at");
-  const row=rows?.[0];if(!row||!await isAppAdmin(row.user_id))return null;
-  await db("app_admin_sessions?token_hash=eq."+hash,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({last_seen_at:new Date().toISOString()})});
-  return {hash,user_id:row.user_id,expires_at:row.expires_at};
 }
 
 Deno.serve(async req=>{
@@ -98,23 +79,6 @@ Deno.serve(async req=>{
     }
     if(action==="logout"){
       const token=bearer(req);if(token)await db("passport_sessions?token_hash=eq."+await sha256(token),{method:"DELETE",headers:{Prefer:"return=minimal"}});return reply({ok:true});
-    }
-    if(action==="admin_login"){
-      const session=await sessionUser(req);if(!session)return reply({ok:false,error:"sign_in_required"},401);
-      if(!await isAppAdmin(session.user.id))return reply({ok:false,error:"admin_forbidden"},403);
-      const password=String(body.password||"");if(password.length<8||password.length>128)return reply({ok:false,error:"invalid_admin_password"},401);
-      const limit=await rateCheck(req,"login","admin."+session.user.sl_username);
-      const rows=await rpc("passport_verify_password",{p_sl_username:session.user.sl_username,p_password:password});
-      if(!rows?.[0]){await rateFail("login",limit);return reply({ok:false,error:"invalid_admin_password"},401)}
-      await rateClear("login",limit.key);
-      return reply({ok:true,...await issueAdminSession(session.user,req)});
-    }
-    if(action==="admin_session"){
-      const session=await adminSession(req);return session?reply({ok:true,expires_at:session.expires_at}):reply({ok:false,error:"admin_required"},401);
-    }
-    if(action==="admin_logout"){
-      const token=adminBearer(req);if(token)await db("app_admin_sessions?token_hash=eq."+await sha256(token),{method:"DELETE",headers:{Prefer:"return=minimal"}});
-      return reply({ok:true});
     }
     return reply({ok:false,error:"unknown_action"},400);
   }catch(e){return reply({ok:false,error:String(e).includes("too_many_attempts")?"too_many_attempts":"server_error"},String(e).includes("too_many_attempts")?429:500)}
