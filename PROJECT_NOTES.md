@@ -236,11 +236,13 @@ This file is the persistent source of truth for future edits to this project.
 ## Player reward experience + Settings payout workflow
 - The optional reward feature is named **Adventure Treasure** and remains scoped per club.
 - Adventure Treasure defaults **OFF** for newly created clubs.
-- **Any active club member may turn Treasure ON/OFF from Settings.**
-- Payer and Paid to are always different players. The first/owner player defaults to **Payer**. Once a second active player exists, owner/admin accounts may change the **Payer** and **Paid to** dropdowns in Settings.
+- Any active club member may turn Treasure **ON** from Settings. The member who turns it on becomes the **locked Payer** for that Treasure session.
+- While Treasure is ON, only that locked payer may turn it OFF, change **Paid to**, or record **Mark 1,000 L$ paid**. Another player cannot take over until the current payer turns Treasure OFF.
+- Turning Treasure OFF releases both Treasure role flags. The next member who turns it ON becomes the new payer. If the payer leaves or is removed from the club, Treasure automatically turns OFF so the club cannot become permanently stuck.
+- Payer and Paid to are always different players. The payer is shown as a locked value, not a dropdown; if another active player exists, that payer may choose the **Paid to** player from the remaining players.
 - When Treasure is ON, Settings shows the current unpaid balance and progress toward the next 1,000 L$ payment.
 - No automatic L$ transfer occurs. The configured payer sends L$ manually in Second Life.
-- When at least **1,000 L$** is ready, **Mark 1,000 L$ paid** appears in Settings for the configured payer and club owner/admin accounts. It records exactly one 1,000 L$ payment after the real payment has been sent.
+- When at least **1,000 L$** is ready, **Mark 1,000 L$ paid** appears only for the locked payer. It records exactly one 1,000 L$ payment after the real payment has been sent.
 - The player-facing Adventures page may show the friendly Treasure experience, but payment bookkeeping stays in Settings.
 - The standalone Admin page is retired. `admin.html` redirects to `settings.html`.
 - Browser-push, Pay-link, test-money, and Second Life IM/bot setup are not part of the current Treasure workflow. Legacy backend/code may remain dormant but must not be required for normal use.
@@ -255,7 +257,7 @@ This file is the persistent source of truth for future edits to this project.
 2. **Re-check Adventure Treasure manually**
    - OFF: Treasure details are hidden;
    - ON: Settings shows payer, Paid to, balance, and manual **Mark 1,000 L$ paid** when due;
-   - any club member may toggle Treasure, while role changes remain owner/admin controlled;
+   - any club member may claim Treasure while it is OFF; the first enabler is locked as payer until they turn it OFF;
    - no separate Admin page or Second Life bot/IM setup is required.
 3. **Re-check player experience with the feature switch**
    - OFF: no L$ treasure panel or Mystery L$ labels;
@@ -300,7 +302,7 @@ This file is the persistent source of truth for future edits to this project.
 - In club mode, the Adventures header keeps the existing visual hierarchy and dynamically renders one compact tab per player. Completion requires every snapshotted participant to have all three stamps. Members may mark their own stamps when manual tracking is needed.
 - Pre-cutover board/account rows remain stored as an archive, but they are not reachable from normal navigation and have no claim/migration UI. New play starts with a fresh SL-username account and club.
 - Adventure Treasure is configured per club and defaults OFF for newly created clubs. Reward/payout logs stay club-scoped.
-- Treasure payer and recipient must always be different players. The first/owner player defaults to **Payer**; once another active player exists, Settings exposes owner/admin **Payer** and **Paid to** dropdowns. Any club member may turn Treasure ON/OFF. The payer or an owner/admin manually pays in Second Life and uses **Mark 1,000 L$ paid** in Settings to record exactly one 1,000 L$ payment. No automatic L$ debit exists.
+- Treasure payer and recipient must always be different players. Treasure roles are unclaimed while OFF. The first active member who turns Treasure ON becomes the locked **Payer**; only that payer may turn it OFF, choose **Paid to**, and record **Mark 1,000 L$ paid**. Another player can take over only after the current payer turns Treasure OFF. No automatic L$ debit exists.
 - `admin.html` is retired and redirects to Settings. StaFi testing and Treasure/payment controls live in Settings.
 - Settings must make unverified StaFi obvious: saved-but-unverified URLs show **StaFi needs test** and a visible amber status box; successful sync shows **StaFi connected** with last success/stamp count; errors show a visible failure state. The primary action is **Test & enable StaFi**.
 - Per-user StaFi validation and conservative active-adventure importing are live in `club-api`. Players save their private StaFi URL, use **Test & enable StaFi sync**, and the Adventures page checks periodically. Only confidently identified stamps from the active adventure are imported; manual **Mark stamp** remains available. Do not claim a particular player's sync works until that player's real URL passes validation.
