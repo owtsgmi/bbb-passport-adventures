@@ -32,7 +32,7 @@ function stafiUrl(value:unknown){
   }catch{return ""}
 }
 function stampRefs(value:unknown,ids:number[]){
-  if(!Array.isArray(value)||value.length!==3)return [];
+  if(!Array.isArray(value)||ids.length<1||ids.length>3||value.length!==ids.length)return [];
   const allowed=new Set(ids),seen=new Set<number>(),out:any[]=[];
   for(const item of value){
     const id=Number(item?.id),name=cleanText(item?.name,180),region=cleanText(item?.region,128),x=Number(item?.x),y=Number(item?.y),z=Number(item?.z);
@@ -131,7 +131,7 @@ async function clubBalance(clubId:string,beneficiaryId=""){
 async function finalizeRun(clubId:string,adventureId:number){
   const run=(await db("club_adventure_runs?club_id=eq."+clubId+"&adventure_id=eq."+adventureId+"&select=id,status,stamp_ids"))?.[0];
   if(!run||run.status!=="active")return null;
-  const stampIds=ints(run.stamp_ids);if(stampIds.length!==3)return null;
+  const stampIds=ints(run.stamp_ids);if(stampIds.length<1||stampIds.length>3)return null;
   const participants=await db("club_run_participants?run_id=eq."+run.id+"&select=player_id");
   const playerIds=participants.map((p:any)=>p.player_id);if(!playerIds.length)return null;
   const progress=await db("club_stamp_progress?club_id=eq."+clubId+"&player_id=in.("+playerIds.join(",")+")&stamp_id=in.("+stampIds.join(",")+")&select=player_id,stamp_id");
@@ -449,9 +449,9 @@ Deno.serve(async(req:Request)=>{
     }
     if(action==="start_adventure"){
       const adventureId=Number(body.adventure_id);if(!Number.isSafeInteger(adventureId)||adventureId<1||adventureId>127)return reply({ok:false,error:"bad_adventure"},400);
-      const stampIds=ints(body.stamp_ids);if(stampIds.length!==3)return reply({ok:false,error:"three_stamps_required"},400);
+      const stampIds=ints(body.stamp_ids);if(stampIds.length<1||stampIds.length>3)return reply({ok:false,error:"one_to_three_stamps_required"},400);
       await db("club_adventure_runs?club_id=eq."+clubId+"&status=eq.active&adventure_id=neq."+adventureId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"retired",locked:false})});
-      const refs=stampRefs(body.stamps,stampIds);if(refs.length!==3)return reply({ok:false,error:"invalid_stamp_references"},400);
+      const refs=stampRefs(body.stamps,stampIds);if(refs.length!==stampIds.length)return reply({ok:false,error:"invalid_stamp_references"},400);
       const run=(await db("club_adventure_runs?on_conflict=club_id,adventure_id",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify({club_id:clubId,adventure_id:adventureId,status:"active",locked:true,started_by:user.id,completed_at:null,stamp_ids:stampIds,stamp_refs:refs})}))?.[0];
       const active=await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&select=id");
       const playerIds:string[]=active.map((p:any)=>p.id);if(!playerIds.length)return reply({ok:false,error:"participant_required"},400);
@@ -464,6 +464,16 @@ Deno.serve(async(req:Request)=>{
       const board=(await db("club_board_state?club_id=eq."+clubId+"&select=started"))?.[0]||{};
       await db("club_board_state?club_id=eq."+clubId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({started:[...new Set([...(board.started||[]),adventureId])],current_adventure:adventureId,adventure_locked:true,updated_by:user.id,last_active_at:new Date().toISOString()})});
       return reply({ok:true,run_id:run.id,participants:playerIds.length,finalized:await finalizeRun(clubId,adventureId)});
+    }
+    if(action==="trim_adventure_stamps"){
+      const adventureId=Number(body.adventure_id);if(!Number.isSafeInteger(adventureId)||adventureId<1||adventureId>127)return reply({ok:false,error:"bad_adventure"},400);
+      const run=(await db("club_adventure_runs?club_id=eq."+clubId+"&adventure_id=eq."+adventureId+"&status=eq.active&select=id,stamp_ids"))?.[0];
+      if(!run)return reply({ok:false,error:"active_run_required"},409);
+      const oldIds=ints(run.stamp_ids),stampIds=ints(body.stamp_ids);
+      if(stampIds.length<1||stampIds.length>3||stampIds.length>=oldIds.length||stampIds.some((id:number)=>!oldIds.includes(id)))return reply({ok:false,error:"invalid_retirement_trim"},400);
+      const refs=stampRefs(body.stamps,stampIds);if(refs.length!==stampIds.length)return reply({ok:false,error:"invalid_stamp_references"},400);
+      await db("club_adventure_runs?id=eq."+run.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({stamp_ids:stampIds,stamp_refs:refs})});
+      return reply({ok:true,stamp_ids:stampIds,finalized:await finalizeRun(clubId,adventureId)});
     }
     if(action==="set_stamp"){
       const playerId=uuid(body.player_id),stampId=Number(body.stamp_id);if(!playerId||!Number.isSafeInteger(stampId)||stampId<1)return reply({ok:false,error:"bad_stamp"},400);
