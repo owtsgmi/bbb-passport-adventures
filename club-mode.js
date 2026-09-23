@@ -19,7 +19,8 @@ function renderParticipantPicker(){
  const host=document.getElementById('club-participant-picker');if(!host)return;
  if(!clubMode){host.innerHTML='';host.classList.remove('show');return}
  const active=activePlayers();if(!clubParticipantSelection.size)active.forEach(function(p){clubParticipantSelection.add(p.id)});
- host.classList.add('show');host.innerHTML='<div class="participantlabel">Playing this adventure</div><div class="participantchoices">'+active.map(function(p){return '<label><input type="checkbox" '+(clubParticipantSelection.has(p.id)?'checked ':'')+'onchange="setClubParticipant(&quot;'+p.id+'&quot;,this.checked)"> '+esc(p.display_name)+'</label>'}).join('')+'</div><div class="tiny">Choose the people joining the next adventure. Everyone selected must collect all 3 stamps.</div>';
+ if(active.length<=1){host.innerHTML='';host.classList.remove('show');return}
+ host.classList.add('show');host.innerHTML='<div class="participantlabel">Who is playing?</div><div class="participantchoices">'+active.map(function(p){return '<label><input type="checkbox" '+(clubParticipantSelection.has(p.id)?'checked ':'')+'onchange="setClubParticipant(&quot;'+p.id+'&quot;,this.checked)"> '+esc(p.display_name)+'</label>'}).join('')+'</div><div class="tiny">Everyone selected must collect all 3 stamps.</div>';
 }
 const legacyStartAdventure=startAdventure;
 startAdventure=function(id){
