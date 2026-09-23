@@ -13,11 +13,10 @@ This file is the persistent source of truth for future edits to this project.
 ## Current game rules
 - Adventures are exactly **3 passport stops** each.
 - Stable adventure dataset: **381 stamps = 127 adventures**. The live BBB/StaFi passport total can be higher and changes independently.
-- A run only counts when **both players have all 3 stamps**.
-- One player completing the three stamps alone is only "waiting on the other" and earns no payout yet.
-- Each jointly completed 3-stop adventure reveals one **random 20–100 L$ mystery reward**.
+- A run completes when **any snapshotted participant gets all 3 stamps**. Solo clubs work normally, and multi-player clubs do not require everyone to finish.
+- Each completed 3-stop adventure can reveal one **random 20–100 L$ mystery reward** when Adventure Treasure is enabled.
 - The reward recipient is the **second/player-two SL username** (👽 tab), while the **first/player-one SL username** (🗡️ tab) is the sponsor/payer.
-- The L$ amount stays hidden until both players complete all 3 stops. A completed adventure gets one persisted random reward in `bbb_board_state.adventure_rewards`; reopening or switching devices must not reroll it.
+- The L$ amount stays hidden until the first participating player reaches 3/3. A completed adventure gets one persisted random reward; reopening or switching devices must not reroll it.
 - Reward ownership does not change when switching tabs.
 - Both tabs show passport progress. Reward ownership stays with the second SL username; revealed prizes accumulate toward the next fixed 1,000 L$ payout.
 
@@ -169,9 +168,9 @@ This file is the persistent source of truth for future edits to this project.
 
 ## Mystery L$ reward model
 - There is **no secondary points/currency system**. Unicorn Bucks have been removed from the app because they added an unnecessary extra layer.
-- Each jointly completed adventure reveals one random Linden reward from **20 through 100 L$ inclusive**.
-- Never show the specific L$ amount before both passports complete the adventure.
-- On first joint completion, generate the value once and persist it in `bbb_board_state.adventure_rewards`, keyed by adventure ID.
+- Each completed adventure reveals one random Linden reward from **20 through 100 L$ inclusive** when Treasure is enabled.
+- Never show the specific L$ amount before any participating passport reaches 3/3.
+- On first qualifying completion, generate the value once and persist it for that run/adventure.
 - Completed-adventure UI may reveal the amount; active/pending runs should say **Mystery L$**.
 - Once revealed, the prize is added directly to the unpaid payout total. There is no cash-out or conversion step.
 - First SL username remains sponsor/payer; second SL username remains reward recipient.
@@ -190,9 +189,9 @@ This file is the persistent source of truth for future edits to this project.
 
 
 ## NEXT indicator semantics
-- **NEXT** means the first stop not yet recorded complete for **both** players.
-- It advances from the shared `meDone` / `partnerDone` stamp state, not from map selection.
-- The intended final behavior is: BBB passport accepts a stamp → StaFi sync imports that accepted stamp → shared progress updates → NEXT advances automatically when both players have that stop.
+- **NEXT** means the first stop not yet recorded complete for the **currently viewed player**.
+- It advances from that player's stamp state, not from map selection.
+- The intended behavior is: BBB passport accepts a stamp → StaFi sync imports it → that player's progress updates → NEXT advances. Reaching 3/3 completes the adventure immediately.
 - StaFi fetching, summary parsing, scheduled refresh, and current-adventure matching are now connected and server-tested. The remaining field test is to collect one of the three current-adventure stamps in Second Life and confirm it is imported automatically and advances NEXT. Until that live stamp test is completed, describe the integration as connected but awaiting final in-world validation.
 
 
@@ -305,8 +304,8 @@ This file is the persistent source of truth for future edits to this project.
 - Tenant tables have RLS enabled with direct browser access revoked. All reads and mutations run through `club-api`, which validates the opaque Passport session and repeats membership/role checks server-side. `club-api` has gateway JWT verification disabled only because it performs this custom authentication itself.
 - A user may create or join multiple independent clubs and switch the active club from Settings. Club join codes are random 128-bit values; only SHA-256 hashes are stored. Rotating an invite invalidates the previous code.
 - Clubs can have any number of active signed-in players. New guest-player creation and player pause/reactivate controls are intentionally **not exposed in Settings**; the normal model is one Second Life username account per player. Legacy guest/inactive rows may remain in stored data for compatibility.
-- When a new adventure starts, **all active club players are snapshotted as participants**, so later roster changes do not rewrite that adventure's completion rules.
-- In club mode, the Adventures header keeps the existing visual hierarchy and dynamically renders one compact tab per player. Completion requires every snapshotted participant to have all three stamps. Members may mark their own stamps when manual tracking is needed.
+- When a new adventure starts, **all active club players are snapshotted as participants**, so later roster changes do not rewrite who was part of that adventure.
+- In club mode, the Adventures header keeps the existing visual hierarchy and dynamically renders one compact tab per player. **Any one snapshotted participant reaching all three stamps completes the adventure.** Members may mark their own stamps when manual tracking is needed.
 - Pre-cutover board/account rows remain stored as an archive, but they are not reachable from normal navigation and have no claim/migration UI. New play starts with a fresh SL-username account and club.
 - Adventure Treasure is configured per club and defaults OFF for newly created clubs. Reward/payout logs stay club-scoped.
 - Treasure payer and recipient must always be different players. Treasure roles are unclaimed while OFF. Settings uses a simple **Treasure checkbox**: the first active member who checks it becomes the locked **Payer**; only that payer may uncheck it, choose **Paid to**, and record **Mark 1,000 L$ as paid**. The payment button stays visible to the payer while Treasure is ON and remains disabled until at least 1,000 L$ is due. Another player can take over only after the current payer unchecks Treasure. No automatic L$ debit exists.
