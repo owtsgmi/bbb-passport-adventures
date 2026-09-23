@@ -233,82 +233,30 @@ This file is the persistent source of truth for future edits to this project.
 - If there is no active incomplete adventure, the lock control is hidden/disabled and choosing an adventure works normally.
 
 
-## Player reward experience + admin payout workflow
-- The **player-facing Adventures page must not show payout-alert setup, notification diagnostics, API-key forms, Pay-link setup, or manual-payment bookkeeping**.
-- The optional reward feature is named **Adventure Treasure** (do not call it benefactor mode).
-- `bbb_board_state.adventure_treasure_enabled` controls whether the player-facing treasure experience is visible. Default is **false/off**.
-- When Adventure Treasure is off, hide the treasure balance, mystery-L$ labels, completed-adventure reward amounts, and the L$ scorecard chip. Existing reward/accounting data is preserved rather than deleted.
-- `payout-push` must pause real threshold notifications while Adventure Treasure is off. Admin test notifications may still be used for setup/diagnostics.
-- Admin toggles Adventure Treasure through authenticated `set_treasure_mode` on the `payout-push` Edge Function.
-- Adventure Treasure should stay visually secondary to passport completion:
-  - render it as a compact row directly under the prominent top-right passport counter;
-  - show the current L$ total in the collapsed summary;
-  - put milestone progress, lifetime prize total, waiting status, and recent prizes behind an on-demand details disclosure;
-  - do not use a full-width reward section in the main page flow.
-- On the second-player/benefactor view, once unpaid Adventure Treasure is at least **1,000 L$**, the expanded Treasure details show **🎉 Get Your 1,000 L$ Bonus** with friendly copy such as **Good job — you earned it!**
-- Do not frame this as the benefactor asking the payer for money. The UI should feel celebratory and automatic. Behind the scenes, the bonus button requests exactly one 1,000 L$ payout; it never transfers L$ itself.
-- `payout-push` action `request_collect` validates Treasure is enabled and the real unpaid balance is at least 1,000 L$, then notifies the payer through configured browser push and queues a real SL IM when the backend bot is available. Payer-facing notification text should say the benefactor **earned/is ready for their 1,000 L$ bonus**, not that they are asking for payment.
-- Duplicate requests at the exact same unpaid balance are deduped using `bbb_push_config.last_collect_request_balance`; after the payer records a payment and the balance changes, the benefactor may request the next 1,000 L$ chunk.
-- Admin shows a visible note when the current balance has an active benefactor Collect Rewards request.
-- The first-player view may show the same treasure pot for context, but should remain non-technical and contain no payout/admin controls.
-- Settings uses neutral player wording:
-  - first SL username;
-  - benefactor SL username;
-  - a generic **Admin** link.
-- Unified admin page: `admin.html`.
-- Admin is intentionally owner-only and low-profile. Settings shows only a small **⚙ gear** on the side; clicking it prompts for the currently signed-in app admin's Passport account password.
-- Admin access is server-gated through `passport-auth`: only rows in `app_admins` can obtain a short-lived (2-hour) `adm_` token, stored only in sessionStorage. Direct navigation to `admin.html` performs the same server validation/password prompt before any admin data is loaded. The static GitHub Pages shell contains no secret credential.
-- The Admin page is deliberately small: **(1) Adventure Treasure for the active club** and **(2) StaFi diagnostics**. The active-club Treasure controls are one card: ON/OFF at the top; payer, Paid to, balance, pending request, and **Mark 1,000 L$ paid** are shown only when Treasure is ON.
-- The old admin setup checklist, Pay-link setup, test-money section, browser-notification troubleshooting UI, and Second Life IM/bot setup are removed from the Admin UI.
-- Legacy `bank.html` and `payout-admin.html` redirect to `admin.html`.
-- Admin page contains the complete setup checklist:
-  1. save both actual SL usernames;
-  2. enable payout alerts on the payer/admin device;
-  3. send one test notification and confirm the desktop/system popup;
-  4. optional one-click Second Life Pay-link setup.
-- Admin page also shows:
-  - an admin-only **Test payout simulation** section with **Add 1,000 L$ test money**, **Clear test money**, and **Send test payout alert**;
-  - test money is stored separately in `bbb_push_config.test_balance` and must never alter `payout_log`, adventure completion, the real benefactor balance, or actual L$;
-  - benefactor username;
-  - current unpaid reward balance;
-  - how many fixed 1,000 L$ payments are ready;
-  - optional Second Life Pay link;
-  - **Mark 1,000 L$ paid** bookkeeping action;
-  - local/server notification diagnostics.
-- Adventure rewards still reveal random **20–100 L$** values and accumulate in the second/player-two benefactor's unpaid balance.
-- Payment threshold and unit remain **1,000 L$**.
-- No automatic L$ transfer is performed by the app.
-- Real payment is made manually in Second Life; after sending it, the admin records exactly one 1,000 L$ payment.
-- `payout-push` Edge Function version 9 includes authenticated `mark_paid`, authenticated `set_treasure_mode`, authenticated `set_test_balance`, backend bot token management, SL IM queue polling/acknowledgement, test-SL-IM queueing, and the server-validated player-facing `request_collect` action. Admin-only actions still use the current device's push subscription control token. It allocates exactly 1,000 L$ across payout-log rows, returns the remaining balance, pauses real threshold notifications while Adventure Treasure is off, and routes payout/test notifications to `admin.html` rather than the player-facing Adventures page.
-- Browser payout alerts use standard Web Push:
-  - service worker: `sw.js`;
-  - Edge Function: `payout-push`;
-  - subscriptions are stored server-side;
-  - the payer/admin device opts in once.
-- The background `bbb-payout-push-check` cron job runs every five minutes, and the Adventures page also calls `check` after successful shared-state writes.
-- Alert delivery is intentionally admin-only. The benefactor does not need to configure or understand notifications.
-- Alerts appear as **desktop/system notifications**, not inside the Passport Adventures browser tab.
-- Admin setup must state clearly that the browser must allow **Notifications** for the site. The optional Firestorm Pay shortcut may also require allowing a **pop-up / external-app launch prompt** when the browser asks.
-- Admin diagnostics order:
-  - **Test local popup** verifies browser/OS display;
-  - **Test server push** verifies the full Supabase/Web Push path.
-- Optional Pay shortcut:
-  - Linden Lab's Name-to-Agent-ID API resolves the saved benefactor username to an avatar UUID;
-  - the Linden API key is accepted transiently for that lookup and is not stored;
-  - once resolved, Admin can open `secondlife:///app/agent/<uuid>/pay`.
-- Old LSL reminder/payment scripts remain harmless obsolete stubs; no current workflow requires LSL.
+## Player reward experience + Settings payout workflow
+- The optional reward feature is named **Adventure Treasure** and remains scoped per club.
+- Adventure Treasure defaults **OFF** for newly created clubs.
+- **Any active club member may turn Treasure ON/OFF from Settings.**
+- Payer and Paid to are always different players. The first/owner player defaults to **Payer**. Once a second active player exists, owner/admin accounts may change the **Payer** and **Paid to** dropdowns in Settings.
+- When Treasure is ON, Settings shows the current unpaid balance and progress toward the next 1,000 L$ payment.
+- No automatic L$ transfer occurs. The configured payer sends L$ manually in Second Life.
+- When at least **1,000 L$** is ready, **Mark 1,000 L$ paid** appears in Settings for the configured payer and club owner/admin accounts. It records exactly one 1,000 L$ payment after the real payment has been sent.
+- The player-facing Adventures page may show the friendly Treasure experience, but payment bookkeeping stays in Settings.
+- The standalone Admin page is retired. `admin.html` redirects to `settings.html`.
+- Browser-push, Pay-link, test-money, and Second Life IM/bot setup are not part of the current Treasure workflow. Legacy backend/code may remain dormant but must not be required for normal use.
 
 
 ## Immediate next work
 1. **Make StaFi automation the next major focus**
-   - verify the real private StaFi URL with **Test & enable StaFi**;
-   - diagnose parsing/verification failures from the new Admin StaFi card;
+   - verify each private StaFi URL with **Test & enable StaFi** in User Account Settings;
    - confirm automatic checks import confidently identified stamps from the active adventure;
-   - confirm imported stamps update club progress and NEXT correctly.
+   - confirm imported stamps update club progress and NEXT correctly;
+   - keep clear connection/error status in Settings so users can self-diagnose without a separate Admin page.
 2. **Re-check Adventure Treasure manually**
    - OFF: Treasure details are hidden;
-   - ON: Admin shows payer, Paid to, balance, pending request, and manual **Mark 1,000 L$ paid**;
-   - no Second Life bot/IM setup is required.
+   - ON: Settings shows payer, Paid to, balance, and manual **Mark 1,000 L$ paid** when due;
+   - any club member may toggle Treasure, while role changes remain owner/admin controlled;
+   - no separate Admin page or Second Life bot/IM setup is required.
 3. **Re-check player experience with the feature switch**
    - OFF: no L$ treasure panel or Mystery L$ labels;
    - ON: Paid to player sees the friendly Adventure Treasure experience;
@@ -352,8 +300,8 @@ This file is the persistent source of truth for future edits to this project.
 - In club mode, the Adventures header keeps the existing visual hierarchy and dynamically renders one compact tab per player. Completion requires every snapshotted participant to have all three stamps. Members may mark their own stamps when manual tracking is needed.
 - Pre-cutover board/account rows remain stored as an archive, but they are not reachable from normal navigation and have no claim/migration UI. New play starts with a fresh SL-username account and club.
 - Adventure Treasure is configured per club and defaults OFF for newly created clubs. Reward/payout logs stay club-scoped.
-- Treasure payer and recipient must always be different players. The first/owner player defaults to **Payer**; once another active player exists, Settings exposes manager-only **Payer** and **Paid to** dropdowns. The **Paid to** tooltip explains that an in-world reminder will be sent to the payer at the payout milestone. A 1,000 L$ bonus creates a `club_collect_requests` record; club owner/admin manually pays in Second Life and uses Admin to mark exactly 1,000 L$ paid. No automatic L$ debit exists.
-- `admin.html` shows an additional active-club payout card for owner/admin accounts. The existing global notification/bot controls remain available for the original installation and global infrastructure; do not expose bot/VPS/token plumbing to ordinary club owners.
+- Treasure payer and recipient must always be different players. The first/owner player defaults to **Payer**; once another active player exists, Settings exposes owner/admin **Payer** and **Paid to** dropdowns. Any club member may turn Treasure ON/OFF. The payer or an owner/admin manually pays in Second Life and uses **Mark 1,000 L$ paid** in Settings to record exactly one 1,000 L$ payment. No automatic L$ debit exists.
+- `admin.html` is retired and redirects to Settings. StaFi testing and Treasure/payment controls live in Settings.
 - Settings must make unverified StaFi obvious: saved-but-unverified URLs show **StaFi needs test** and a visible amber status box; successful sync shows **StaFi connected** with last success/stamp count; errors show a visible failure state. The primary action is **Test & enable StaFi**.
 - Per-user StaFi validation and conservative active-adventure importing are live in `club-api`. Players save their private StaFi URL, use **Test & enable StaFi sync**, and the Adventures page checks periodically. Only confidently identified stamps from the active adventure are imported; manual **Mark stamp** remains available. Do not claim a particular player's sync works until that player's real URL passes validation.
 - Version-controlled backend sources live under `supabase/migrations/` and `supabase/functions/club-api/`.
