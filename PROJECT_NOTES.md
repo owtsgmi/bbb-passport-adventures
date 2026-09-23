@@ -138,37 +138,12 @@ This file is the persistent source of truth for future edits to this project.
 - If the Owner Passphrase is ever exposed, rotate it by replacing the stored hash and giving the owner a new code.
 
 
-## Public multi-user roadmap
-- Goal: evolve from the current private two-player prototype into a low-friction public multi-user app without losing the simple adventure experience.
-- Phase 1 — Identity:
-  - Add Supabase Auth using magic link / email OTP rather than traditional passwords.
-  - Add a `profiles` table keyed by `auth.users.id` with display name and optional SL name.
-- Phase 2 — Clubs/groups:
-  - Add `clubs` and `club_members` tables.
-  - A user can create or join multiple clubs.
-  - Invite via short join code or invite link; do not use the current Secret Club Code as long-term identity/auth.
-  - Roles: owner/admin/member.
-- Phase 3 — Scope game state:
-  - Replace the single global `bbb_board_state` row with club-scoped state.
-  - Adventure starts, current adventure, completion history, reward rules, payout history, and settings belong to a club.
-- Phase 4 — Per-user passport progress:
-  - Add normalized `user_stamp_progress` keyed by user + stamp.
-  - Each user's StaFi URL remains private to that user; only derived progress is shared with clubs as needed.
-  - Never expose raw StaFi reference URLs to other members.
-- Phase 5 — Authorization:
-  - Use RLS for all user/club tables.
-  - Users can access only their own profile/private settings and clubs where they are members.
-  - Club owner/admin capabilities should be explicit permissions, not possession of a shared secret.
-- Phase 6 — Realtime:
-  - Subscribe to club-scoped state so stamp/adventure changes appear immediately on other members' devices.
-- Phase 7 — Generalize rewards:
-  - Replace AA/KK-specific reward ownership with configurable club rules: earner(s), sponsor(s), reward amount, required participants, and payout model.
-- Phase 8 — Migration:
-  - Convert the current AA/KK installation into the first club and preserve existing completed adventures, current adventure, revealed reward values, and payout history.
-- Phase 9 — Public hardening:
-  - Add rate limits/abuse controls to feedback, invitations, and other write endpoints.
-  - Replace temporary feedback Owner Passphrase with authenticated owner/admin roles when public launch happens.
-  - Keep the BBB public catalog global/read-only while private gameplay remains user/club scoped.
+## Multi-user direction
+- The discarded email/magic-link and original-game claim designs must not be reintroduced.
+- Player identity is the actual Second Life username plus a password. No real email address is requested or stored, and there is intentionally no password-recovery flow.
+- Couples and larger groups play in independent clubs with owner/admin/member roles, private state, invite links, configurable player rosters, and club-scoped Treasure records.
+- Each member owns one private StaFi URL. Club members may see derived stamp progress but never another member's raw StaFi reference URL.
+- The global BBB catalog remains shared and read-only; player, club, reward, and payout data remain tenant-scoped.
 
 
 ## Shared Second Life map component
@@ -370,7 +345,7 @@ This file is the persistent source of truth for future edits to this project.
 - The benefactor should see a fun accumulation of money they are going to receive, not operational payout language.
 - Browser payout alerts are desktop/system notifications, not notifications inside the browser tab.
 - The realistic test payout notification must explicitly say which saved Second Life username should be paid.
-- **There is no in-world Second Life IM sender in the current no-script/no-bot architecture.** The old LSL reminder path was retired and SmartBots was rejected on recurring cost. Current testing covers desktop/system push + Admin + optional Firestorm Pay handoff. If actual in-world IMs are requested again, that is a deliberate architecture change requiring a sender (LSL object or bot/service).
+- The old LSL reminder path was retired and SmartBots was rejected on recurring cost. In-world IM delivery now uses the dedicated backend-managed `PassportAdventures` bot design; desktop/system push, Admin, and the optional Firestorm Pay handoff remain available independently.
 - **Hard UX constraint:** do not require users to rez prims, paste LSL, wear HUDs, or manage scripts for payout notifications. The user explicitly rejected any prim/script setup. If in-world IM delivery is revisited, it must be completely backend-managed with zero in-world setup for normal users; otherwise keep the existing desktop/system notification flow.
 - True in-world IM delivery uses the dedicated **PassportAdventures** avatar with a self-hosted LibreMetaverse service on the VPS. The avatar account has been created; VPS service installation/connection must still be verified independently. Normal users do nothing in-world. The dedicated bot avatar must be marked as a Scripted Agent in Second Life account settings.
 - Bot source lives under `bot/` in this repo: `PassportMessenger.csproj`, `Program.cs`, `install.sh`, `passport-messenger.service`, and `README.md`.
@@ -392,5 +367,5 @@ This file is the persistent source of truth for future edits to this project.
 - Pre-cutover board/account rows remain stored as an archive, but they are not reachable from normal navigation and have no claim/migration UI. New play starts with a fresh SL-username account and club.
 - Adventure Treasure is configured per club and defaults OFF for newly created clubs. Reward/payout logs stay club-scoped. A 1,000 L$ bonus creates a `club_collect_requests` record; club owner/admin manually pays in Second Life and uses Admin to mark exactly 1,000 L$ paid. No automatic L$ debit exists.
 - `admin.html` shows an additional active-club payout card for owner/admin accounts. The existing global notification/bot controls remain available for the original installation and global infrastructure; do not expose bot/VPS/token plumbing to ordinary club owners.
-- Automatic per-user BBB StaFi importing is still pending. Until it is connected and tested, club gameplay uses the tidy per-stop **Mark stamp** control; do not claim live StaFi import works.
+- Per-user StaFi validation and conservative active-adventure importing are live in `club-api`. Players save their private StaFi URL, use **Test & enable StaFi sync**, and the Adventures page checks periodically. Only confidently identified stamps from the active adventure are imported; manual **Mark stamp** remains available. Do not claim a particular player's sync works until that player's real URL passes validation.
 - Version-controlled backend sources live under `supabase/migrations/` and `supabase/functions/club-api/`.
