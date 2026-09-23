@@ -260,7 +260,6 @@ $('#treasure-recipient').onchange=()=>saveTreasureRoles().catch(e=>clubStatus(e.
 $('#club-treasure').onclick=async()=>{try{
  const enabled=!activeClubData.club.treasure_enabled;
  const activePlayers=activeClubData.players.filter(p=>p.is_active);
- if(enabled&&activePlayers.length<2){clubStatus('Adventure Treasure needs at least 2 players so the payer and Paid to player are different.');return}
  await PassportCloud.call('update_club',{club_id:PassportCloud.activeClub(),treasure_enabled:enabled});
  await loadClubTools(PassportCloud.activeClub());
  clubStatus('Adventure Treasure is '+(enabled?'ON':'OFF')+' for this club.',true)
