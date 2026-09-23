@@ -54,16 +54,20 @@ function stafiClassification(text:string,ref:any){
 }
 function stafiSummary(text:string){
   const get=(re:RegExp)=>{const m=text.match(re),n=m?Number(m[1]):NaN;return Number.isSafeInteger(n)&&n>=0?n:null};
-  let uncollected=get(/currently available uncollected stamps?\s*:\s*(\d+)/i);
+  const currentUncollected=get(/currently available uncollected stamps?\s*:\s*(\d+)/i);
+  const currentAvailable=get(/all currently available stamps?\s*:\s*(\d+)/i);
+  let uncollected=currentUncollected;
   if(uncollected===null)uncollected=get(/uncollected stamps?\s*:\s*(\d+)/i);
-  let collected=get(/my collected stamps?\s*:\s*(\d+)/i);
-  if(collected===null)collected=get(/collected stamps?\s*:\s*(\d+)/i);
-  let available=get(/all currently available stamps?\s*:\s*(\d+)/i);
+  let rawCollected=get(/my collected stamps?\s*:\s*(\d+)/i);
+  if(rawCollected===null)rawCollected=get(/collected stamps?\s*:\s*(\d+)/i);
+  let available=currentAvailable;
   if(available===null)available=get(/available stamps?\s*:\s*(\d+)/i);
-  if(available===null&&collected!==null&&uncollected!==null)available=collected+uncollected;
-  if(collected===null&&available!==null&&uncollected!==null&&available>=uncollected)collected=available-uncollected;
-  if(uncollected===null&&available!==null&&collected!==null&&available>=collected)uncollected=available-collected;
-  return {collected,uncollected,available};
+  if(available===null&&rawCollected!==null&&uncollected!==null)available=rawCollected+uncollected;
+  if(uncollected===null&&available!==null&&rawCollected!==null&&available>=rawCollected)uncollected=available-rawCollected;
+  const activeCollected=currentAvailable!==null&&currentUncollected!==null&&currentAvailable>=currentUncollected
+    ?currentAvailable-currentUncollected
+    :null;
+  return {raw_collected:rawCollected,uncollected,available,active_collected:activeCollected,current_available:currentAvailable,current_uncollected:currentUncollected};
 }
 async function fetchStaFi(raw:string){
   let url=stafiUrl(raw);if(!url)throw new Error("invalid_stafi_url");
@@ -191,16 +195,19 @@ async function syncStaFi(userId:string,clubId:string,force=false){
   const now=new Date().toISOString();
   try{
     const page=await fetchStaFi(settings.stafi_url),summary=stafiSummary(page.text);
-    if(summary.available!==null){
-      await db("app_runtime_state?id=eq.1",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({passport_available_count:summary.available,updated_at:now})});
+    const activeAvailable=summary.current_available??summary.available;
+    const activeCollected=summary.active_collected;
+    if(activeAvailable!==null){
+      await db("app_runtime_state?id=eq.1",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({passport_available_count:activeAvailable,updated_at:now})});
     }
     const countPatch:any={};
-    if(summary.collected!==null)countPatch.stafi_last_stamp_count=summary.collected;
-    if(summary.uncollected!==null)countPatch.stafi_uncollected_count=summary.uncollected;
-    if(summary.available!==null)countPatch.stafi_available_count=summary.available;
+    if(activeCollected!==null)countPatch.stafi_last_stamp_count=activeCollected;
+    if(summary.current_uncollected!==null)countPatch.stafi_uncollected_count=summary.current_uncollected;
+    else if(summary.uncollected!==null)countPatch.stafi_uncollected_count=summary.uncollected;
+    if(activeAvailable!==null)countPatch.stafi_available_count=activeAvailable;
     const playerPatch:any={stafi_last_success_at:now};
-    if(summary.collected!==null)playerPatch.stafi_collected_count=summary.collected;
-    if(summary.available!==null)playerPatch.stafi_available_count=summary.available;
+    if(activeCollected!==null)playerPatch.stafi_collected_count=activeCollected;
+    if(activeAvailable!==null)playerPatch.stafi_available_count=activeAvailable;
     await db("club_players?user_id=eq."+userId+"&is_active=eq.true",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(playerPatch)});
 
     if(!run){
@@ -226,7 +233,8 @@ async function syncStaFi(userId:string,clubId:string,force=false){
     if(rows.length)await db("club_stamp_progress?on_conflict=club_id,player_id,stamp_id",{method:"POST",headers:{Prefer:"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify(rows)});
 
     const fallbackCount=completed.size;
-    const status={stafi_sync_enabled:true,stafi_verified_at:now,stafi_last_sync_at:now,stafi_last_success_at:now,stafi_last_error:null,stafi_last_stamp_count:summary.collected??fallbackCount,...countPatch};
+    const status={stafi_sync_enabled:true,stafi_verified_at:now,stafi_last_sync_at:now,stafi_last_success_at:now,stafi_last_error:null,...countPatch};
+    if(status.stafi_last_stamp_count===undefined&&summary.active_collected===null&&summary.current_available===null)status.stafi_last_stamp_count=fallbackCount;
     await db("user_private_settings?user_id=eq."+userId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(status)});
     await finalizeRun(clubId,Number(run.adventure_id));
     return {enabled:true,verified:true,imported:rows.length,checked:[...new Set(checked)].length,total:status.stafi_last_stamp_count,summary,current_adventure:Number(run.adventure_id)};
@@ -255,7 +263,7 @@ async function scheduledStaFiRefresh(){
       const out=await syncStaFi(userId,clubId,false);
       if(out.error==="stafi_sync_disabled"||out.error==="stafi_url_required")continue;
       touched=true;users++;imported+=Number(out.imported||0);if(out.error)errors++;
-      passportTotal=Math.max(passportTotal,Number(out.summary?.available||0));
+      passportTotal=Math.max(passportTotal,Number(out.summary?.current_available??out.summary?.available??0));
     }
     if(touched)clubsChecked++;
   }
