@@ -22,11 +22,11 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
 <div class="grid">
 <section class="card">
 <h3>1. Set up your club</h3>
-<div class="step"><div class="num">1</div><div>Open the ☰ menu, choose <b>Settings</b>, and sign in with the secure link sent to your email.</div></div>
+<div class="step"><div class="num">1</div><div>Open the ☰ menu, choose <b>Settings</b>, and create an account using your Second Life username and a password.</div></div>
 <div class="step"><div class="num">2</div><div>Create a club for this couple or group. New clubs start with Adventure Treasure off.</div></div>
 <div class="step"><div class="num">3</div><div>Make an invite link and send it to the other players. They sign in and join the same club.</div></div>
 <div class="step"><div class="num">4</div><div>Choose the active club in Settings whenever you want to switch groups.</div></div>
-<p class="small">Club owners can also add a guest player without an account. The old Secret Club Code is used only once to claim and preserve the original two-player game.</p>
+<p class="small">Club owners can also add a guest player without an account. Passport Adventures does not collect player email addresses.</p>
 </section>
 
 <section class="card">
@@ -74,7 +74,7 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
   <div class="archhead">
     <h2>🏗 App Architecture</h2>
     <div class="small">A plain-English map of how Passport Adventures works today. This section is intentionally kept as living documentation for users and for future development.</div>
-    <div class="flow"><span>GitHub Pages UI</span><i>→</i><span>Supabase Auth</span><i>→</i><span>Private clubs</span><i>+</i><span>BBB live catalog</span></div>
+    <div class="flow"><span>GitHub Pages UI</span><i>→</i><span>Passport login</span><i>→</i><span>Private clubs</span><i>+</i><span>BBB live catalog</span></div>
   </div>
   <div class="archgrid">
     <section class="archcard">
@@ -106,8 +106,8 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
     </section>
     <section class="archcard">
       <h3>Private settings</h3>
-      <p>Email magic links provide account identity; club membership and owner/admin roles control access. Row Level Security and the authenticated club service prevent one club from reading another club's private gameplay. A signed-in player's raw StaFi URL stays in that player's private settings and is never included in the club roster payload.</p>
-      <p>The original two-player installation keeps its browser-encrypted StaFi links and Secret Club Code for migration. Each original player signs in, chooses their preserved passport, and uses that code once. The matching StaFi link moves into that player’s private account record without revealing the other player’s link. The Secret Club Code is not used as identity for new clubs.</p>
+      <p>Each account uses a Second Life username and password. Passwords are stored only as one-way hashes, login sessions are revocable, and club membership plus owner/admin roles control access. A signed-in player's raw StaFi URL stays in that player's private settings and is never included in the club roster payload.</p>
+      <p>No email address is collected. There is no email-based password recovery, so players should keep their password somewhere safe.</p>
     </section>
     <section class="archcard">
       <h3>BBB catalog mirror</h3>
@@ -123,14 +123,13 @@ main{max-width:950px;margin:auto;padding:28px 4vw 60px}.hero{background:linear-g
       <h3>Feedback system</h3>
       <p>The <a href="feedback.html">Comments & Bugs</a> page stores public feedback in Supabase. There is no user account list yet, so people choose any display name they want.</p>
       <p>Anyone can submit feedback, but only the site owner has the separate <b>Owner Passphrase</b> used to edit, resolve, hide, reopen, or permanently delete entries. The Owner Passphrase is not stored in the public site source; only a one-way hash is stored server-side.</p>
-      <p>Users should never post Secret Club Codes, Owner Passphrases, or private StaFi links there.</p>
+      <p>Users should never post passwords, Owner Passphrases, or private StaFi links there.</p>
     </section>
     <section class="archcard">
       <h3>Multiuser clubs today</h3>
-      <p>Email magic-link accounts, independent clubs, invite links, owner/admin/member roles, and club switching are live. A couple is simply a two-player club; larger groups can keep a bigger roster and choose the participants for each adventure.</p>
+      <p>SL-username/password accounts, independent clubs, invite links, owner/admin/member roles, and club switching are live. A couple is simply a two-player club; larger groups can keep a bigger roster and choose the participants for each adventure.</p>
       <p>Every adventure run snapshots its selected participants. Per-player stamps, run completion, Treasure rewards, collection requests, and payment records remain inside that club.</p>
       <p>Treasure roles are explicit: a club owner/admin chooses one payer and one Treasure recipient. Reward amounts are generated by the authenticated backend only after all selected participants finish the run; browsers cannot submit or alter reward amounts.</p>
-      <p>The original AA/KK installation remains available as the rollback-safe signed-out game until it is claimed with the existing Secret Club Code. Claiming it preserves its player slots and history.</p>
       <p class="small">The shared public BBB catalog stays global/read-only; private passport progress and club gameplay stay isolated per user and club.</p>
     </section>
     <section class="archcard">

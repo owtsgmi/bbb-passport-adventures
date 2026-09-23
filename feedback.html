@@ -25,14 +25,14 @@ main{max-width:1000px;margin:auto;padding:26px 4vw 60px}.hero{background:linear-
 <div class="field"><label for="message">Message</label><textarea id="message" maxlength="2000" required placeholder="Tell us what you would change, what broke, or what you liked."></textarea></div>
 <button class="primary" type="submit">Submit feedback</button><div id="form-status" class="small" aria-live="polite"></div>
 </form>
-<p class="small">Do not post passwords, your Secret Club Code, private StaFi links, or other private information.</p>
+<p class="small">Do not post passwords, private StaFi links, or other private information.</p>
 </section>
 <section class="card">
 <h3>Feedback board</h3>
 <div class="filters"><select id="filter"><option value="">All types</option><option value="suggestion">Suggestions</option><option value="bug">Bugs</option><option value="comment">Comments</option></select><button id="refresh" type="button">Refresh</button><button id="owner-toggle" type="button">🔐 Owner tools</button></div>
 <div class="ownerbox" id="owner-box" style="display:none">
   <div class="ownerrow"><input id="owner-code" type="password" autocomplete="off" placeholder="three.word.passphrase"><button id="owner-unlock" type="button">Unlock</button><button id="owner-lock" type="button" style="display:none">Lock</button></div>
-  <div id="owner-status" class="owner-note">The Owner Passphrase is separate from the two-player Secret Club Code.</div>
+  <div id="owner-status" class="owner-note">The Owner Passphrase is only for comments-and-bugs moderation.</div>
 </div>
 <div id="feedback-list"><div class="empty">Loading…</div></div>
 </section>
@@ -65,7 +65,7 @@ function setOwner(on){
   $('#owner-lock').style.display=ownerMode?'inline-block':'none';
   $('#owner-code').disabled=ownerMode;
   $('#owner-status').className=ownerMode?'owner-note ownerok':'owner-note';
-  $('#owner-status').textContent=ownerMode?'✓ Owner mode unlocked for this browser tab.':'The Owner Passphrase is separate from the two-player Secret Club Code.';
+  $('#owner-status').textContent=ownerMode?'✓ Owner mode unlocked for this browser tab.':'The Owner Passphrase is only for comments-and-bugs moderation.';
 }
 function statusOptions(current){
   return ['open','planned','fixed','closed'].map(s=>'<option value="'+s+'"'+(s===current?' selected':'')+'>'+s[0].toUpperCase()+s.slice(1)+'</option>').join('');

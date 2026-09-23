@@ -2,7 +2,6 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const SUPA_URL=Deno.env.get("SUPABASE_URL")!;
 const SERVICE=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const LEGACY_CLUB="00000000-0000-4000-8000-000000000001";
 const cors={
   "Access-Control-Allow-Origin":"*",
   "Access-Control-Allow-Headers":"authorization,apikey,content-type,x-client-info",
@@ -20,6 +19,7 @@ function randomSlug(name:string){const base=name.toLowerCase().normalize("NFKD")
 function randomReward(){const a=new Uint32Array(1);crypto.getRandomValues(a);return 20+(a[0]%81)}
 function rewardRemaining(row:any){return Math.max(0,Number(row?.amount||0)-Math.max(0,Number(row?.paid_amount||0)))}
 async function sha256(s:string){const h=new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s.trim().toUpperCase())));return Array.from(h,b=>b.toString(16).padStart(2,"0")).join("")}
+async function sha256Raw(s:string){const h=new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s)));return Array.from(h,b=>b.toString(16).padStart(2,"0")).join("")}
 
 function stafiUrl(value:unknown){
   const raw=String(value||"").trim().slice(0,1000);if(!raw)return "";
@@ -71,9 +71,12 @@ async function db(path:string,init:RequestInit={}){
 }
 async function currentUser(req:Request){
   const bearer=req.headers.get("Authorization")||"";
-  if(!bearer.startsWith("Bearer "))return null;
-  const r=await fetch(SUPA_URL+"/auth/v1/user",{headers:{apikey:SERVICE,Authorization:bearer}});
-  if(!r.ok)return null;return await r.json();
+  if(!bearer.startsWith("Bearer pa_"))return null;
+  const token=bearer.slice(7),hash=await sha256Raw(token),now=encodeURIComponent(new Date().toISOString());
+  const sessions=await db("passport_sessions?token_hash=eq."+hash+"&expires_at=gt."+now+"&select=user_id");
+  const row=sessions?.[0];if(!row)return null;
+  const users=await db("passport_users?id=eq."+row.user_id+"&disabled_at=is.null&select=id,sl_username,display_name");
+  return users?.[0]||null;
 }
 async function membership(clubId:string,userId:string){
   const rows=await db("club_members?club_id=eq."+clubId+"&user_id=eq."+userId+"&select=club_id,user_id,role");
@@ -155,19 +158,6 @@ async function syncStaFi(userId:string,clubId:string,force=false){
   }
 }
 
-function b64(s:string){const bin=atob(s);return Uint8Array.from(bin,c=>c.charCodeAt(0))}
-async function provesLegacySecret(secret:string){
-  if(secret.length<8)return false;
-  const rows=await db("bbb_private_settings?id=eq.1&select=ciphertext,iv,salt");const row=rows?.[0];
-  if(!row?.ciphertext||!row?.iv||!row?.salt)return false;
-  try{
-    const base=await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),"PBKDF2",false,["deriveKey"]);
-    const key=await crypto.subtle.deriveKey({name:"PBKDF2",salt:b64(row.salt),iterations:250000,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["decrypt"]);
-    const plain=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(row.iv)},key,b64(row.ciphertext));
-    const data=JSON.parse(new TextDecoder().decode(plain));return data&&typeof data==="object";
-  }catch{return false}
-}
-
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors});
   if(req.method!=="POST")return reply({ok:false,error:"post_required"},405);
@@ -181,13 +171,13 @@ Deno.serve(async(req:Request)=>{
       const clubs=ids.length?await db("clubs?id=in.("+ids.join(",")+")&select=id,name,slug,owner_id,treasure_enabled,payout_threshold,is_legacy,created_at,updated_at"):[];
       const profile=(await db("profiles?user_id=eq."+user.id+"&select=user_id,display_name,sl_username"))?.[0]||null;
       const privateSettings=(await db("user_private_settings?user_id=eq."+user.id+"&select=stafi_url,stafi_sync_enabled,stafi_verified_at,stafi_last_sync_at,stafi_last_success_at,stafi_last_error,stafi_last_stamp_count"))?.[0]||null;
-      return reply({ok:true,user:{id:user.id,email:user.email},profile,private_settings:privateSettings,clubs:clubs.map((c:any)=>({...c,role:memberships.find((m:any)=>m.club_id===c.id)?.role||"member"}))});
+      return reply({ok:true,user:{id:user.id,sl_username:user.sl_username,display_name:user.display_name},profile,private_settings:privateSettings,clubs:clubs.map((c:any)=>({...c,role:memberships.find((m:any)=>m.club_id===c.id)?.role||"member"}))});
     }
     if(action==="load")return reply({ok:true,...await loadClub(uuid(body.club_id),user.id)});
 
     if(action==="update_profile"){
       const display=cleanText(body.display_name,60);if(!display)return reply({ok:false,error:"display_name_required"},400);
-      const sl=cleanText(body.sl_username,80)||null;
+      const sl=user.sl_username;
       const stafi=body.stafi_url===undefined?undefined:(body.stafi_url?stafiUrl(body.stafi_url):null);if(body.stafi_url&&!stafi)return reply({ok:false,error:"invalid_stafi_url"},400);
       const rows=await db("profiles?user_id=eq."+user.id,{method:"PATCH",headers:{Prefer:"return=representation"},body:JSON.stringify({display_name:display,sl_username:sl})});
       await db("club_players?user_id=eq."+user.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({display_name:display,sl_username:sl})});
@@ -216,12 +206,7 @@ Deno.serve(async(req:Request)=>{
       if(!club)return reply({ok:false,error:"join_code_not_found"},404);
       const profile=(await db("profiles?user_id=eq."+user.id+"&select=display_name,sl_username"))?.[0]||{};
       await db("club_members?on_conflict=club_id,user_id",{method:"POST",headers:{Prefer:"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify({club_id:club.id,user_id:user.id,role:"member"})});
-      const openPlayers=await db("club_players?club_id=eq."+club.id+"&user_id=is.null&is_active=eq.true&select=id");
-      if(club.id===LEGACY_CLUB&&openPlayers.length===1){
-        await db("club_players?id=eq."+openPlayers[0].id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({user_id:user.id,claimed_at:new Date().toISOString()})});
-      }else{
-        await db("club_players?on_conflict=club_id,user_id",{method:"POST",headers:{Prefer:"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify({club_id:club.id,user_id:user.id,display_name:profile.display_name||"Adventurer",sl_username:profile.sl_username||null,sort_order:100,claimed_at:new Date().toISOString()})});
-      }
+      await db("club_players?on_conflict=club_id,user_id",{method:"POST",headers:{Prefer:"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify({club_id:club.id,user_id:user.id,display_name:profile.display_name||"Adventurer",sl_username:profile.sl_username||user.sl_username,sort_order:100,claimed_at:new Date().toISOString()})});
       const joinedPlayer=(await db("club_players?club_id=eq."+club.id+"&user_id=eq."+user.id+"&select=id"))?.[0];
       const currentBeneficiary=(await db("club_players?club_id=eq."+club.id+"&is_beneficiary=eq.true&select=id,is_payer&limit=1"))?.[0];
       if(joinedPlayer&&currentBeneficiary?.is_payer&&joinedPlayer.id!==currentBeneficiary.id){
@@ -230,22 +215,6 @@ Deno.serve(async(req:Request)=>{
       }
       await db("profiles?user_id=eq."+user.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({join_attempts:0,join_window_started_at:null})});
       return reply({ok:true,club_id:club.id,club_name:club.name});
-    }
-
-    if(action==="claim_legacy"){
-      const migratedStaFi=body.stafi_url?stafiUrl(body.stafi_url):"";if(body.stafi_url&&!migratedStaFi)return reply({ok:false,error:"invalid_stafi_url"},400);
-      const clubs=await db("clubs?id=eq."+LEGACY_CLUB+"&select=owner_id");const club=clubs?.[0];
-      if(!club)return reply({ok:false,error:"legacy_club_missing"},404);
-      if(!await provesLegacySecret(String(body.secret||"")))return reply({ok:false,error:"wrong_club_code"},403);
-      const playerId=uuid(body.player_id);const players=await db("club_players?id=eq."+playerId+"&club_id=eq."+LEGACY_CLUB+"&select=id,user_id");
-      if(!players?.[0]||players[0].user_id&&players[0].user_id!==user.id)return reply({ok:false,error:"player_unavailable"},409);
-      const already=(await db("club_players?club_id=eq."+LEGACY_CLUB+"&user_id=eq."+user.id+"&select=id"))?.[0];if(already&&already.id!==playerId)return reply({ok:false,error:"account_already_linked"},409);
-      const firstClaim=!club.owner_id;if(firstClaim)await db("clubs?id=eq."+LEGACY_CLUB,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({owner_id:user.id})});
-      await db("club_members?on_conflict=club_id,user_id",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({club_id:LEGACY_CLUB,user_id:user.id,role:firstClaim||club.owner_id===user.id?"owner":"member"})});
-      await db("club_players?id=eq."+playerId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({user_id:user.id,claimed_at:new Date().toISOString()})});
-      if(migratedStaFi)await db("user_private_settings?on_conflict=user_id",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({user_id:user.id,stafi_url:migratedStaFi,stafi_sync_enabled:false,stafi_verified_at:null,stafi_last_error:null})});
-      let code="";if(firstClaim){code=randomCode();await db("clubs?id=eq."+LEGACY_CLUB,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({join_code_hash:await sha256(code)})})}
-      return reply({ok:true,club_id:LEGACY_CLUB,join_code:code,stafi_migrated:!!migratedStaFi});
     }
 
     const clubId=uuid(body.club_id);if(!clubId)return reply({ok:false,error:"club_required"},400);

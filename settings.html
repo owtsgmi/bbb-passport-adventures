@@ -41,20 +41,18 @@ main{max-width:900px;margin:auto;padding:26px 4vw 60px}.card{background:linear-g
   <h2>👥 Your clubs</h2>
   <div class="small">Each couple or group gets its own private game, players, progress, and Treasure balance.</div>
   <div id="signed-out">
-    <div class="accountgrid"><div class="field"><label>Email address</label><input id="auth-email" type="email" autocomplete="email" placeholder="you@example.com"></div></div>
-    <div class="actions"><button class="primary" id="send-link">✉ Send secure sign-in link</button></div>
-    <div class="note">No password to remember. Open the link in the email on this device.</div>
-    <details style="margin-top:10px"><summary>Email opened localhost or says expired?</summary>
-      <div class="note">Request a fresh email, then <b>copy the sign-in link address without opening it</b>. Paste it below. The one-time token is exchanged directly in this browser and immediately removed from the field.</div>
-      <div class="accountgrid"><div class="field"><label>Copied email sign-in link</label><input id="auth-link" type="password" autocomplete="off" placeholder="https://tzxlrglgwzinefutledx.supabase.co/auth/v1/verify?..."></div></div>
-      <div class="actions"><button id="complete-link">Complete sign-in</button></div>
-    </details>
+    <div class="accountgrid">
+      <div class="field"><label>Second Life username</label><input id="auth-username" maxlength="80" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="avatar.name"></div>
+      <div class="field"><label>Password</label><input id="auth-password" type="password" minlength="8" maxlength="128" autocomplete="current-password" placeholder="8 or more characters"></div>
+    </div>
+    <div class="actions"><button class="primary" id="sign-in">Sign in</button><button id="create-account">Create account</button></div>
+    <div class="note">No email address is collected. Your SL username is your login. There is no password-recovery email, so save your password somewhere safe.</div>
   </div>
   <div id="signed-in" class="hidden">
-    <div class="clubrow"><b id="account-email"></b><button id="sign-out">Sign out</button></div>
+    <div class="clubrow"><b id="account-username"></b><button id="sign-out">Sign out</button></div>
     <div class="accountgrid">
       <div class="field"><label>Your display name</label><input id="profile-name" maxlength="60"></div>
-      <div class="field"><label>Your Second Life username</label><input id="profile-sl" maxlength="80" placeholder="avatar.name"></div>
+      <div class="field"><label>Your Second Life username</label><input id="profile-sl" maxlength="80" readonly></div>
       <div class="field"><label>Your private BBB StaFi progress page</label><input id="profile-stafi" maxlength="1000" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
     </div>
     <div class="actions"><button id="save-profile">Save my profile</button><button id="verify-stafi">✓ Test & enable StaFi sync</button></div>
@@ -73,182 +71,15 @@ main{max-width:900px;margin:auto;padding:26px 4vw 60px}.card{background:linear-g
           <div class="field"><label>Invite code</label><input id="join-code" maxlength="40" placeholder="Paste an invite code"><div class="actions"><button id="join-club">Join club</button></div></div>
         </div>
       </details>
-      <details style="margin-top:10px"><summary>Claim the original two-player game</summary>
-        <div class="note">Each original player uses the existing Secret Club Code once and chooses their preserved passport. The matching encrypted StaFi link is moved into that account without exposing the other player's link.</div>
-        <div class="accountgrid"><div class="field"><label>Existing Secret Club Code</label><input id="claim-secret" type="password" autocomplete="current-password"></div><div class="field"><label>I am</label><select id="claim-player"><option value="00000000-0000-4000-8000-000000000101">First player</option><option value="00000000-0000-4000-8000-000000000102">Second player</option></select></div></div>
-        <div class="actions"><button id="claim-club">Claim original club</button></div>
-      </details>
     </div>
   </div>
   <div id="account-status" class="small" style="margin-top:12px">Checking account…</div>
 </section>
-<section class="card">
-  <h2>⚙ Original two-player game</h2>
-  <div class="small">Legacy settings remain here so the original game keeps working during account migration. New clubs use the account and player settings above.</div>
-
-  <div class="grid">
-    <div class="field"><label>🗡️ First player SL username</label><input id="set-partner-name" placeholder="your.username"></div>
-    <div class="field"><label>👽 Second player SL username</label><input id="set-me-name" placeholder="partner.username"></div>
-    <div class="field"><label>🗡️ First player BBB StaFi page</label><input id="set-partner-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
-    <div class="field"><label>👽 Second player BBB StaFi page</label><input id="set-me-url" placeholder="http://thebbbbug.com/UTILS/YourStamps.php?Ref=..."></div>
-    <div class="field"><label>Open Adventures on</label><select id="set-default-view"><option value="partner">First player</option><option value="me">Second player</option></select></div>
-    <div class="field"><label>🔐 Secret Club Code</label><input id="set-family-key" type="password" autocomplete="new-password" placeholder="Use the same code on trusted devices"></div>
-  </div>
-
-  <div class="actions"><label class="small"><input id="set-remember-key" type="checkbox" checked> Remember Secret Club Code on this device</label></div>
-
-  <div class="actions">
-    <button class="primary" id="save">💾 Save Settings</button>
-    <button id="load-cloud">☁ Load Private Settings</button>
-    <button id="copy-code">🔑 Copy Club Code</button>
-    <button id="open-first">🗡️ Open First StaFi</button>
-    <button id="open-second">👽 Open Second StaFi</button>
-    <a class="btn" href="admin.html">🔧 Admin</a>
-  </div>
-
-  <div class="note"><b>The two SL usernames are shared display settings.</b> BBB StaFi links are encrypted before they are stored. On another trusted device, enter the same Secret Club Code and choose <b>Load Private Settings</b>.</div>
-  <div id="status">Loading settings…</div>
-</section>
 </main>
 
-<script src="club-session.js?v=2"></script>
+<script src="club-session.js?v=3"></script>
 <script>
-const SUPA_URL='https://tzxlrglgwzinefutledx.supabase.co';
-const SUPA_KEY='sb_publishable_s54v4rmFk_BjHoweE7mliA_w64vK6WR';
-const STATE_URL=SUPA_URL+'/rest/v1/bbb_board_state?id=eq.1&select=tab_partner_name,tab_me_name,default_view,updated_at';
-const PRIVATE_URL=SUPA_URL+'/rest/v1/bbb_private_settings?id=eq.1';
 const $=s=>document.querySelector(s);
-
-let tabPartnerName=localStorage.getItem('bbb-tab-partner-name')||'AA';
-let tabMeName=localStorage.getItem('bbb-tab-me-name')||'KK';
-let partnerStaFiUrl=localStorage.getItem('bbb-partner-stafi-url')||'';
-let meStaFiUrl=localStorage.getItem('bbb-me-stafi-url')||'';
-let defaultView=localStorage.getItem('bbb-default-view')||'partner';
-let familyKey=localStorage.getItem('bbb-family-key')||sessionStorage.getItem('bbb-family-key')||'';
-
-function status(msg,good=false){const e=$('#status');e.textContent=msg;e.className=good?'ok':''}
-function bytesToB64(bytes){let bin='';bytes.forEach(b=>bin+=String.fromCharCode(b));return btoa(bin)}
-function b64ToBytes(s){const bin=atob(s);return Uint8Array.from(bin,c=>c.charCodeAt(0))}
-function makeFamilyKey(){const a=crypto.getRandomValues(new Uint8Array(24));return bytesToB64(a).replace(/=+$/,'')}
-async function derivePrivateKey(secret,salt){
- const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),'PBKDF2',false,['deriveKey']);
- return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
-}
-async function encryptPrivatePayload(payload,secret){
- const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
- const key=await derivePrivateKey(secret,salt);
- const plain=new TextEncoder().encode(JSON.stringify(payload));
- const enc=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,plain));
- return {ciphertext:bytesToB64(enc),salt:bytesToB64(salt),iv:bytesToB64(iv)};
-}
-async function decryptPrivatePayload(row,secret){
- const salt=b64ToBytes(row.salt),iv=b64ToBytes(row.iv),data=b64ToBytes(row.ciphertext);
- const key=await derivePrivateKey(secret,salt);
- const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,data);
- return JSON.parse(new TextDecoder().decode(plain));
-}
-function fill(){
- $('#set-partner-name').value=tabPartnerName;
- $('#set-me-name').value=tabMeName;
- $('#set-partner-url').value=partnerStaFiUrl;
- $('#set-me-url').value=meStaFiUrl;
- $('#set-default-view').value=defaultView;
- $('#set-family-key').value=familyKey;
- $('#set-remember-key').checked=!!localStorage.getItem('bbb-family-key');
-}
-async function loadShared(){
- try{
-   const r=await fetch(STATE_URL,{headers:{apikey:SUPA_KEY}});
-   if(!r.ok)throw new Error('Cloud read '+r.status);
-   const rows=await r.json(),row=rows[0];
-   if(row){
-     tabPartnerName=row.tab_partner_name||tabPartnerName;
-     tabMeName=row.tab_me_name||tabMeName;
-     defaultView=row.default_view||defaultView;
-     localStorage.setItem('bbb-tab-partner-name',tabPartnerName);
-     localStorage.setItem('bbb-tab-me-name',tabMeName);
-     localStorage.setItem('bbb-default-view',defaultView);
-   }
- }catch(e){}
- fill();
- status('Settings loaded.',true);
-}
-async function saveShared(){
- const r=await fetch(SUPA_URL+'/rest/v1/bbb_board_state?id=eq.1',{
-   method:'PATCH',
-   headers:{apikey:SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
-   body:JSON.stringify({tab_partner_name:tabPartnerName,tab_me_name:tabMeName,default_view:defaultView,updated_at:new Date().toISOString()})
- });
- if(!r.ok)throw new Error('Display settings write '+r.status);
-}
-async function savePrivate(){
- const enc=await encryptPrivatePayload({partnerStaFiUrl,meStaFiUrl},familyKey);
- const r=await fetch(PRIVATE_URL,{
-   method:'PATCH',
-   headers:{apikey:SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
-   body:JSON.stringify({...enc,version:1,updated_at:new Date().toISOString()})
- });
- if(!r.ok)throw new Error('Private settings write '+r.status);
-}
-async function save(){
- tabPartnerName=$('#set-partner-name').value.trim()||'AA';
- tabMeName=$('#set-me-name').value.trim()||'KK';
- partnerStaFiUrl=$('#set-partner-url').value.trim();
- meStaFiUrl=$('#set-me-url').value.trim();
- defaultView=$('#set-default-view').value||'partner';
- familyKey=$('#set-family-key').value.trim()||familyKey||makeFamilyKey();
- $('#set-family-key').value=familyKey;
-
- localStorage.setItem('bbb-tab-partner-name',tabPartnerName);
- localStorage.setItem('bbb-tab-me-name',tabMeName);
- localStorage.setItem('bbb-partner-stafi-url',partnerStaFiUrl);
- localStorage.setItem('bbb-me-stafi-url',meStaFiUrl);
- localStorage.setItem('bbb-default-view',defaultView);
-
- if($('#set-remember-key').checked){
-   localStorage.setItem('bbb-family-key',familyKey);sessionStorage.removeItem('bbb-family-key');
- }else{
-   localStorage.removeItem('bbb-family-key');sessionStorage.setItem('bbb-family-key',familyKey);
- }
-
- status('Saving…');
- try{
-   await Promise.all([saveShared(),savePrivate()]);
-   status('✓ Settings saved and synced.',true);
- }catch(e){
-   status('Saved on this device, but cloud sync failed: '+e.message);
- }
-}
-async function loadPrivate(){
- familyKey=$('#set-family-key').value.trim()||familyKey;
- if(familyKey.length<8){status('Enter your Secret Club Code first.');return}
- status('Loading private settings…');
- try{
-   const r=await fetch(PRIVATE_URL+'&select=*',{headers:{apikey:SUPA_KEY}});
-   if(!r.ok)throw new Error('Private settings read '+r.status);
-   const rows=await r.json(),row=rows[0];
-   if(!row?.ciphertext){status('No encrypted private settings are stored yet.');return}
-   const p=await decryptPrivatePayload(row,familyKey);
-   partnerStaFiUrl=p.partnerStaFiUrl||'';
-   meStaFiUrl=p.meStaFiUrl||'';
-   localStorage.setItem('bbb-partner-stafi-url',partnerStaFiUrl);
-   localStorage.setItem('bbb-me-stafi-url',meStaFiUrl);
-   if($('#set-remember-key').checked){localStorage.setItem('bbb-family-key',familyKey);sessionStorage.removeItem('bbb-family-key')}
-   else{localStorage.removeItem('bbb-family-key');sessionStorage.setItem('bbb-family-key',familyKey)}
-   fill();
-   status('✓ Private settings loaded.',true);
- }catch(e){status('Could not unlock private settings — check the Secret Club Code.')}
-}
-function copyCode(){
- const k=$('#set-family-key').value.trim()||familyKey;
- if(!k){status('Save settings first to create a Secret Club Code.');return}
- navigator.clipboard.writeText(k).then(()=>status('✓ Secret Club Code copied.',true)).catch(()=>prompt('Copy this Secret Club Code:',k));
-}
-function openStaFi(which){
- const u=which==='partner'?$('#set-partner-url').value.trim():$('#set-me-url').value.trim();
- if(!u){status('Add that player’s BBB StaFi page first.');return}
- window.open(u,'_blank','noopener');
-}
 
 let accountData=null,activeClubData=null;
 function accountStatus(message,good=false){const e=$('#account-status');e.textContent=message;e.className=good?'ok':'warn'}
@@ -283,7 +114,7 @@ async function loadAccount(){
  const session=PassportCloud.session(),signed=!!session?.user;
  $('#signed-out').classList.toggle('hidden',signed);$('#signed-in').classList.toggle('hidden',!signed);
  if(!signed){accountStatus('Sign in to create separate games for different couples or groups.');return}
- $('#account-email').textContent=session.user.email||'Signed in';
+ $('#account-username').textContent=session.user.sl_username||'Signed in';
  accountData=await PassportCloud.call('list');
  $('#profile-name').value=accountData.profile?.display_name||'';$('#profile-sl').value=accountData.profile?.sl_username||'';$('#profile-stafi').value=accountData.private_settings?.stafi_url||'';
  const ss=accountData.private_settings||{},sync=$('#stafi-status');
@@ -305,15 +136,8 @@ async function joinClub(){
  const code=$('#join-code').value.trim()||new URLSearchParams(location.search).get('join')||'';if(!code)return accountStatus('Paste an invite code.');
  const out=await PassportCloud.call('join',{join_code:code});PassportCloud.setActiveClub(out.club_id);localStorage.removeItem('bbb-pending-join');history.replaceState(null,'',location.pathname);await loadAccount();accountStatus('Joined '+out.club_name+'.',true);
 }
-async function claimClub(){
- const secret=$('#claim-secret').value,playerId=$('#claim-player').value;let migrated='';
- try{const r=await fetch(PRIVATE_URL+'&select=*',{headers:{apikey:SUPA_KEY}}),rows=await r.json(),p=rows[0]?.ciphertext?await decryptPrivatePayload(rows[0],secret):null;migrated=playerId.endsWith('0101')?(p?.partnerStaFiUrl||''):(p?.meStaFiUrl||'')}catch(e){}
- const out=await PassportCloud.call('claim_legacy',{secret,player_id:playerId,stafi_url:migrated});PassportCloud.setActiveClub(out.club_id);$('#claim-secret').value='';if(out.join_code)showInvite(out.join_code);await loadAccount();
- if(out.stafi_migrated){const checked=await PassportCloud.call('verify_stafi',{club_id:out.club_id});await loadAccount();accountStatus(checked.verified?'Original passport and private StaFi page migrated; automatic sync is enabled.':'Original passport claimed. The StaFi link was migrated but could not be reached yet.',checked.verified)}
- else accountStatus('Original passport claimed. Existing progress is safe; add this player’s StaFi page above to enable automatic updates.',true);
-}
 async function verifyStaFi(){
- const clubId=PassportCloud.activeClub();if(!clubId)return accountStatus('Create, join, or claim a club first.');
+ const clubId=PassportCloud.activeClub();if(!clubId)return accountStatus('Create or join a club first.');
  await PassportCloud.call('update_profile',{display_name:$('#profile-name').value,sl_username:$('#profile-sl').value,stafi_url:$('#profile-stafi').value});
  const out=await PassportCloud.call('verify_stafi',{club_id:clubId});await loadAccount();accountStatus(out.verified?'StaFi page verified. Automatic stamp sync is enabled.':'StaFi could not be verified: '+(out.error||'unavailable'),out.verified);
 }
@@ -327,27 +151,27 @@ async function setMemberRole(userId,role){await PassportCloud.call('set_member_r
 async function removeMember(userId){const player=activeClubData.players.find(p=>p.user_id===userId),name=player&&player.display_name||'this player';if(!confirm('Remove '+name+'\'s account from this club? Their player slot and stamp progress will stay as a guest player.'))return;await PassportCloud.call('remove_member',{club_id:PassportCloud.activeClub(),user_id:userId});await loadClubTools(PassportCloud.activeClub());accountStatus('Account removed; the player history was preserved.',true)}
 async function leaveClub(){if(!confirm('Leave this club? Your player history will remain as a guest slot.'))return;await PassportCloud.call('leave_club',{club_id:PassportCloud.activeClub()});PassportCloud.setActiveClub('');await loadAccount();accountStatus('You left the club.',true)}
 
-$('#save').onclick=()=>save();
-$('#load-cloud').onclick=()=>loadPrivate();
-$('#copy-code').onclick=()=>copyCode();
-$('#open-first').onclick=()=>openStaFi('partner');
-$('#open-second').onclick=()=>openStaFi('me');
-$('#send-link').onclick=async()=>{try{const email=$('#auth-email').value.trim();if(!email)return accountStatus('Enter your email address.');localStorage.setItem('bbb-pending-join',new URLSearchParams(location.search).get('join')||'');await PassportCloud.magicLink(email,location.origin+location.pathname+location.search);accountStatus('Sign-in link sent — check your email.',true)}catch(e){accountStatus(e.message)}};
-$('#complete-link').onclick=async()=>{const field=$('#auth-link'),raw=field.value;field.value='';try{await PassportCloud.completeMagicLink(raw);await loadAccount();accountStatus('Signed in securely. You can now claim your passport.',true)}catch(e){accountStatus(e.message==='invalid_email_link'?'That is not a valid Passport Adventures sign-in link.':'That link is invalid or already used. Request a fresh email and copy its link without opening it.')}};
+function authMessage(error){return error==='invalid_login'?'SL username or password is incorrect.':error==='username_unavailable'?'That SL username already has an account. Sign in instead.':error==='password_length'?'Use a password with at least 8 characters.':error==='invalid_sl_username'?'Enter your actual Second Life username, such as avatar.name.':error==='too_many_attempts'?'Too many attempts. Wait a little while and try again.':'Account service unavailable. Please try again.'}
+async function accountAuth(kind){
+ const username=$('#auth-username').value.trim(),password=$('#auth-password').value;
+ if(!username)return accountStatus('Enter your Second Life username.');if(password.length<8)return accountStatus('Use a password with at least 8 characters.');
+ localStorage.setItem('bbb-pending-join',new URLSearchParams(location.search).get('join')||'');
+ try{if(kind==='register')await PassportCloud.register(username,password,username);else await PassportCloud.signIn(username,password);$('#auth-password').value='';await loadAccount();accountStatus(kind==='register'?'Account created. Create a club or join with an invite.':'Signed in.',true)}catch(e){accountStatus(authMessage(e.message))}
+}
+$('#sign-in').onclick=()=>accountAuth('login');
+$('#create-account').onclick=()=>accountAuth('register');
 $('#sign-out').onclick=()=>PassportCloud.signOut();
 $('#save-profile').onclick=async()=>{try{await PassportCloud.call('update_profile',{display_name:$('#profile-name').value,sl_username:$('#profile-sl').value,stafi_url:$('#profile-stafi').value});await loadAccount();accountStatus('Profile and private StaFi page saved.',true)}catch(e){accountStatus(e.message)}};
 $('#verify-stafi').onclick=()=>verifyStaFi().catch(e=>accountStatus(e.message==='invalid_stafi_url'?'Use the private thebbbbug.com/UTILS/YourStamps.php?Ref=… link supplied by the StaFi HUD.':e.message));
 $('#club-select').onchange=async e=>{PassportCloud.setActiveClub(e.target.value);await loadClubTools(e.target.value)};
 $('#create-club').onclick=()=>createClub().catch(e=>accountStatus(e.message));
 $('#join-club').onclick=()=>joinClub().catch(e=>accountStatus(e.message==='join_code_not_found'?'That invite code was not found.':e.message==='join_rate_limited'?'Too many invite attempts. Wait about 10 minutes, then try again.':e.message));
-$('#claim-club').onclick=()=>claimClub().catch(e=>accountStatus(e.message==='wrong_club_code'?'That Secret Club Code did not unlock the original game.':e.message));
 $('#new-invite').onclick=async()=>{try{const out=await PassportCloud.call('rotate_invite',{club_id:PassportCloud.activeClub()});showInvite(out.join_code);accountStatus('New invite ready. Older invite links no longer work.',true)}catch(e){accountStatus(e.message)}};
 $('#add-guest').onclick=()=>addGuest().catch(e=>accountStatus(e.message));
 $('#club-treasure').onclick=async()=>{try{const enabled=!activeClubData.club.treasure_enabled;await PassportCloud.call('update_club',{club_id:PassportCloud.activeClub(),treasure_enabled:enabled});await loadClubTools(PassportCloud.activeClub());accountStatus('Adventure Treasure is '+(enabled?'ON':'OFF')+' for this club.',true)}catch(e){accountStatus(e.message)}};
 $('#leave-club').onclick=()=>leaveClub().catch(e=>accountStatus(e.message==='owner_cannot_leave'?'The owner must transfer or remove the club before leaving.':e.message));
 window.addEventListener('passport-auth-ready',()=>loadAccount().catch(e=>accountStatus('Account service: '+e.message)));
 PassportCloud.ready().then(()=>loadAccount()).catch(e=>accountStatus('Account service: '+e.message));
-loadShared().then(()=>{const options=$('#claim-player').options;if(options.length>1){options[0].textContent=tabPartnerName;options[1].textContent=tabMeName}});
 </script>
 </body>
 </html>

@@ -81,7 +81,7 @@ requestCollectRewards=async function(btn){
 };
 const legacyRender=render;
 render=function(){
- legacyRender();const done=viewedDone(),baseline=clubMode&&currentView==='00000000-0000-4000-8000-000000000101'?1:(!clubMode?knownPreCampaignStamps(currentView):0),passportDone=Math.min(TOTAL_PASSPORT_STAMPS,done.size+baseline),toGo=Math.max(0,TOTAL_PASSPORT_STAMPS-passportDone);
+ legacyRender();const done=viewedDone(),passportDone=Math.min(TOTAL_PASSPORT_STAMPS,done.size),toGo=Math.max(0,TOTAL_PASSPORT_STAMPS-passportDone);
  const progressEl=$('#passport-progress'),remainingEl=$('#passport-remaining');if(progressEl)progressEl.textContent=passportDone+' / '+TOTAL_PASSPORT_STAMPS;if(remainingEl)remainingEl.textContent=toGo?toGo+' to go':'Passport complete!';
  const tabs=document.getElementById('player-tabs');if(clubMode&&tabs)tabs.innerHTML=activePlayers().map(function(p,i){return '<button class="viewtab '+(currentView===p.id?'active':'')+'" onclick="setView(&quot;'+p.id+'&quot;)">'+(i===0?'🗡️':i===1?'👽':'🧭')+' '+esc(p.display_name)+'</button>'}).join('');
  const context=document.getElementById('club-context');if(context)context.innerHTML=clubMode?'Playing with <b>'+esc(clubData.club.name)+'</b> · <a href="settings.html">switch or invite players</a>':'';
