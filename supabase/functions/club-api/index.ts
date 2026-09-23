@@ -237,9 +237,13 @@ Deno.serve(async(req:Request)=>{
       return reply({ok:true,join_code:code});
     }
     if(action==="update_club"){
-      if(!manager(m))return reply({ok:false,error:"manager_required"},403);
-      const patch:any={};if(body.name!==undefined){patch.name=cleanText(body.name,80);if(!patch.name)return reply({ok:false,error:"club_name_required"},400)}
+      const patch:any={};
+      if(body.name!==undefined){
+        if(!manager(m))return reply({ok:false,error:"manager_required"},403);
+        patch.name=cleanText(body.name,80);if(!patch.name)return reply({ok:false,error:"club_name_required"},400);
+      }
       if(body.treasure_enabled!==undefined)patch.treasure_enabled=body.treasure_enabled===true;
+      if(!Object.keys(patch).length)return reply({ok:false,error:"nothing_to_update"},400);
       await db("clubs?id=eq."+clubId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(patch)});
       if(body.treasure_enabled===true)await normalizeTreasureRoles(clubId);
       return reply({ok:true});
@@ -314,7 +318,10 @@ Deno.serve(async(req:Request)=>{
       return reply({ok:true,balance,request:row,payer});
     }
     if(action==="mark_paid"){
-      if(!manager(m))return reply({ok:false,error:"manager_required"},403);
+      if(!manager(m)){
+        const payer=(await db("club_players?club_id=eq."+clubId+"&user_id=eq."+user.id+"&is_active=eq.true&is_payer=eq.true&select=id"))?.[0];
+        if(!payer)return reply({ok:false,error:"payer_or_manager_required"},403);
+      }
       try{
         const remaining=await db("rpc/allocate_club_payment",{method:"POST",body:JSON.stringify({p_club_id:clubId,p_handler:user.id})});
         return reply({ok:true,paid:1000,remaining_balance:Number(remaining||0)});
