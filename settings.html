@@ -302,6 +302,9 @@ async function loadAccount(){
  const select=$('#club-select'),remembered=PassportCloud.activeClub();
  select.innerHTML=accountData.clubs.length?accountData.clubs.map(c=>'<option value="'+c.id+'">'+html(c.name)+' · '+html(c.role)+'</option>').join(''):'<option value="">No clubs yet</option>';
  const active=accountData.clubs.some(c=>c.id===remembered)?remembered:(accountData.clubs[0]?.id||'');select.value=active;PassportCloud.setActiveClub(active);
+ setClubAction(null);
+ $('#selected-invite-box').classList.add('hidden');
+ $('#new-club-invite-box').classList.add('hidden');
  await loadClubTools(active);
  const pending=new URLSearchParams(location.search).get('join')||localStorage.getItem('bbb-pending-join')||'';
  if(pending){$('#join-code').value=pending;setClubAction('join');clubStatus('Invite ready — choose Join club.');}
@@ -349,12 +352,32 @@ $('#create-account').onclick=()=>accountAuth('register');
 $('#sign-out').onclick=()=>PassportCloud.signOut();
 $('#save-profile').onclick=async()=>{try{const hasStaFi=!!$('#profile-stafi').value.trim();await PassportCloud.call('update_profile',{display_name:$('#profile-name').value,sl_username:$('#profile-sl').value,stafi_url:$('#profile-stafi').value});await loadAccount();$('#account-details').open=true;accountStatus(hasStaFi?'Saved. If StaFi says “needs test,” click Test & enable StaFi.':'Profile saved. Manual stamp tracking is active.',true)}catch(e){accountStatus(e.message)}};
 $('#verify-stafi').onclick=()=>verifyStaFi().catch(e=>accountStatus(e.message==='invalid_stafi_url'?'Use the private thebbbbug.com/UTILS/YourStamps.php?Ref=… link supplied by the StaFi HUD.':e.message));
-$('#club-select').onchange=async e=>{$('#selected-invite-box').classList.add('hidden');PassportCloud.setActiveClub(e.target.value);await loadClubTools(e.target.value)};
-$('#show-create-club').onclick=()=>{const opening=$('#create-club-panel').classList.contains('hidden');setClubAction(opening?'create':null);if(opening)$('#new-club-invite-box').classList.add('hidden')};
-$('#show-join-club').onclick=()=>setClubAction($('#join-club-panel').classList.contains('hidden')?'join':null);
+$('#club-select').onchange=async e=>{
+ setClubAction(null);
+ $('#selected-invite-box').classList.add('hidden');
+ $('#new-club-invite-box').classList.add('hidden');
+ PassportCloud.setActiveClub(e.target.value);
+ await loadClubTools(e.target.value);
+};
+$('#show-create-club').onclick=()=>{
+ const opening=$('#create-club-panel').classList.contains('hidden');
+ setClubAction(opening?'create':null);
+ if(opening){$('#selected-invite-box').classList.add('hidden');$('#new-club-invite-box').classList.add('hidden')}
+};
+$('#show-join-club').onclick=()=>{
+ const opening=$('#join-club-panel').classList.contains('hidden');
+ setClubAction(opening?'join':null);
+ if(opening){$('#selected-invite-box').classList.add('hidden');$('#new-club-invite-box').classList.add('hidden')}
+};
 $('#create-club').onclick=()=>createClub().catch(e=>clubStatus(e.message));
 $('#join-club').onclick=()=>joinClub().catch(e=>clubStatus(e.message==='join_code_not_found'?'That invite code was not found.':e.message==='join_rate_limited'?'Too many invite attempts. Wait about 10 minutes, then try again.':e.message));
-$('#invite-selected-club').onclick=async()=>{try{const out=await PassportCloud.call('rotate_invite',{club_id:PassportCloud.activeClub()});showInvite(out.join_code,'#selected-invite-box','copy-selected-club-invite','Invite to '+activeClubData.club.name);clubStatus('Invite ready for '+activeClubData.club.name+'. Older invite links no longer work.',true)}catch(e){accountStatus(e.message)}};
+$('#invite-selected-club').onclick=async()=>{try{
+ setClubAction(null);
+ $('#new-club-invite-box').classList.add('hidden');
+ const out=await PassportCloud.call('rotate_invite',{club_id:PassportCloud.activeClub()});
+ showInvite(out.join_code,'#selected-invite-box','copy-selected-club-invite','Invite to '+activeClubData.club.name);
+ clubStatus('Invite ready for '+activeClubData.club.name+'. Older invite links no longer work.',true)
+}catch(e){accountStatus(e.message)}};
 $('#treasure-recipient').onchange=()=>saveTreasureRecipient().catch(e=>clubStatus(e.message==='treasure_locked_to_payer'?'Only the locked payer can change who is paid.':e.message));
 $('#mark-treasure-paid').onclick=()=>markTreasurePaid().catch(e=>clubStatus(e.message==='threshold_not_met'?'The Treasure balance is below 1,000 L$.':e.message==='payer_required'?'Only the locked payer can record the payment.':e.message));
 $('#club-treasure').onchange=async()=>{try{
