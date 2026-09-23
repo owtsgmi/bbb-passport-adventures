@@ -24,7 +24,7 @@ This file is the persistent source of truth for future edits to this project.
 - Two configurable player tabs use the players' **actual Second Life usernames** as their labels.
 - Player-facing header should stay intentionally simple:
   - title: **Bellisseria Passport Adventures**;
-  - short subtitle: **Pick a 3-stop adventure, collect BBB stamps together, and explore Second Life.**
+  - short subtitle: **Pick a 3-stop adventure, collect BBB stamps, and explore Second Life.**
   - keep the top header free of action buttons;
   - **Settings** lives in the hamburger menu, not beside the passport counter;
   - keep a prominent top-right passport completion counter for the selected player. When StaFi is connected, use the live StaFi summary, e.g. **1 / 390**, with the remaining stamp count below it. This is the primary game goal and should remain visually prominent;
