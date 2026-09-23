@@ -9,8 +9,8 @@ function participantPlayers(a){
 }
 setView=function(v){currentView=v;if(clubMode)localStorage.setItem('bbb-club-view-'+clubData.club.id,v);else localStorage.setItem('bbb-view',v);render()};
 startedAdventure=function(a){return started.has(a.id)||(clubMode?activePlayers().some(function(p){return a.stamps.some(function(st){return (clubProgress.get(p.id)||new Set()).has(st.id)})}):a.stamps.some(function(st){return meDone.has(st.id)||partnerDone.has(st.id)}))};
-togetherComplete=function(a){if(!clubMode)return personComplete(a,meDone)&&personComplete(a,partnerDone);const people=participantPlayers(a);return people.length>0&&people.every(function(p){return personComplete(a,clubProgress.get(p.id)||new Set())})};
-sharedNextIndex=function(a){const people=participantPlayers(a);let i=a.stamps.findIndex(function(st){return clubMode?(!people.length||people.some(function(p){return !(clubProgress.get(p.id)||new Set()).has(st.id)})):!(meDone.has(st.id)&&partnerDone.has(st.id))});return i<0?0:i};
+togetherComplete=function(a){if(!clubMode)return personComplete(a,meDone)||personComplete(a,partnerDone);const people=participantPlayers(a);return people.length>0&&people.some(function(p){return personComplete(a,clubProgress.get(p.id)||new Set())})};
+sharedNextIndex=function(a){if(!clubMode){const set=currentView==='partner'?partnerDone:meDone;const i=a.stamps.findIndex(function(st){return !set.has(st.id)});return i<0?0:i}const set=viewedDone(),i=a.stamps.findIndex(function(st){return !set.has(st.id)});return i<0?0:i};
 const legacySyncCompletedRewardsToPayouts=syncCompletedRewardsToPayouts;
 syncCompletedRewardsToPayouts=function(){return clubMode?false:legacySyncCompletedRewardsToPayouts()};
 function selectedParticipantIds(){return activePlayers().map(function(p){return p.id})}
@@ -55,13 +55,13 @@ missionRows=function(a,mapInteractive){
 const legacyPinnedHtml=pinnedHtml;
 pinnedHtml=function(a){
  if(!clubMode)return legacyPinnedHtml(a);
- const selected=viewedDone(),shown=progressFor(a,selected),people=participantPlayers(a),together=a.stamps.filter(function(st){return people.length&&people.every(function(p){return (clubProgress.get(p.id)||new Set()).has(st.id)})}).length;
- const treasureBadge=adventureTreasureEnabled?' <span class="badge mystery">🎁 Mystery L$</span>':'',treasureNote=adventureTreasureEnabled?' · L$ amount reveals only when everyone finishes':'',person=(viewedPlayer()||{}).display_name||'Player';
- return '<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>'+esc(a.title)+treasureBadge+'</h3><div class="meta">'+esc(a.zone)+' · about '+a.minutes+' min · 3 stops · '+people.length+' players</div><div class="progress"><div class="bar" style="width:'+Math.round((shown/a.stamps.length)*100)+'%"></div></div><div class="small">'+esc(person)+' passport: '+shown+'/'+a.stamps.length+' · Group: '+together+'/'+a.stamps.length+treasureNote+'</div></div></div><div style="padding:0 17px 17px">'+missionRows(a,true)+'</div><div class="runmap"><div id="run-map"></div></div></div>';
+ const selected=viewedDone(),shown=progressFor(a,selected),people=participantPlayers(a),best=people.reduce(function(m,p){return Math.max(m,progressFor(a,clubProgress.get(p.id)||new Set()))},0);
+ const treasureBadge=adventureTreasureEnabled?' <span class="badge mystery">🎁 Mystery L$</span>':'',treasureNote=adventureTreasureEnabled?' · prize reveals when any player reaches 3/3':'',person=(viewedPlayer()||{}).display_name||'Player';
+ return '<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>'+esc(a.title)+treasureBadge+'</h3><div class="meta">'+esc(a.zone)+' · about '+a.minutes+' min · 3 stops · '+people.length+' player'+(people.length===1?'':'s')+'</div><div class="progress"><div class="bar" style="width:'+Math.round((shown/a.stamps.length)*100)+'%"></div></div><div class="small">'+esc(person)+' passport: '+shown+'/'+a.stamps.length+' · Best passport: '+best+'/'+a.stamps.length+treasureNote+'</div></div></div><div style="padding:0 17px 17px">'+missionRows(a,true)+'</div><div class="runmap"><div id="run-map"></div></div></div>';
 };
 function beneficiaryPlayer(){return clubMode?(activePlayers().find(function(p){return p.is_beneficiary})||activePlayers().find(function(p){return !p.is_payer})||activePlayers()[0]):null}
 const legacyPartnerAheadCount=partnerAheadCount;
-partnerAheadCount=function(){if(!clubMode)return legacyPartnerAheadCount();const b=beneficiaryPlayer();return b?adventures.filter(function(a){return participantPlayers(a).filter(function(p){return p.id!==b.id}).every(function(p){return personComplete(a,clubProgress.get(p.id)||new Set())})&&!personComplete(a,clubProgress.get(b.id)||new Set())}).length:0};
+partnerAheadCount=function(){if(!clubMode)return legacyPartnerAheadCount();return 0};
 const legacyRewardHtml=rewardHtml;
 rewardHtml=function(){
  if(!clubMode)return legacyRewardHtml();if(!adventureTreasureEnabled)return '';
