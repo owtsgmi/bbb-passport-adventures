@@ -470,7 +470,13 @@ Deno.serve(async(req:Request)=>{
       const run=(await db("club_adventure_runs?club_id=eq."+clubId+"&adventure_id=eq."+adventureId+"&status=eq.active&select=id,stamp_ids"))?.[0];
       if(!run)return reply({ok:false,error:"active_run_required"},409);
       const oldIds=ints(run.stamp_ids),stampIds=ints(body.stamp_ids);
-      if(stampIds.length<1||stampIds.length>3||stampIds.length>=oldIds.length||stampIds.some((id:number)=>!oldIds.includes(id)))return reply({ok:false,error:"invalid_retirement_trim"},400);
+      if(stampIds.length>3||stampIds.length>=oldIds.length||stampIds.some((id:number)=>!oldIds.includes(id)))return reply({ok:false,error:"invalid_retirement_trim"},400);
+      if(!stampIds.length){
+        await db("club_adventure_runs?id=eq."+run.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"retired",locked:false,stamp_ids:[],stamp_refs:[]})});
+        const board=(await db("club_board_state?club_id=eq."+clubId+"&select=current_adventure"))?.[0];
+        if(Number(board?.current_adventure||0)===adventureId)await db("club_board_state?club_id=eq."+clubId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({current_adventure:0,adventure_locked:true,updated_by:user.id,last_active_at:new Date().toISOString()})});
+        return reply({ok:true,retired:true,stamp_ids:[]});
+      }
       const refs=stampRefs(body.stamps,stampIds);if(refs.length!==stampIds.length)return reply({ok:false,error:"invalid_stamp_references"},400);
       await db("club_adventure_runs?id=eq."+run.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({stamp_ids:stampIds,stamp_refs:refs})});
       return reply({ok:true,stamp_ids:stampIds,finalized:await finalizeRun(clubId,adventureId)});
