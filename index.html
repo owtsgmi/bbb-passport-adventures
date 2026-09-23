@@ -394,6 +394,10 @@ function missionRows(a,mapInteractive=false){
  return h+'</tbody></table>';
 }
 let currentAdventureMap=null,currentAdventureMapId=0,selectedAdventureStop=-1;
+function adventureMapSignature(a){
+ const stamps=(typeof adventureStamps==='function'?adventureStamps(a):a.stamps)||[];
+ return String(a.id)+':'+stamps.map(s=>String(s.id)).join(',');
+}
 async function renderRunMap(a){
  const host=document.getElementById('run-map');if(!host||!window.SLGridMap)return;
  currentAdventureMapId=a.id;
@@ -485,7 +489,24 @@ function render(){
  let pinned=adventures.find(a=>a.id===lastAdventure&&!togetherComplete(a));
  if(!pinned) pinned=adventures.find(a=>startedAdventure(a)&&!togetherComplete(a));
  if(pinned&&lastAdventure!==pinned.id){lastAdventure=pinned.id;localStorage.setItem('bbb-last-adventure',pinned.id)}
- $('#pinned').innerHTML=pinned?pinnedHtml(pinned):'<div class="pinempty"><b>No adventure selected yet.</b><div class="small" style="margin-top:4px">Browse the adventure list or let us choose one for you.</div><div class="emptyactions"><button class="primary" onclick="surpriseUs()">✨ Pick Random Adventure</button></div></div>';if(pinned)setTimeout(()=>renderRunMap(pinned),0);
+ const pinnedHost=$('#pinned');
+ const nextMapSig=pinned?adventureMapSignature(pinned):'';
+ const oldMapWrap=pinnedHost.querySelector('#pinned-card .runmap');
+ const keepMap=!!(oldMapWrap&&oldMapWrap.dataset.mapSignature===nextMapSig);
+ if(keepMap)oldMapWrap.remove();
+ pinnedHost.innerHTML=pinned?pinnedHtml(pinned):'<div class="pinempty"><b>No adventure selected yet.</b><div class="small" style="margin-top:4px">Browse the adventure list or let us choose one for you.</div><div class="emptyactions"><button class="primary" onclick="surpriseUs()">✨ Pick Random Adventure</button></div></div>';
+ if(pinned){
+   if(keepMap){
+     const freshWrap=pinnedHost.querySelector('#pinned-card .runmap');
+     if(freshWrap)freshWrap.replaceWith(oldMapWrap);
+   }else{
+     setTimeout(async()=>{
+       await renderRunMap(pinned);
+       const wrap=pinnedHost.querySelector('#pinned-card .runmap');
+       if(wrap)wrap.dataset.mapSignature=nextMapSig;
+     },0);
+   }
+ }
  const currentDetails=document.getElementById('current-adventure');
  if(currentDetails&&pinned&&currentDetails.dataset.autopened!=='1'){currentDetails.open=true;currentDetails.dataset.autopened='1'}
  if(currentDetails&&!pinned)delete currentDetails.dataset.autopened;
