@@ -196,7 +196,9 @@ async function loadClubTools(clubId){
  $('#manager-actions').classList.toggle('hidden',!canManage);
  $('#personal-club-actions').classList.toggle('hidden',mine.role==='owner');
 
- $('#member-list').innerHTML=activeClubData.players.map(p=>{
+ const otherPlayers=activeClubData.players.filter(p=>p.user_id!==currentUserId);
+ $('#member-list').classList.toggle('hidden',otherPlayers.length===0);
+ $('#member-list').innerHTML=otherPlayers.map(p=>{
    const member=p.user_id&&activeClubData.members.find(m=>m.user_id===p.user_id);
    const badges=(treasureOn&&p.is_payer?'<span class="rolebadge">payer</span>':'')+(treasureOn&&p.is_beneficiary?'<span class="rolebadge">paid to</span>':'')+(!p.is_active?'<span class="rolebadge">inactive</span>':'');
    let actions='';
