@@ -1,4 +1,4 @@
-let clubMode=false,clubData=null,clubPlayers=[],clubProgress=new Map(),clubRuns=[],clubParticipants=[],clubParticipantSelection=new Set(),clubStaFiSyncBusy=false,lastClubStaFiSync=0;
+let clubMode=false,clubData=null,clubPlayers=[],clubProgress=new Map(),clubRuns=[],clubParticipants=[],clubParticipantSelection=new Set(),clubStaFiSyncBusy=false,lastClubStaFiSync=0,lastClubActivity=0;
 function activePlayers(){return clubMode?clubPlayers.filter(function(p){return p.is_active}):[]}
 function viewedPlayer(){return clubMode?(clubPlayers.find(function(p){return p.id===currentView})||activePlayers()[0]||null):null}
 function viewedDone(){if(!clubMode)return currentView==='partner'?partnerDone:meDone;return clubProgress.get((viewedPlayer()||{}).id)||new Set()}
@@ -22,6 +22,11 @@ startAdventure=function(id){
  const ok=legacyStartAdventure(id);
  if(ok&&clubMode&&adventure)PassportCloud.call('start_adventure',{club_id:clubData.club.id,adventure_id:Number(id),stamp_ids:adventure.stamps.map(function(st){return st.id}),stamps:adventure.stamps.map(function(st){return {id:st.id,name:st.name,region:st.region,x:Number(st.x),y:Number(st.y),z:Number(st.z)}}),player_ids:players}).then(function(){return pollClub(true)}).catch(function(){toast('Adventure saved here; club sync will retry.')});return ok
 };
+async function touchClubActivity(force){
+ if(!clubMode||document.hidden||(!force&&Date.now()-lastClubActivity<2*60*1000))return false;
+ lastClubActivity=Date.now();
+ try{await PassportCloud.call('activity',{club_id:clubData.club.id});return true}catch(e){return false}
+}
 async function maybeAutoStaFiSync(force){
  if(!clubMode||clubStaFiSyncBusy||(!force&&Date.now()-lastClubStaFiSync<60*1000))return false;
  clubStaFiSyncBusy=true;lastClubStaFiSync=Date.now();
@@ -76,7 +81,7 @@ requestCollectRewards=async function(btn){
 const legacyRender=render;
 render=function(){
  legacyRender();const done=viewedDone();
- const player=viewedPlayer(),stafiTotal=Number(player&&player.stafi_available_count||0),stafiDone=Number(player&&player.stafi_collected_count),hasStaFiTotals=!!(player&&player.stafi_last_success_at&&stafiTotal>0&&Number.isFinite(stafiDone)),shownTotal=hasStaFiTotals?stafiTotal:TOTAL_PASSPORT_STAMPS,shownDone=hasStaFiTotals?Math.min(shownTotal,Math.max(0,stafiDone)):Math.min(shownTotal,done.size),toGo=Math.max(0,shownTotal-shownDone);
+ const player=viewedPlayer(),globalTotal=Number(clubData&&clubData.passport_total||0),stafiDone=Number(player&&player.stafi_collected_count),hasStaFiDone=!!(player&&player.stafi_last_success_at&&Number.isFinite(stafiDone)&&stafiDone>=0),shownTotal=globalTotal>0?globalTotal:TOTAL_PASSPORT_STAMPS,shownDone=hasStaFiDone?Math.min(shownTotal,stafiDone):Math.min(shownTotal,done.size),toGo=Math.max(0,shownTotal-shownDone);
  const progressEl=$('#passport-progress'),remainingEl=$('#passport-remaining');if(progressEl)progressEl.textContent=shownDone+' / '+shownTotal;if(remainingEl)remainingEl.textContent=toGo?toGo+' to go':'Passport complete!';
  const tabs=document.getElementById('player-tabs');if(clubMode&&tabs)tabs.innerHTML=activePlayers().map(function(p,i){return '<button class="viewtab '+(currentView===p.id?'active':'')+'" onclick="setView(&quot;'+p.id+'&quot;)">'+(i===0?'🗡️':i===1?'👽':'🧭')+' '+esc(p.display_name)+'</button>'}).join('');
  const context=document.getElementById('club-context');if(context)context.innerHTML=clubMode?'Playing with <b>'+esc(clubData.club.name)+'</b> · <a href="settings.html">switch or invite players</a>':'';
