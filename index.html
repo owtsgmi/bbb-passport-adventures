@@ -97,7 +97,7 @@ async function loadAdventureStopImages(){
    if(!r.ok)throw new Error('HTTP '+r.status);
    const data=await r.json();
    if(!data?.ok||!Array.isArray(data.items))throw new Error('bad BBB response');
-   const allStops=adventures.flatMap(a=>a.stamps);
+   const allStops=adventures.flatMap(a=>a.allStamps||a.stamps);
    data.items.forEach(it=>{
      if(!it?.img)return;
      let match=allStops.find(s=>sameStopLocation(s,it));
@@ -113,7 +113,7 @@ async function loadAdventureStopImages(){
    try{
      const cached=JSON.parse(localStorage.getItem('bbb-adventure-image-cache')||'null');
      if(cached?.items){
-       const allStops=adventures.flatMap(a=>a.stamps);
+       const allStops=adventures.flatMap(a=>a.allStamps||a.stamps);
        cached.items.forEach(it=>{
          if(!it?.img)return;
          let match=allStops.find(s=>sameStopLocation(s,it));
@@ -128,8 +128,17 @@ async function loadAdventureStopImages(){
    }catch(_){}
  }
 }
-const adventures=(window.RAW||[]).map(a=>({id:a[0],title:a[1],zone:a[2],mode:a[3],minutes:a[4],stamps:a[5].map(s=>({id:s[0],name:s[1],url:s[2],region:s[3],x:s[4],y:s[5],z:s[6],retire:s[7]}))}));
-const allStampIds=[...new Set(adventures.flatMap(a=>a.stamps.map(s=>s.id)))];
+function stopRetiredNow(st){
+ if(!st||!st.retire)return false;
+ const t=Date.parse(String(st.retire)+' 23:59:59');
+ return Number.isFinite(t)&&Date.now()>t;
+}
+const adventures=(window.RAW||[]).map(a=>{
+ const allStamps=a[5].map(s=>({id:s[0],name:s[1],url:s[2],region:s[3],x:s[4],y:s[5],z:s[6],retire:s[7]}));
+ return {id:a[0],title:a[1],zone:a[2],mode:a[3],minutes:a[4],allStamps,stamps:allStamps.filter(st=>!stopRetiredNow(st))};
+});
+function adventureAvailable(a){return !!(a&&Array.isArray(a.stamps)&&a.stamps.length)}
+const allStampIds=[...new Set(adventures.flatMap(a=>(a.allStamps||a.stamps).map(s=>s.id)))];
 const TOTAL_PASSPORT_STAMPS=allStampIds.length+1; // 381 campaign stamps + 1 already collected before the campaign list
 const PRE_CAMPAIGN_BASELINE={partner:1,me:0};
 function knownPreCampaignStamps(view){return Number(PRE_CAMPAIGN_BASELINE[view]||0)}
@@ -355,7 +364,7 @@ function toggleFor(person,id,advId){const set=person==='me'?meDone:partnerDone;s
 function surpriseUs(){
  const current=activeAdventure();
  if(current&&adventureLocked)return toast('🔒 Current adventure is locked. Unlock it before picking another.');
- const pool=adventures.filter(a=>!startedAdventure(a)&&!togetherComplete(a));if(!pool.length)return toast('No untouched adventures left.');
+ const pool=adventures.filter(a=>adventureAvailable(a)&&!startedAdventure(a)&&!togetherComplete(a));if(!pool.length)return toast('No untouched adventures left.');
  const a=pool[Math.floor(Math.random()*pool.length)];
  if(startAdventure(a.id))toast('Pinned: '+a.title);
 }
@@ -389,7 +398,7 @@ async function renderRunMap(a){
  const host=document.getElementById('run-map');if(!host||!window.SLGridMap)return;
  currentAdventureMapId=a.id;
  selectedAdventureStop=-1;
- currentAdventureMap=new SLGridMap(host,{title:'🗺 Current adventure · all 3 stops'});
+ currentAdventureMap=new SLGridMap(host,{title:'🗺 Current adventure · '+a.stamps.length+' stop'+(a.stamps.length===1?'':'s')});
  await currentAdventureMap.setLocations(a.stamps.map((s,i)=>({name:s.name,region:s.region,x:Number(s.x),y:Number(s.y),z:Number(s.z),label:String(i+1)})),{fit:true});
 }
 async function selectAdventureStop(advId,index){
@@ -413,7 +422,7 @@ function pinnedHtml(a){
  const shown=currentView==='partner'?hers:mine;
  const treasureBadge=adventureTreasureEnabled?' <span class="badge mystery">🎁 Mystery L$</span>':'';
  const treasureNote=adventureTreasureEnabled?' · prize reveals when any passport reaches 3/3':'';
- return `<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>${esc(a.title)}${treasureBadge}</h3><div class="meta">${esc(a.zone)} · about ${a.minutes} min · 3 stops</div><div class="progress"><div class="bar" style="width:${Math.round((shown/a.stamps.length)*100)}%"></div></div><div class="small">${currentView==='partner'?tabPartnerName:tabMeName} passport: ${shown}/${a.stamps.length} · Best passport: ${best}/${a.stamps.length}${treasureNote}</div></div></div><div style="padding:0 17px 17px">${missionRows(a,true)}</div><div class="runmap"><div id="run-map"></div></div></div>`;
+ return `<div class="pinned" id="pinned-card"><div class="advhead"><div><h3>${esc(a.title)}${treasureBadge}</h3><div class="meta">${esc(a.zone)} · about ${a.minutes} min · ${a.stamps.length} stop${a.stamps.length===1?'':'s'}</div><div class="progress"><div class="bar" style="width:${Math.round((shown/a.stamps.length)*100)}%"></div></div><div class="small">${currentView==='partner'?tabPartnerName:tabMeName} passport: ${shown}/${a.stamps.length} · Best passport: ${best}/${a.stamps.length}${treasureNote}</div></div></div><div style="padding:0 17px 17px">${missionRows(a,true)}</div><div class="runmap"><div id="run-map"></div></div></div>`;
 }
 function collapsedTrip(a,completed=false){
  const r=completed?rewardFor(a):0;
@@ -484,7 +493,7 @@ function render(){
  if(lockBox){lockBox.checked=!!(pinned&&adventureLocked);lockBox.disabled=!pinned}
  if(lockLabel){lockLabel.style.display=pinned?'flex':'none';lockLabel.classList.toggle('locked',!!(pinned&&adventureLocked))}
  if(lockText)lockText.textContent=adventureLocked?'Adventure locked':'Adventure unlocked';
- const pending=adventures.filter(a=>!togetherComplete(a)&&(!pinned||a.id!==pinned.id)&&matches(a)).sort((a,b)=>a.zone.localeCompare(b.zone)||a.title.localeCompare(b.title));
+ const pending=adventures.filter(a=>adventureAvailable(a)&&!togetherComplete(a)&&(!pinned||a.id!==pinned.id)&&matches(a)).sort((a,b)=>a.zone.localeCompare(b.zone)||a.title.localeCompare(b.title));
  $('#pending').innerHTML=pending.map(a=>collapsedTrip(a,false)).join('')||'<div class="pinempty">No pending adventures match this filter.</div>';
  const completed=adventures.filter(a=>togetherComplete(a)&&matches(a)).sort((a,b)=>a.zone.localeCompare(b.zone)||a.title.localeCompare(b.title));
  $('#completed').innerHTML=completed.map(a=>collapsedTrip(a,true)).join('')||'<div class="pinempty">No completed adventures yet.</div>';
@@ -512,7 +521,7 @@ function init(){
 }
 init();
 </script>
-<script src="club-mode.js?v=9"></script>
+<script src="club-mode.js?v=10"></script>
 
 <script>
 /* Shared Supabase sync: publishable key is intentionally safe for browser use.
