@@ -30,9 +30,10 @@ This file is the persistent source of truth for future edits to this project.
   - **Settings** lives in the hamburger menu, not beside the passport counter;
   - keep a prominent top-right passport completion counter for the selected player, e.g. **1 / 382**, with the remaining stamp count below it. This is the primary game goal and should remain visually prominent;
   - no cloud-sync text, StaFi-link count, payout status, notification diagnostics, or other technical/admin status in the header.
-- A primary **Pick an Adventure** button sits above the Current Adventure area and opens/scrolls to the adventure chooser; it does not randomize by itself.
+- Adventure selection is intentionally consolidated rather than duplicated: there is no separate top CTA bar. With no current adventure, the Current Adventure empty state offers **Browse Adventures** and **Pick Random**; the chooser is titled **Choose an Adventure** and opens by default. Once an adventure is active, the chooser becomes **Choose Another Adventure** and collapses by default.
 - Random selection button text: **Pick Random Adventure**. It appears only inside the expanded **Choose Another Adventure** section.
 - Adventure-selection controls are grouped inside the chooser: **Pick Random Adventure**, text search, area filter, participant selection, and the pending adventure list.
+- The participant picker is hidden when only one active player exists; with 2+ active players it appears as **Who is playing?**.
 - The random button must be visually obvious at the top of the expanded chooser, above the pending adventure cards.
 - Keep adventure stop lists clean: do **not** render the old `missionSetup` Travel / Next stop / Copy destination strip above stop rows. Per-stop Copy buttons are enough.
 - Current adventure loads collapsed.
@@ -40,6 +41,7 @@ This file is the persistent source of truth for future edits to this project.
 - Settings is a standalone page at `settings.html`, linked from the hamburger menu on Adventures and supporting pages.
 - Do not reintroduce the inline Settings panel on `index.html`; the main Adventures page should remain focused on gameplay.
 - Settings is organized as two distinct steps: **1) User Account** and **2) Clubs**. After sign-in, account/profile/StaFi controls collapse into a compact **Account details & StaFi** disclosure so club creation/joining is the obvious next step. StaFi remains optional; manual stamp tracking works without it.
+- In the Clubs step, the **club picker comes first**. **Create a new club** and **Join an existing club** are compact mutually-exclusive expanders; opening one closes the other. Active-club roster/management tools remain below the selected club.
 - The standalone Settings page is player-oriented and allows:
   - first and second player Second Life usernames (also used as tab names)
   - each person's BBB StaFi progress-page URL
