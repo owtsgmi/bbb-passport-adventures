@@ -12,7 +12,7 @@ This file is the persistent source of truth for future edits to this project.
 
 ## Current game rules
 - Adventures are exactly **3 passport stops** each.
-- Current dataset: **381 stamps = 127 adventures**.
+- Stable adventure dataset: **381 stamps = 127 adventures**. The live BBB/StaFi passport total can be higher and changes independently.
 - A run only counts when **both players have all 3 stamps**.
 - One player completing the three stamps alone is only "waiting on the other" and earns no payout yet.
 - Each jointly completed 3-stop adventure reveals one **random 20–100 L$ mystery reward**.
@@ -28,7 +28,7 @@ This file is the persistent source of truth for future edits to this project.
   - short subtitle: **Pick a 3-stop adventure, collect BBB stamps together, and explore Second Life.**
   - keep the top header free of action buttons;
   - **Settings** lives in the hamburger menu, not beside the passport counter;
-  - keep a prominent top-right passport completion counter for the selected player, e.g. **1 / 382**, with the remaining stamp count below it. This is the primary game goal and should remain visually prominent;
+  - keep a prominent top-right passport completion counter for the selected player. When StaFi is connected, use the live StaFi summary, e.g. **1 / 390**, with the remaining stamp count below it. This is the primary game goal and should remain visually prominent;
   - no cloud-sync text, StaFi-link count, payout status, notification diagnostics, or other technical/admin status in the header.
 - Adventure selection is deliberately flat and simple: there is **no Pick/Choose Adventure container or accordion**.
 - The empty Current Adventure state contains the single **Pick Random Adventure** action. Directly below Current Adventure, show the **area dropdown**, pending adventure count, and then the adventure list; do not duplicate the random button there.
@@ -74,10 +74,11 @@ This file is the persistent source of truth for future edits to this project.
 
 
 ## Total passport counter
-- The top stamp counter should show the **full passport total**, not only the 381-stamp campaign subset.
-- Current snapshot total: **382 stamps** = 381 campaign/uncollected stamps + 1 known pre-campaign stamp. Do not hardcode or publish the private StaFi reference used to establish that baseline.
-- Display format should include both collected/total and remaining, e.g. **1/382 stamps · 381 to go**.
-- Adventure rewards still use only the 381 campaign stamps grouped into 127 three-stop runs.
+- The top stamp counter shows the **full live passport total**, not only the fixed 381-stamp adventure subset.
+- A verified private StaFi page exposes a summary with **collected**, **uncollected**, and **all currently available stamps**. Store only those derived counts for club-visible progress; never expose the raw private StaFi URL.
+- Current verified example from StaFi (2026-09-22/23): **1 collected + 389 uncollected = 390 currently available**. Treat 390 as a live observation, not a new hard-coded constant.
+- Display format includes collected/total and remaining, e.g. **1 / 390 · 389 to go**.
+- Adventure rewards still use only the stable 381 campaign stamps grouped into 127 three-stop adventures.
 
 
 ## Navigation / extra pages
@@ -186,7 +187,7 @@ This file is the persistent source of truth for future edits to this project.
 - **NEXT** means the first stop not yet recorded complete for **both** players.
 - It advances from the shared `meDone` / `partnerDone` stamp state, not from map selection.
 - The intended final behavior is: BBB passport accepts a stamp → StaFi sync imports that accepted stamp → shared progress updates → NEXT advances automatically when both players have that stop.
-- Automatic StaFi stamp importing is **not yet fully connected/tested**, so do not tell users that merely accepting a stamp in Second Life currently advances NEXT by itself.
+- StaFi fetching, summary parsing, scheduled refresh, and current-adventure matching are now connected and server-tested. The remaining field test is to collect one of the three current-adventure stamps in Second Life and confirm it is imported automatically and advances NEXT. Until that live stamp test is completed, describe the integration as connected but awaiting final in-world validation.
 
 
 ## Map tile reliability
@@ -304,6 +305,10 @@ This file is the persistent source of truth for future edits to this project.
 - Adventure Treasure is configured per club and defaults OFF for newly created clubs. Reward/payout logs stay club-scoped.
 - Treasure payer and recipient must always be different players. Treasure roles are unclaimed while OFF. The first active member who turns Treasure ON becomes the locked **Payer**; only that payer may turn it OFF, choose **Paid to**, and record **Mark 1,000 L$ paid**. Another player can take over only after the current payer turns Treasure OFF. No automatic L$ debit exists.
 - `admin.html` is retired and redirects to Settings. StaFi testing and Treasure/payment controls live in Settings.
-- Settings must make unverified StaFi obvious: saved-but-unverified URLs show **StaFi needs test** and a visible amber status box; successful sync shows **StaFi connected** with last success/stamp count; errors show a visible failure state. The primary action is **Test & enable StaFi**.
-- Per-user StaFi validation and conservative active-adventure importing are live in `club-api`. Players save their private StaFi URL, use **Test & enable StaFi sync**, and the Adventures page checks periodically. Only confidently identified stamps from the active adventure are imported; manual **Mark stamp** remains available. Do not claim a particular player's sync works until that player's real URL passes validation.
+- Settings must make unverified StaFi obvious: saved-but-unverified URLs show **StaFi needs test** and a visible amber status box; successful sync shows **StaFi connected** with last success and live collected/available totals; errors show a visible failure state. The primary action is **Test & enable StaFi**.
+- Per-user StaFi validation and conservative current-adventure importing are live in `club-api`. Players save their private StaFi URL and use **Test & enable StaFi** once.
+- Supabase cron job **bbb-stafi-refresh** calls `club-api` every **2 minutes** using a server-only secret. It only processes enabled users who currently have an active adventure; it does not continuously crawl idle users.
+- While Adventures is open, the browser also attempts StaFi refresh about once per minute, immediately after opening, and when returning to the tab.
+- The StaFi parser reads the page summary (**collected / uncollected / all currently available**) and stores derived counts in private settings plus club-visible player summary fields. Raw StaFi URLs remain private.
+- Only confidently identified stamps from the board's **current active adventure** are imported. Starting a different adventure retires the prior active run so two adventures cannot compete for StaFi imports. Manual **Mark stamp** remains available.
 - Version-controlled backend sources live under `supabase/migrations/` and `supabase/functions/club-api/`.
