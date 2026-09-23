@@ -72,7 +72,7 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 
 </main>
 
-<script src="club-session.js?v=5"></script><script src="data1.js"></script><script src="data2.js"></script><script src="data3.js"></script><script src="data4.js"></script><script src="data5.js"></script><script src="data6.js"></script><script src="data7.js"></script><script src="slmap.js?v=8"></script>
+<script src="club-session.js?v=5"></script><script src="data1.js"></script><script src="data2.js"></script><script src="data3.js"></script><script src="data4.js"></script><script src="data5.js"></script><script src="data6.js"></script><script src="data7.js"></script><script src="slmap.js?v=9"></script>
 <script>
 const SITE_URL='https://owtsgmi.github.io/bbb-passport-adventures/';
 const ASSET_API='https://tzxlrglgwzinefutledx.supabase.co/functions/v1/bbb-stamp-assets';
@@ -388,8 +388,8 @@ function missionRows(a,mapInteractive=false){
    else if(!personDone&&otherDone)note=' · another player has it';
    const cls=(nr?'nextrow ':'')+(mapInteractive?'mapselectable':'');
    const rowClick=mapInteractive?` onclick="selectAdventureStop(${a.id},${i})"`:'';
-   const mapButton=mapInteractive?`<button class="sl mapbtn" title="Reset map and zoom to this stop" onclick="event.stopPropagation();selectAdventureStop(${a.id},${i})">🎯 Focus</button>`:'';
-   h+=`<tr class="${cls}" data-map-row="${mapInteractive?i:''}" id="trip-${a.id}-stop-${i+1}"${rowClick}><td>${i+1}</td><td><div class="stopinfo">${stampThumbHtml(s)}<div><div class="place">${esc(s.name)}${nr?'<span class="nexttag">NEXT</span>':''}</div><div class="where">${esc(s.region)} · ${s.x}, ${s.y}, ${s.z}</div></div></div></td><td class="who">${status}<span class="small">${note}</span></td><td class="act"><button class="sl" onclick='event.stopPropagation();copy(fsUrl(adventures.find(x=>x.id===${a.id}).stamps[${i}]),"Destination copied for Firestorm")'>🔥 Copy</button>${mapButton}</td></tr>`;
+   const mapButton='';
+   h+=`<tr class="${cls}" data-map-row="${mapInteractive?i:''}" id="trip-${a.id}-stop-${i+1}"${rowClick}><td>${i+1}</td><td><div class="stopinfo">${stampThumbHtml(s)}<div><div class="place">${esc(s.name)}${nr?'<span class="nexttag">NEXT</span>':''}</div><div class="where">${esc(s.region)} · ${s.x}, ${s.y}, ${s.z}</div></div></div></td><td class="who">${status}<span class="small">${note}</span></td><td class="act"><button class="sl" onclick='event.stopPropagation();copy(fsUrl(adventures.find(x=>x.id===${a.id}).stamps[${i}]),"SLURL copied — paste into Firestorm chat or location bar")'>🔥 Copy SLURL</button>${mapButton}</td></tr>`;
  });
  return h+'</tbody></table>';
 }
@@ -540,7 +540,7 @@ function init(){
 }
 init();
 </script>
-<script src="club-mode.js?v=11"></script>
+<script src="club-mode.js?v=12"></script>
 
 <script>
 /* Shared Supabase sync: publishable key is intentionally safe for browser use.
