@@ -13,15 +13,8 @@ togetherComplete=function(a){if(!clubMode)return personComplete(a,meDone)&&perso
 sharedNextIndex=function(a){const people=participantPlayers(a);let i=a.stamps.findIndex(function(st){return clubMode?(!people.length||people.some(function(p){return !(clubProgress.get(p.id)||new Set()).has(st.id)})):!(meDone.has(st.id)&&partnerDone.has(st.id))});return i<0?0:i};
 const legacySyncCompletedRewardsToPayouts=syncCompletedRewardsToPayouts;
 syncCompletedRewardsToPayouts=function(){return clubMode?false:legacySyncCompletedRewardsToPayouts()};
-function selectedParticipantIds(){const active=activePlayers(),chosen=active.filter(function(p){return clubParticipantSelection.has(p.id)}).map(function(p){return p.id});return chosen.length?chosen:active.map(function(p){return p.id})}
-function setClubParticipant(id,checked){if(checked)clubParticipantSelection.add(id);else clubParticipantSelection.delete(id);renderParticipantPicker()}
-function renderParticipantPicker(){
- const host=document.getElementById('club-participant-picker');if(!host)return;
- if(!clubMode){host.innerHTML='';host.classList.remove('show');return}
- const active=activePlayers();if(!clubParticipantSelection.size)active.forEach(function(p){clubParticipantSelection.add(p.id)});
- if(active.length<=1){host.innerHTML='';host.classList.remove('show');return}
- host.classList.add('show');host.innerHTML='<div class="participantlabel">Who is playing?</div><div class="participantchoices">'+active.map(function(p){return '<label><input type="checkbox" '+(clubParticipantSelection.has(p.id)?'checked ':'')+'onchange="setClubParticipant(&quot;'+p.id+'&quot;,this.checked)"> '+esc(p.display_name)+'</label>'}).join('')+'</div><div class="tiny">Everyone selected must collect all 3 stamps.</div>';
-}
+function selectedParticipantIds(){return activePlayers().map(function(p){return p.id})}
+function renderParticipantPicker(){}
 const legacyStartAdventure=startAdventure;
 startAdventure=function(id){
  const adventure=adventures.find(function(a){return a.id===Number(id)}),players=selectedParticipantIds();
