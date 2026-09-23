@@ -256,8 +256,10 @@ This file is the persistent source of truth for future edits to this project.
   - benefactor SL username;
   - a generic **Admin** link.
 - Unified admin page: `admin.html`.
-- Settings exposes a **🔧 Admin / Setup** link for the signed-in app setup workflow. Keep this entry point; do not let cleanup passes orphan `admin.html` again.
-- Admin contains browser notification setup/troubleshooting (local popup + server push tests), SL bot setup/status, payout diagnostics, and a **StaFi diagnostics** card for the signed-in account. StaFi diagnostics show whether the private URL is saved, whether sync is enabled, verification/attempt/success timestamps, stamp count, last error, and provide **Test & enable StaFi**.
+- Admin is intentionally owner-only and low-profile. Settings shows only a small **⚙ gear** on the side; clicking it prompts for the currently signed-in app admin's Passport account password.
+- Admin access is server-gated through `passport-auth`: only rows in `app_admins` can obtain a short-lived (2-hour) `adm_` token, stored only in sessionStorage. Direct navigation to `admin.html` performs the same server validation/password prompt before any admin data is loaded. The static GitHub Pages shell contains no secret credential.
+- The Admin page is deliberately small: **(1) Adventure Treasure for the active club** and **(2) StaFi diagnostics**. The active-club Treasure controls are one card: ON/OFF at the top; payer, Paid to, balance, pending request, and **Mark 1,000 L$ paid** are shown only when Treasure is ON.
+- The old admin setup checklist, Pay-link setup, test-money section, browser-notification troubleshooting UI, and Second Life IM/bot setup are removed from the Admin UI.
 - Legacy `bank.html` and `payout-admin.html` redirect to `admin.html`.
 - Admin page contains the complete setup checklist:
   1. save both actual SL usernames;
@@ -298,38 +300,20 @@ This file is the persistent source of truth for future edits to this project.
 
 
 ## Immediate next work
-1. **Bring the self-hosted Second Life IM messenger online**
-   - create or choose a dedicated SL bot avatar;
-   - mark that account as a Scripted Agent;
-   - resolve both player UUIDs from Admin if the payer UUID is still missing;
-   - generate a bot setup key in Admin;
-   - clone/update the repo on the VPS and run `sudo bash bot/install.sh`;
-   - confirm Admin shows the bot as Connected;
-   - add 1,000 L$ test money and use **Send test SL IM**;
-   - verify a real IM appears in Firestorm for the payer.
-2. **Finish and test the optional Second Life Pay shortcut**
-   - obtain a Linden Lab API key;
-   - resolve the saved second-player/benefactor username to avatar UUID;
-   - confirm **Pay in Second Life** launches Firestorm;
-   - confirm Firestorm opens the correct avatar's Pay dialog;
-   - browser may require permission to open an external application.
-3. **Run a full Adventure Treasure payout simulation**
-   - turn Adventure Treasure ON from Admin;
-   - use Admin **Add 1,000 L$ test money** to create a separate simulation balance without touching permanent adventure/reward history;
-   - verify the admin/payer device receives the desktop payout notification;
-   - clicking the notification should open `admin.html`;
-   - verify the 1,000 L$ payment-ready box;
-   - test **Mark 1,000 L$ paid** and confirm the remainder is correct.
-4. **Re-check player experience with the feature switch**
-   - OFF: no L$ score chip, no treasure panel, no Mystery L$ labels, no completed reward amounts;
-   - ON: benefactor sees friendly Adventure Treasure only;
-   - player pages never expose notification/API/payment bookkeeping controls.
-5. **Test the admin notification flow on Windows**
-   - browser site Notifications permission;
-   - Windows toast / Notification Center;
-   - notification click opens Admin;
-   - Firestorm external-app launch.
-6. **Automatic BBB StaFi sync remains the major gameplay integration**
+1. **Make StaFi automation the next major focus**
+   - verify the real private StaFi URL with **Test & enable StaFi**;
+   - diagnose parsing/verification failures from the new Admin StaFi card;
+   - confirm automatic checks import confidently identified stamps from the active adventure;
+   - confirm imported stamps update club progress and NEXT correctly.
+2. **Re-check Adventure Treasure manually**
+   - OFF: Treasure details are hidden;
+   - ON: Admin shows payer, Paid to, balance, pending request, and manual **Mark 1,000 L$ paid**;
+   - no Second Life bot/IM setup is required.
+3. **Re-check player experience with the feature switch**
+   - OFF: no L$ treasure panel or Mystery L$ labels;
+   - ON: Paid to player sees the friendly Adventure Treasure experience;
+   - player pages never expose payment bookkeeping controls.
+4. **Automatic BBB StaFi sync remains the major gameplay integration**
    - desired end state: BBB stamp accepted → StaFi updates → app imports stamp → shared progress updates → NEXT advances;
    - do not claim this works until fully connected and tested.
 7. **Later public architecture**
@@ -352,15 +336,9 @@ This file is the persistent source of truth for future edits to this project.
 - The benefactor should see a fun accumulation of money they are going to receive, not operational payout language.
 - Browser payout alerts are desktop/system notifications, not notifications inside the browser tab.
 - The realistic test payout notification must explicitly say which saved Second Life username should be paid.
-- The old LSL reminder path was retired and SmartBots was rejected on recurring cost. In-world IM delivery now uses the dedicated backend-managed `PassportAdventures` bot design; desktop/system push, Admin, and the optional Firestorm Pay handoff remain available independently.
-- **Hard UX constraint:** do not require users to rez prims, paste LSL, wear HUDs, or manage scripts for payout notifications. The user explicitly rejected any prim/script setup. If in-world IM delivery is revisited, it must be completely backend-managed with zero in-world setup for normal users; otherwise keep the existing desktop/system notification flow.
-- True in-world IM delivery uses the dedicated **PassportAdventures** avatar with a self-hosted LibreMetaverse service on the VPS. The avatar account has been created; VPS service installation/connection must still be verified independently. Normal users do nothing in-world. The dedicated bot avatar must be marked as a Scripted Agent in Second Life account settings.
-- Bot source lives under `bot/` in this repo: `PassportMessenger.csproj`, `Program.cs`, `install.sh`, `passport-messenger.service`, and `README.md`.
-- Bot credentials are stored only on the VPS in `/etc/passport-messenger.env` with mode 600; never put the SL bot password or bot setup token in GitHub or client-side JavaScript.
-- Backend queue table: `bbb_sl_im_queue`. The bot polls `payout-push` using an admin-generated one-time setup token whose SHA-256 hash is stored in `bbb_push_config.bot_token_hash`.
-- `bbb_push_config` also tracks `payer_uuid`, `bot_last_seen_at`, and `bot_account_name`. Admin status treats the bot as connected when it has checked in recently.
-- Real payout IM format should be simple and explicit, e.g. `Passport Adventures: kististulip has earned 1,000 L$. Please pay kististulip 1,000 L$.` Test messages must be clearly labeled TEST ONLY.
-- Admin setup must clearly say the site needs browser **Notifications** permission; optional Firestorm launching may need an external-app/pop-up permission prompt.
+- Second Life IM/bot delivery is **retired from the current product path**. The existing `bot/` source and legacy queue/config tables may remain dormant as historical code, but Admin must not expose bot setup and normal Treasure operation must not depend on it.
+- Treasure payment is intentionally manual: pay the configured **Paid to** player in Second Life, then use **Mark 1,000 L$ paid** in Admin.
+- **Hard UX constraint:** normal users never rez prims, paste LSL, wear HUDs, configure bots, or manage notification plumbing.
 
 ## Multi-user implementation (current)
 - The player experience is account/club-only. The signed-out Adventures page redirects to Settings; the old two-player board and migration controls are no longer exposed.
