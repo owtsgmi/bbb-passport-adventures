@@ -206,34 +206,58 @@ async function maybeTrimRetiredActiveRun(){
  }catch(e){return false}finally{retiredRunTrimBusy=false}
 }
 
+function partnerCatchupContext(){
+ if(!clubMode||clubGameMode()!=='babygirl')return null;
+ const people=activePlayers().slice(0,2),viewed=viewedPlayer();
+ if(people.length!==2||!viewed)return null;
+ const partner=people.find(function(p){return p.id!==viewed.id});
+ return partner?{viewed,partner}:null;
+}
 function babygirlBacklogAdventures(){
- if(!clubMode||clubGameMode()!=='babygirl')return [];
+ const ctx=partnerCatchupContext();if(!ctx)return [];
  const currentId=Number(clubData&&clubData.board&&clubData.board.current_adventure||0);
+ const viewedSet=clubProgress.get(ctx.viewed.id)||new Set(),partnerSet=clubProgress.get(ctx.partner.id)||new Set();
  return clubRuns.filter(function(r){return r.status==='active'&&Number(r.adventure_id)!==currentId})
    .map(function(r){return adventures.find(function(a){return Number(a.id)===Number(r.adventure_id)})})
-   .filter(function(a){return !!a&&!togetherComplete(a)});
+   .filter(function(a){
+     if(!a||togetherComplete(a))return false;
+     const stamps=adventureStamps(a);
+     const viewedCount=stamps.filter(function(st){return viewedSet.has(st.id)}).length;
+     const partnerCount=stamps.filter(function(st){return partnerSet.has(st.id)}).length;
+     return viewedCount>partnerCount;
+   });
 }
-function backlogSummaryHtml(a){
- const people=activePlayers().slice(0,2),stamps=adventureStamps(a);
- const bits=people.map(function(p){
-   const n=progressFor(a,clubProgress.get(p.id)||new Set());
-   return esc(p.display_name)+' '+n+'/'+stamps.length;
- }).join(' · ');
- const still=stamps.filter(function(st){return people.some(function(p){return !(clubProgress.get(p.id)||new Set()).has(st.id)})}).length;
- return '<details class="trip backlogrow"><summary><div class="summary-main"><strong>'+esc(a.title)+'</strong> <span class="small">· '+esc(a.zone)+'</span></div><div class="summary-right">'+bits+' · '+still+' left</div></summary><div class="tripbody">'+missionRows(a,false)+'</div></details>';
+function catchupRows(a,partner){
+ const stamps=adventureStamps(a),partnerSet=clubProgress.get(partner.id)||new Set(),people=participantPlayers(a);
+ let h='<table class="mission-table"><thead><tr><th>#</th><th>Passport stop</th><th>'+esc(partner.display_name+' status')+'</th><th></th></tr></thead><tbody>';
+ stamps.forEach(function(st,i){
+   const done=partnerSet.has(st.id),count=people.filter(function(p){return (clubProgress.get(p.id)||new Set()).has(st.id)}).length;
+   h+='<tr><td>'+(i+1)+'</td><td><div class="stopinfo">'+stampThumbHtml(st)+'<div><div class="place">'+esc(st.name)+'</div><div class="where">'+esc(st.region)+' · '+st.x+', '+st.y+', '+st.z+'</div></div></div></td><td class="who">'+(done?'✅ Got it':'○ Needed')+'<span class="small"> · '+count+'/'+people.length+' players</span></td><td class="act"><button class="sl" onclick="event.stopPropagation();copyClubAdventureStop('+a.id+','+st.id+')">🔥 Copy SLURL</button></td></tr>';
+ });
+ return h+'</tbody></table>';
+}
+function backlogSummaryHtml(a,ctx){
+ const stamps=adventureStamps(a),viewedSet=clubProgress.get(ctx.viewed.id)||new Set(),partnerSet=clubProgress.get(ctx.partner.id)||new Set();
+ const viewedCount=stamps.filter(function(st){return viewedSet.has(st.id)}).length,partnerCount=stamps.filter(function(st){return partnerSet.has(st.id)}).length;
+ const left=Math.max(0,stamps.length-partnerCount);
+ return '<details class="trip backlogrow"><summary><div class="summary-main"><strong>'+esc(a.title)+'</strong> <span class="small">· '+esc(a.zone)+'</span></div><div class="summary-right">'+esc(ctx.viewed.display_name)+' '+viewedCount+'/'+stamps.length+' · '+esc(ctx.partner.display_name)+' '+partnerCount+'/'+stamps.length+' · '+left+' left</div></summary><div class="tripbody">'+catchupRows(a,ctx.partner)+'</div></details>';
 }
 function renderBabygirlBacklog(){
- const box=document.getElementById('babygirl-backlog'),host=document.getElementById('backlog'),count=document.getElementById('backlog-count');
+ const box=document.getElementById('babygirl-backlog'),host=document.getElementById('backlog'),count=document.getElementById('backlog-count'),note=document.getElementById('backlog-note');
  if(!box||!host||!count)return;
- if(!clubMode||clubGameMode()!=='babygirl'){box.style.display='none';host.innerHTML='';count.textContent='';return}
+ const ctx=partnerCatchupContext();
+ if(!ctx){box.style.display='none';host.innerHTML='';count.textContent='';if(note)note.textContent='';return}
  const list=babygirlBacklogAdventures();
- box.style.display=list.length?'block':'none';
- count.textContent=list.length?'('+list.length+')':'';
- host.innerHTML=list.map(backlogSummaryHtml).join('');
- if(!list.length)return;
- const ids=new Set(list.map(function(a){return Number(a.id)})),pinned=activeAdventure();
+ box.style.display='block';
+ count.textContent='('+list.length+')';
+ if(note)note.textContent=list.length
+   ?ctx.partner.display_name+' can use this list to catch up to '+ctx.viewed.display_name+'. Switch player tabs to see the other direction.'
+   :'No catch-up needed for '+ctx.partner.display_name+' from '+ctx.viewed.display_name+' right now.';
+ host.innerHTML=list.length?list.map(function(a){return backlogSummaryHtml(a,ctx)}).join(''):'<div class="pinempty">All caught up.</div>';
+ const ids=new Set(clubRuns.filter(function(r){return r.status==='active'}).map(function(r){return Number(r.adventure_id)})),pinned=activeAdventure();
+ const z=document.getElementById('zone')&&document.getElementById('zone').value||'';
  const pending=adventures.filter(function(a){
-   return adventureAvailable(a)&&!togetherComplete(a)&&(!pinned||a.id!==pinned.id)&&!ids.has(Number(a.id))&&matches(a);
+   return adventureAvailable(a)&&!togetherComplete(a)&&(!pinned||a.id!==pinned.id)&&!ids.has(Number(a.id))&&(!z||a.zone===z);
  }).sort(function(a,b){return a.zone.localeCompare(b.zone)||a.title.localeCompare(b.title)});
  const pendingHost=document.getElementById('pending'),pendingCount=document.getElementById('pending-count');
  if(pendingHost)pendingHost.innerHTML=pending.map(function(a){return collapsedTrip(a,false)}).join('')||'<div class="pinempty">No pending adventures match this filter.</div>';
