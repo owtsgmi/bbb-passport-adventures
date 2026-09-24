@@ -1,4 +1,4 @@
-let clubMode=false,clubData=null,clubPlayers=[],clubProgress=new Map(),clubRuns=[],clubParticipants=[],clubParticipantSelection=new Set(),clubStaFiSyncBusy=false,lastClubStaFiSync=0,lastClubActivity=0;
+let clubMode=false,clubData=null,clubPlayers=[],clubProgress=new Map(),clubProgressSources=new Map(),clubRuns=[],clubParticipants=[],clubParticipantSelection=new Set(),clubStaFiSyncBusy=false,lastClubStaFiSync=0,lastClubActivity=0;
 let manualPassportAdjustments={};
 try{manualPassportAdjustments=JSON.parse(localStorage.getItem('bbb-manual-passport-adjustments')||'{}')||{}}catch(e){manualPassportAdjustments={}}
 function saveManualPassportAdjustments(){try{localStorage.setItem('bbb-manual-passport-adjustments',JSON.stringify(manualPassportAdjustments))}catch(e){}}
@@ -32,6 +32,7 @@ function viewedPlayer(){return clubMode?(clubPlayers.find(function(p){return p.i
 function viewedDone(){if(!clubMode)return currentView==='partner'?partnerDone:meDone;return clubProgress.get((viewedPlayer()||{}).id)||new Set()}
 function participantPlayers(a){
  if(!clubMode)return [];
+ if(clubGameMode()==='babygirl')return activePlayers().slice(0,2);
  const run=clubRuns.find(function(r){return Number(r.adventure_id)===Number(a.id)}),ids=run?clubParticipants.filter(function(x){return x.run_id===run.id}).map(function(x){return x.player_id}):[];
  const pool=ids.length?ids:activePlayers().map(function(p){return p.id});return pool.map(function(id){return clubPlayers.find(function(p){return p.id===id})}).filter(Boolean);
 }
@@ -123,7 +124,9 @@ missionRows=function(a,mapInteractive){
    const personDone=selected.has(st.id),nr=i===next&&!togetherComplete(a),count=people.filter(function(p){return (clubProgress.get(p.id)||new Set()).has(st.id)}).length;
    const cls=(nr?'nextrow ':'')+(mapInteractive?'mapselectable':''),rowClick=mapInteractive?' onclick="selectAdventureStop('+a.id+','+i+')"':'';
    const mapButton='';
-   const stampButton=canMark?'<br><button class="stampbtn" onclick="event.stopPropagation();toggleClubStamp('+a.id+','+st.id+')">'+(personDone?'Undo':'Mark stamp')+'</button>':'';
+   const source=(clubProgressSources.get((player||{}).id)||new Map()).get(Number(st.id))||'';
+   const canUndo=personDone&&source==='manual';
+   const stampButton=canMark?(!personDone?'<br><button class="stampbtn" onclick="event.stopPropagation();toggleClubStamp('+a.id+','+st.id+')">Mark stamp</button>':canUndo?'<br><button class="stampbtn" onclick="event.stopPropagation();toggleClubStamp('+a.id+','+st.id+')">Undo</button>':''):'';
    h+='<tr class="'+cls+'" data-map-row="'+(mapInteractive?i:'')+'" id="trip-'+a.id+'-stop-'+(i+1)+'"'+rowClick+'><td>'+(i+1)+'</td><td><div class="stopinfo">'+stampThumbHtml(st)+'<div><div class="place">'+esc(st.name)+(nr?'<span class="nexttag">NEXT</span>':'')+'</div><div class="where">'+esc(st.region)+' · '+st.x+', '+st.y+', '+st.z+'</div></div></div></td><td class="who">'+(personDone?'✅ Got it':'○ Needed')+'<span class="small"> · '+count+'/'+people.length+' players</span>'+stampButton+'</td><td class="act"><button class="sl" onclick="event.stopPropagation();copyClubAdventureStop('+a.id+','+st.id+')">🔥 Copy SLURL</button>'+mapButton+'</td></tr>';
  });
  return h+'</tbody></table>';
