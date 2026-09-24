@@ -75,11 +75,12 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 
 </main>
 
-<script src="club-session.js?v=5"></script><script src="data1.js"></script><script src="data2.js"></script><script src="data3.js"></script><script src="data4.js"></script><script src="data5.js"></script><script src="data6.js"></script><script src="data7.js"></script><script src="slmap.js?v=9"></script>
+<script src="club-session.js?v=5"></script><script src="data1.js"></script><script src="data2.js"></script><script src="data3.js"></script><script src="data4.js"></script><script src="data5.js"></script><script src="data6.js"></script><script src="data7.js"></script><script src="slmap.js?v=10"></script>
 <script>
 const SITE_URL='https://owtsgmi.github.io/bbb-passport-adventures/';
 const ASSET_API='https://tzxlrglgwzinefutledx.supabase.co/functions/v1/bbb-stamp-assets';
 const stampImages=new Map();
+let liveCatalogStops=[];
 function normStopName(s){return String(s||'').toLowerCase().replace(/\b(be|na|ca|st|sl|he|sa|ga|zi)\b/g,' ').replace(/[^a-z0-9]+/g,' ').trim()}
 function proxyStampImage(u){
  try{
@@ -108,6 +109,7 @@ async function loadAdventureStopImages(){
      warning.style.display='none';
      warning.textContent='';
    }
+   liveCatalogStops=data.items.map(it=>({name:it.name||it.region||'BBB stop',region:it.region||'',x:Number(it.x),y:Number(it.y),z:Number(it.z)})).filter(it=>it.region&&[it.x,it.y,it.z].every(Number.isFinite));
    const allStops=adventures.flatMap(a=>a.allStamps||a.stamps);
    data.items.forEach(it=>{
      if(!it?.img)return;
@@ -126,6 +128,7 @@ async function loadAdventureStopImages(){
    try{
      const cached=JSON.parse(localStorage.getItem('bbb-adventure-image-cache')||'null');
      if(cached?.items){
+       liveCatalogStops=cached.items.map(it=>({name:it.name||it.region||'BBB stop',region:it.region||'',x:Number(it.x),y:Number(it.y),z:Number(it.z)})).filter(it=>it.region&&[it.x,it.y,it.z].every(Number.isFinite));
        const allStops=adventures.flatMap(a=>a.allStamps||a.stamps);
        cached.items.forEach(it=>{
          if(!it?.img)return;
@@ -411,12 +414,29 @@ function adventureMapSignature(a){
  const stamps=(typeof adventureStamps==='function'?adventureStamps(a):a.stamps)||[];
  return String(a.id)+':'+stamps.map(s=>String(s.id)).join(',');
 }
+function nearbyOptionalMapStops(stamps){
+ if(!Array.isArray(liveCatalogStops)||!liveCatalogStops.length||!Array.isArray(stamps)||!stamps.length)return [];
+ const required=new Set(stamps.map(s=>String(s.region||'').toLowerCase()+'|'+Number(s.x)+'|'+Number(s.y)+'|'+Number(s.z)));
+ const regions=new Set(stamps.map(s=>String(s.region||'').toLowerCase()));
+ const seen=new Set(),out=[];
+ for(const it of liveCatalogStops){
+   const region=String(it.region||'').toLowerCase();
+   if(!regions.has(region))continue;
+   const key=region+'|'+Number(it.x)+'|'+Number(it.y)+'|'+Number(it.z);
+   if(required.has(key)||seen.has(key))continue;
+   seen.add(key);
+   out.push({name:it.name,region:it.region,x:Number(it.x),y:Number(it.y),z:Number(it.z),optional:true,label:'•'});
+   if(out.length>=12)break;
+ }
+ return out;
+}
 async function renderRunMap(a){
  const host=document.getElementById('run-map');if(!host||!window.SLGridMap)return;
  currentAdventureMapId=a.id;
  selectedAdventureStop=-1;
  currentAdventureMap=new SLGridMap(host,{title:'🗺 Current adventure · '+a.stamps.length+' stop'+(a.stamps.length===1?'':'s')});
- await currentAdventureMap.setLocations(a.stamps.map((s,i)=>({name:s.name,region:s.region,x:Number(s.x),y:Number(s.y),z:Number(s.z),label:String(i+1)})),{fit:true});
+ const required=a.stamps.map((s,i)=>({name:s.name,region:s.region,x:Number(s.x),y:Number(s.y),z:Number(s.z),label:String(i+1)}));
+ await currentAdventureMap.setLocations(required.concat(nearbyOptionalMapStops(a.stamps)),{fit:true});
 }
 async function selectAdventureStop(advId,index){
  const a=adventures.find(x=>x.id===Number(advId));if(!a||!a.stamps[index])return;
