@@ -206,6 +206,40 @@ async function maybeTrimRetiredActiveRun(){
  }catch(e){return false}finally{retiredRunTrimBusy=false}
 }
 
+function babygirlBacklogAdventures(){
+ if(!clubMode||clubGameMode()!=='babygirl')return [];
+ const currentId=Number(clubData&&clubData.board&&clubData.board.current_adventure||0);
+ return clubRuns.filter(function(r){return r.status==='active'&&Number(r.adventure_id)!==currentId})
+   .map(function(r){return adventures.find(function(a){return Number(a.id)===Number(r.adventure_id)})})
+   .filter(function(a){return !!a&&!togetherComplete(a)});
+}
+function backlogSummaryHtml(a){
+ const people=activePlayers().slice(0,2),stamps=adventureStamps(a);
+ const bits=people.map(function(p){
+   const n=progressFor(a,clubProgress.get(p.id)||new Set());
+   return esc(p.display_name)+' '+n+'/'+stamps.length;
+ }).join(' · ');
+ const still=stamps.filter(function(st){return people.some(function(p){return !(clubProgress.get(p.id)||new Set()).has(st.id)})}).length;
+ return '<details class="trip backlogrow"><summary><div class="summary-main"><strong>'+esc(a.title)+'</strong> <span class="small">· '+esc(a.zone)+'</span></div><div class="summary-right">'+bits+' · '+still+' left</div></summary><div class="tripbody">'+missionRows(a,false)+'</div></details>';
+}
+function renderBabygirlBacklog(){
+ const box=document.getElementById('babygirl-backlog'),host=document.getElementById('backlog'),count=document.getElementById('backlog-count');
+ if(!box||!host||!count)return;
+ if(!clubMode||clubGameMode()!=='babygirl'){box.style.display='none';host.innerHTML='';count.textContent='';return}
+ const list=babygirlBacklogAdventures();
+ box.style.display=list.length?'block':'none';
+ count.textContent=list.length?'('+list.length+')':'';
+ host.innerHTML=list.map(backlogSummaryHtml).join('');
+ if(!list.length)return;
+ const ids=new Set(list.map(function(a){return Number(a.id)})),pinned=activeAdventure();
+ const pending=adventures.filter(function(a){
+   return adventureAvailable(a)&&!togetherComplete(a)&&(!pinned||a.id!==pinned.id)&&!ids.has(Number(a.id))&&matches(a);
+ }).sort(function(a,b){return a.zone.localeCompare(b.zone)||a.title.localeCompare(b.title)});
+ const pendingHost=document.getElementById('pending'),pendingCount=document.getElementById('pending-count');
+ if(pendingHost)pendingHost.innerHTML=pending.map(function(a){return collapsedTrip(a,false)}).join('')||'<div class="pinempty">No pending adventures match this filter.</div>';
+ if(pendingCount)pendingCount.textContent=pending.length+' adventure'+(pending.length===1?'':'s');
+}
+
 const legacyRender=render;
 render=function(){
  legacyRender();const done=viewedDone();
@@ -213,6 +247,7 @@ render=function(){
  const progressEl=$('#passport-progress'),remainingEl=$('#passport-remaining');if(progressEl)progressEl.textContent=shownDone+' / '+shownTotal;if(remainingEl)remainingEl.textContent=toGo?toGo+' to go':'Passport complete!';
  const tabs=document.getElementById('player-tabs');if(clubMode&&tabs)tabs.innerHTML=activePlayers().map(function(p,i){return '<button class="viewtab '+(currentView===p.id?'active':'')+'" onclick="setView(&quot;'+p.id+'&quot;)">'+(i===0?'🗡️':i===1?'👽':'🧭')+' '+esc(p.display_name)+'</button>'}).join('');
  const context=document.getElementById('club-context');if(context){const mode=clubGameMode(),label=mode==='solo'?'🧭 Solo':mode==='babygirl'?'💗 Babygirl':'👥 Group';context.innerHTML=clubMode?'Playing <b>'+label+'</b> with <b>'+esc(clubData.club.name)+'</b> · <a href="settings.html">club settings</a>':'';}
+ renderBabygirlBacklog();
  renderParticipantPicker();
 };
 render();
