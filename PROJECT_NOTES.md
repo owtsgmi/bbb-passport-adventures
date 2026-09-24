@@ -315,3 +315,5 @@ This file is the persistent source of truth for future edits to this project.
 - The StaFi parser reads the page summary (**collected / uncollected / all currently available**). Collected count remains per player; **all currently available stamps is a single global app value** in `app_runtime_state`, refreshed from successful StaFi checks. Raw StaFi URLs remain private.
 - Only confidently identified stamps from the board's **current active adventure** are imported. Starting a different adventure retires the prior active run so two adventures cannot compete for StaFi imports. Manual **Mark stamp** remains available.
 - Version-controlled backend sources live under `supabase/migrations/` and `supabase/functions/club-api/`.
+
+- BBB live catalog parsing is fail-safe: a fresh parse below 100 stops or >25% below the last known-good count is rejected, the last verified cache is preserved/served, and the UI shows a friendly warning asking users to file a bug report. Never replace the last-good catalog with a suspicious parse.
