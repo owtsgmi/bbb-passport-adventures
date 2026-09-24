@@ -353,8 +353,9 @@ $('#club-select').onchange=async e=>{
  setClubAction(null);
  $('#selected-invite-box').classList.add('hidden');
  $('#new-club-invite-box').classList.add('hidden');
- PassportCloud.setActiveClub(e.target.value);
- await loadClubTools(e.target.value);
+ const chosen=e.target.value;
+ PassportCloud.setActiveClub(chosen);
+ try{await loadClubTools(chosen)}catch(err){clubStatus('Could not load that club. Please try again.')}
 };
 $('#show-create-club').onclick=()=>{
  const opening=$('#create-club-panel').classList.contains('hidden');
@@ -387,7 +388,6 @@ $('#invite-selected-club').onclick=async()=>{try{
 }catch(e){clubStatus(e.message==='babygirl_full'?'Babygirl mode is full — exactly two players.':e.message==='solo_club_no_invites'?'Solo mode does not use invites.':e.message)}};
 $('#mark-treasure-paid').onclick=()=>markTreasurePaid().catch(e=>clubStatus(e.message==='threshold_not_met'?'The Treasure balance is below 1,000 L$.':e.message==='payer_required'?'Only the locked Daddy Warbucks can record the payment.':e.message));
 $('#leave-club').onclick=()=>leaveClub().catch(e=>clubStatus(e.message==='owner_cannot_leave'?'The owner must transfer or remove the club before leaving.':e.message));
-window.addEventListener('passport-auth-ready',()=>loadAccount().catch(e=>accountStatus('Account service: '+e.message)));
 PassportCloud.ready().then(()=>loadAccount()).catch(e=>accountStatus('Account service: '+e.message));
 </script>
 </body>
