@@ -317,3 +317,5 @@ This file is the persistent source of truth for future edits to this project.
 - Version-controlled backend sources live under `supabase/migrations/` and `supabase/functions/club-api/`.
 
 - BBB live catalog parsing is fail-safe: a fresh parse below 100 stops or >25% below the last known-good count is rejected, the last verified cache is preserved/served, and the UI shows a friendly warning asking users to file a bug report. Never replace the last-good catalog with a suspicious parse.
+
+- StaFi per-stop sync fix (2026-09-24): the main `YourStamps.php` page only exposes summary counts; current-adventure stop completion now checks `NotCollectedStamps.php` using the same private Ref and exact SL location data. Verified against the live club: 2 current adventure stamps were imported automatically while the main count remained 4/390. `club-api` deployed as v27.
