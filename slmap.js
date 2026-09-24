@@ -21,7 +21,7 @@
 .slg-tilecell{position:absolute;width:${TILE}px;height:${TILE}px;overflow:hidden;background:linear-gradient(135deg,#173f54,#204f66)}.slg-tile{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:transparent;pointer-events:none;-webkit-user-drag:none;user-select:none}.slg-tilecell.missing:after{content:'map tile unavailable';position:absolute;inset:0;display:grid;place-items:center;color:#ffffff55;font-size:10px;letter-spacing:.04em}
 .slg-marker{position:absolute;transform:translate(-50%,-100%);z-index:5;display:flex;pointer-events:none;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50% 50% 50% 0;background:#ff5fa8;border:3px solid #fff;color:#1b0f1b;font-size:11px;font-weight:900;box-shadow:0 2px 12px #000;rotate:-45deg}
 .slg-marker>span{rotate:45deg}
-.slg-marker.secondary{background:#69d8ff}.slg-marker.tertiary{background:#ffd166}.slg-marker.optional{width:18px;height:18px;background:#8f8f98;border:2px solid #d0d0d488;color:#ececf0aa;opacity:.34;box-shadow:none;z-index:3}.slg-marker.optional>span{font-size:9px}.slg-marker.focused{box-shadow:0 0 0 5px #ff78c855,0 2px 16px #000;z-index:8}
+.slg-marker.secondary{background:#69d8ff}.slg-marker.tertiary{background:#ffd166}.slg-marker.optional{width:13px;height:13px;background:#a7ff3f;border:2px solid #efffd8;color:#173000;opacity:.9;box-shadow:0 0 0 2px #0b0b0b99,0 1px 5px #0008;z-index:6}.slg-marker.optional>span{font-size:0}.slg-marker.focused{box-shadow:0 0 0 5px #ff78c855,0 2px 16px #000;z-index:8}
 .slg-empty{padding:28px;text-align:center;color:#bcb0ca}
 @media(max-width:760px){.slg-viewport{height:560px}.slg-level{min-width:auto}}
 `;
@@ -294,14 +294,28 @@
           h+='<div class="slg-tilecell" style="left:'+(col*TILE)+'px;top:'+(row*TILE)+'px"><img class="slg-tile" draggable="false" decoding="async" data-src="'+tileUrl+'" alt=""></div>';
         }
       }
+      const projectedPrimary=this.markers.filter(m=>!m.optional).map(m=>{
+        const wx=m.gridX+Number(m.x||128)/256,wy=m.gridY+Number(m.y||128)/256;
+        return {x:((wx-baseX)/span)*TILE,y:((topY-wy)/span)*TILE};
+      });
       this.markers.forEach((m,i)=>{
         if(m.optional&&z>2)return;
         const wx=m.gridX+Number(m.x||128)/256,wy=m.gridY+Number(m.y||128)/256;
-        const px=((wx-baseX)/span)*TILE,py=((topY-wy)/span)*TILE;
+        let px=((wx-baseX)/span)*TILE,py=((topY-wy)/span)*TILE;
+        if(m.optional&&projectedPrimary.length){
+          let nearest=null,best=Infinity;
+          for(const p of projectedPrimary){const d=Math.hypot(px-p.x,py-p.y);if(d<best){best=d;nearest=p}}
+          if(nearest&&best<18){
+            let dx=px-nearest.x,dy=py-nearest.y,len=Math.hypot(dx,dy);
+            if(len<1){dx=1;dy=-1;len=Math.SQRT2}
+            const shift=18-best;
+            px+=dx/len*shift;py+=dy/len*shift;
+          }
+        }
         if(px>=-20&&px<=TILE*GRID+20&&py>=-20&&py<=TILE*GRID+20){
           const cls=(m.optional?' optional':(i===1?' secondary':i===2?' tertiary':''))+(i===this.focusIndex?' focused':'');
           const title=(m.optional?'Nearby BBB stop · ':'')+String(m.name||m.region);
-          h+='<div class="slg-marker'+cls+'" title="'+title.replace(/"/g,'&quot;')+'" style="left:'+px+'px;top:'+py+'px"><span>'+(m.label||String(i+1))+'</span></div>';
+          h+='<div class="slg-marker'+cls+'" title="'+title.replace(/"/g,'&quot;')+'" style="left:'+px+'px;top:'+py+'px"><span>'+(m.optional?'':(m.label||String(i+1)))+'</span></div>';
         }
       });
       this.stage.innerHTML=h;
