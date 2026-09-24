@@ -56,14 +56,6 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
   <div class="inside"><div id="pinned"></div></div>
 </details>
 
-<details class="compactdetails backlogbox" id="babygirl-backlog">
-  <summary><span class="sectionbarlabel"><span class="light" style="background:#9a8cab"></span><span>Catch-up List</span><span class="small" id="backlog-count"></span></span></summary>
-  <div class="inside">
-    <div class="backlognote">Unfinished Babygirl adventures stay here so either of you can catch up later.</div>
-    <div id="backlog"></div>
-  </div>
-</details>
-
 <details class="compactdetails" id="potential-adventures">
   <summary><span class="sectionbarlabel"><span class="light green"></span><span>Potential Adventures</span><span class="small" id="pending-count"></span></span></summary>
   <div class="inside">
@@ -79,6 +71,13 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
   <div class="inside"><div id="completed"></div></div>
 </details>
 
+<details class="compactdetails backlogbox" id="babygirl-backlog">
+  <summary><span class="sectionbarlabel"><span class="light" style="background:#9a8cab"></span><span>Partner Catch-up</span><span class="small" id="backlog-count"></span></span></summary>
+  <div class="inside">
+    <div class="backlognote" id="backlog-note"></div>
+    <div id="backlog"></div>
+  </div>
+</details>
 
 </main>
 
@@ -580,7 +579,7 @@ function init(){
 }
 init();
 </script>
-<script src="club-mode.js?v=16"></script>
+<script src="club-mode.js?v=17"></script>
 
 <script>
 /* Shared Supabase sync: publishable key is intentionally safe for browser use.
