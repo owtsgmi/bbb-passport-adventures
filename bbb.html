@@ -268,8 +268,13 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
         try{localStorage.setItem('bbb-live-catalog-cache',JSON.stringify({saved_at:Date.now(),data:data}))}catch(e){}
         rebuildDropdowns();renderList();
         var d=new Date(data.fetched_at||Date.now());
-        qs('#live-status').textContent='✓ BBB catalog loaded · '+Number(data.image_count||0)+' location photos · '+d.toLocaleString()+(added?' · '+added+' new stop'+(added===1?'':'s'):'');
-        qs('#live-status').className='livestatus ok';
+        if(data.parser_warning){
+          qs('#live-status').innerHTML='⚠ We could not safely read the latest BBB stop list. You are seeing the last verified catalog, so you can keep playing normally. Please <a href="feedback.html">file a bug report</a> if this stays on.';
+          qs('#live-status').className='livestatus warn';
+        }else{
+          qs('#live-status').textContent='✓ BBB catalog loaded · '+Number(data.image_count||0)+' location photos · '+d.toLocaleString()+(added?' · '+added+' new stop'+(added===1?'':'s'):'');
+          qs('#live-status').className='livestatus ok';
+        }
       })
       .catch(function(){if(!useCachedBBB()){qs('#live-status').textContent='⚠ BBB live update unavailable · using built-in catalog';qs('#live-status').className='livestatus warn'}});
   }
