@@ -247,7 +247,10 @@ render=function(){
  const progressEl=$('#passport-progress'),remainingEl=$('#passport-remaining');if(progressEl)progressEl.textContent=shownDone+' / '+shownTotal;if(remainingEl)remainingEl.textContent=toGo?toGo+' to go':'Passport complete!';
  const tabs=document.getElementById('player-tabs');if(clubMode&&tabs)tabs.innerHTML=activePlayers().map(function(p,i){return '<button class="viewtab '+(currentView===p.id?'active':'')+'" onclick="setView(&quot;'+p.id+'&quot;)">'+(i===0?'🗡️':i===1?'👽':'🧭')+' '+esc(p.display_name)+'</button>'}).join('');
  const context=document.getElementById('club-context');if(context){const mode=clubGameMode(),label=mode==='solo'?'🧭 Solo':mode==='babygirl'?'💗 Babygirl':'👥 Group';context.innerHTML=clubMode?'Playing <b>'+label+'</b> with <b>'+esc(clubData.club.name)+'</b> · <a href="settings.html">club settings</a>':'';}
- renderBabygirlBacklog();
+ try{renderBabygirlBacklog()}catch(e){
+   console.error('Babygirl catch-up render failed',e);
+   const box=document.getElementById('babygirl-backlog');if(box)box.style.display='none';
+ }
  renderParticipantPicker();
 };
 render();
