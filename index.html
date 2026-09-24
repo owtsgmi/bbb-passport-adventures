@@ -580,7 +580,7 @@ function init(){
 }
 init();
 </script>
-<script src="club-mode.js?v=15"></script>
+<script src="club-mode.js?v=16"></script>
 
 <script>
 /* Shared Supabase sync: publishable key is intentionally safe for browser use.
@@ -762,14 +762,32 @@ async function pollClub(force){
  try{let data=await PassportCloud.call('load',{club_id:PassportCloud.activeClub()}),fingerprint=clubFingerprint(data);if(force||fingerprint!==lastCloudUpdate)adoptClub(data);if(await maybeAutoStaFiSync(false)){data=await PassportCloud.call('load',{club_id:PassportCloud.activeClub()});adoptClub(data)}}catch(e){syncStatus('Reconnecting to club…',false)}
 }
 async function startCloudMode(){
- await PassportCloud.ready();const active=PassportCloud.activeClub();
- if(PassportCloud.session()&&PassportCloud.session().user&&active){
+ await PassportCloud.ready();const active=PassportCloud.activeClub(),session=PassportCloud.session();
+ if(session&&session.user&&active){
+   let data=null;
    try{
-     syncStatus('Loading club…');adoptClub(await PassportCloud.call('load',{club_id:active}));
-     await touchClubActivity(true);
-     if(await maybeAutoStaFiSync(true))adoptClub(await PassportCloud.call('load',{club_id:active}));
+     syncStatus('Loading club…');
+     data=await PassportCloud.call('load',{club_id:active});
+   }catch(e){
+     const code=String(e&&e.message||'');
+     if(code==='not_a_club_member'||code==='club_not_found')PassportCloud.setActiveClub('');
+     syncStatus('Could not load the selected club.',false);
+     location.replace('settings.html');
      return;
-   }catch(e){PassportCloud.setActiveClub('')}
+   }
+   try{
+     adoptClub(data);
+   }catch(e){
+     console.error('Club page render failed',e);
+     syncStatus('Club loaded, but part of the page could not render. Refresh once.',false);
+     return;
+   }
+   await touchClubActivity(true);
+   if(await maybeAutoStaFiSync(true)){
+     try{adoptClub(await PassportCloud.call('load',{club_id:active}))}
+     catch(e){console.error('Club refresh after StaFi sync failed',e)}
+   }
+   return;
  }
  location.replace('settings.html');
 }
