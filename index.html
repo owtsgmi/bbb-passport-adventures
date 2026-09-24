@@ -80,7 +80,7 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 const SITE_URL='https://owtsgmi.github.io/bbb-passport-adventures/';
 const ASSET_API='https://tzxlrglgwzinefutledx.supabase.co/functions/v1/bbb-stamp-assets';
 const stampImages=new Map();
-let liveCatalogStops=[];
+let liveCatalogStops=[],liveCatalogMapVersion=0;
 function normStopName(s){return String(s||'').toLowerCase().replace(/\b(be|na|ca|st|sl|he|sa|ga|zi)\b/g,' ').replace(/[^a-z0-9]+/g,' ').trim()}
 function proxyStampImage(u){
  try{
@@ -109,7 +109,7 @@ async function loadAdventureStopImages(){
      warning.style.display='none';
      warning.textContent='';
    }
-   liveCatalogStops=data.items.map(it=>({name:it.name||it.region||'BBB stop',region:it.region||'',x:Number(it.x),y:Number(it.y),z:Number(it.z)})).filter(it=>it.region&&[it.x,it.y,it.z].every(Number.isFinite));
+   liveCatalogStops=data.items.map(it=>({name:it.name||it.region||'BBB stop',region:it.region||'',x:Number(it.x),y:Number(it.y),z:Number(it.z)})).filter(it=>it.region&&[it.x,it.y,it.z].every(Number.isFinite));liveCatalogMapVersion++;
    const allStops=adventures.flatMap(a=>a.allStamps||a.stamps);
    data.items.forEach(it=>{
      if(!it?.img)return;
@@ -128,7 +128,7 @@ async function loadAdventureStopImages(){
    try{
      const cached=JSON.parse(localStorage.getItem('bbb-adventure-image-cache')||'null');
      if(cached?.items){
-       liveCatalogStops=cached.items.map(it=>({name:it.name||it.region||'BBB stop',region:it.region||'',x:Number(it.x),y:Number(it.y),z:Number(it.z)})).filter(it=>it.region&&[it.x,it.y,it.z].every(Number.isFinite));
+       liveCatalogStops=cached.items.map(it=>({name:it.name||it.region||'BBB stop',region:it.region||'',x:Number(it.x),y:Number(it.y),z:Number(it.z)})).filter(it=>it.region&&[it.x,it.y,it.z].every(Number.isFinite));liveCatalogMapVersion++;
        const allStops=adventures.flatMap(a=>a.allStamps||a.stamps);
        cached.items.forEach(it=>{
          if(!it?.img)return;
@@ -412,7 +412,7 @@ function missionRows(a,mapInteractive=false){
 let currentAdventureMap=null,currentAdventureMapId=0,selectedAdventureStop=-1;
 function adventureMapSignature(a){
  const stamps=(typeof adventureStamps==='function'?adventureStamps(a):a.stamps)||[];
- return String(a.id)+':'+stamps.map(s=>String(s.id)).join(',');
+ return String(a.id)+':'+stamps.map(s=>String(s.id)).join(',')+':catalog'+liveCatalogMapVersion;
 }
 function nearbyOptionalMapStops(stamps){
  if(!Array.isArray(liveCatalogStops)||!liveCatalogStops.length||!Array.isArray(stamps)||!stamps.length)return [];
@@ -573,7 +573,7 @@ function init(){
 }
 init();
 </script>
-<script src="club-mode.js?v=13"></script>
+<script src="club-mode.js?v=14"></script>
 
 <script>
 /* Shared Supabase sync: publishable key is intentionally safe for browser use.
