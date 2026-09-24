@@ -553,7 +553,7 @@ function init(){
 }
 init();
 </script>
-<script src="club-mode.js?v=12"></script>
+<script src="club-mode.js?v=13"></script>
 
 <script>
 /* Shared Supabase sync: publishable key is intentionally safe for browser use.
@@ -717,7 +717,7 @@ function clubFingerprint(data){return [data.board&&data.board.updated_at,data.cl
 function adoptClub(data){
   const previousClub=clubData&&clubData.club&&clubData.club.id;
   clubMode=true;clubData=data;clubPlayers=Array.isArray(data.players)?data.players:[];clubRuns=Array.isArray(data.runs)?data.runs:[];clubParticipants=Array.isArray(data.participants)?data.participants:[];
-  clubProgress=new Map(clubPlayers.map(function(p){return [p.id,new Set()]}));(data.stamps||[]).forEach(function(st){if(!clubProgress.has(st.player_id))clubProgress.set(st.player_id,new Set());clubProgress.get(st.player_id).add(Number(st.stamp_id))});
+  clubProgress=new Map(clubPlayers.map(function(p){return [p.id,new Set()]}));clubProgressSources=new Map(clubPlayers.map(function(p){return [p.id,new Map()]}));(data.stamps||[]).forEach(function(st){if(!clubProgress.has(st.player_id))clubProgress.set(st.player_id,new Set());if(!clubProgressSources.has(st.player_id))clubProgressSources.set(st.player_id,new Map());clubProgress.get(st.player_id).add(Number(st.stamp_id));clubProgressSources.get(st.player_id).set(Number(st.stamp_id),String(st.source||''))});
   const board=data.board||{};started=new Set((board.started||[]).map(Number));lastAdventure=Number(board.current_adventure||0);adventureLocked=board.adventure_locked!==false;
   const rewards=Array.isArray(data.rewards)?data.rewards:[],runById=new Map(clubRuns.map(function(r){return [r.id,r]}));
   adventureRewards={};payoutLog=rewards.map(function(r){const run=runById.get(r.run_id)||{},adventureId=Number(run.adventure_id||0),adventure=adventures.find(function(a){return a.id===adventureId});if(adventureId)adventureRewards[adventureId]={linden:Number(r.amount||0),at:r.awarded_at};return {reward_id:r.id,linden:Number(r.amount||0),paid_linden:Number(r.paid_amount||0),paid:Number(r.paid_amount||0)>=Number(r.amount||0),adventure_id:adventureId,title:adventure&&adventure.title||'',at:r.awarded_at}});
