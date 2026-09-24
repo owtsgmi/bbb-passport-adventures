@@ -295,7 +295,7 @@
         }
       }
       this.markers.forEach((m,i)=>{
-        if(m.optional&&z>3)return;
+        if(m.optional&&z>2)return;
         const wx=m.gridX+Number(m.x||128)/256,wy=m.gridY+Number(m.y||128)/256;
         const px=((wx-baseX)/span)*TILE,py=((topY-wy)/span)*TILE;
         if(px>=-20&&px<=TILE*GRID+20&&py>=-20&&py<=TILE*GRID+20){
