@@ -158,7 +158,8 @@ renderRunMap=async function(a){
  const host=document.getElementById('run-map'),stamps=adventureStamps(a);if(!host||!window.SLGridMap||!stamps.length)return;
  currentAdventureMapId=a.id;selectedAdventureStop=-1;
  currentAdventureMap=new SLGridMap(host,{title:'🗺 Current adventure · '+stopWord(stamps.length)});
- await currentAdventureMap.setLocations(stamps.map(function(st,i){return {name:st.name,region:st.region,x:Number(st.x),y:Number(st.y),z:Number(st.z),label:String(i+1)}}),{fit:true});
+ const required=stamps.map(function(st,i){return {name:st.name,region:st.region,x:Number(st.x),y:Number(st.y),z:Number(st.z),label:String(i+1)}});
+ await currentAdventureMap.setLocations(required.concat(nearbyOptionalMapStops(stamps)),{fit:true});
 };
 selectAdventureStop=async function(advId,index){
  if(!clubMode)return legacySelectAdventureStop(advId,index);
