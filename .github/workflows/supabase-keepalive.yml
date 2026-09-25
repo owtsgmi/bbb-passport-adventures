@@ -23,7 +23,10 @@ jobs:
           SUPABASE_PUBLISHABLE_KEY: sb_publishable_s54v4rmFk_BjHoweE7mliA_w64vK6WR
         run: |
           set -euo pipefail
-          response="$(curl --fail --silent --show-error --retry 2 --max-time 20 \
+          response="$(curl --fail --silent --show-error \
+            --ipv4 --http1.1 \
+            --retry 5 --retry-all-errors --retry-delay 2 \
+            --connect-timeout 10 --max-time 30 \
             -H "apikey: $SUPABASE_PUBLISHABLE_KEY" \
             "$SUPABASE_URL/rest/v1/app_feedback?select=id&limit=1")"
           printf '%s\n' "$response"
