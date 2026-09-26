@@ -1,4 +1,4 @@
-let clubMode=false,clubData=null,clubPlayers=[],clubProgress=new Map(),clubProgressSources=new Map(),clubRuns=[],clubParticipants=[],clubParticipantSelection=new Set(),clubStaFiSyncBusy=false,lastClubStaFiSync=0,lastClubActivity=0;
+let clubMode=false,clubData=null,clubPlayers=[],clubProgress=new Map(),clubProgressSources=new Map(),clubExtraStamps=[],clubRuns=[],clubParticipants=[],clubParticipantSelection=new Set(),clubStaFiSyncBusy=false,lastClubStaFiSync=0,lastClubActivity=0;
 let manualPassportAdjustments={};
 try{manualPassportAdjustments=JSON.parse(localStorage.getItem('bbb-manual-passport-adjustments')||'{}')||{}}catch(e){manualPassportAdjustments={}}
 function saveManualPassportAdjustments(){try{localStorage.setItem('bbb-manual-passport-adjustments',JSON.stringify(manualPassportAdjustments))}catch(e){}}
@@ -206,6 +206,32 @@ async function maybeTrimRetiredActiveRun(){
  }catch(e){return false}finally{retiredRunTrimBusy=false}
 }
 
+function catchupLocationKey(region,x,y,z){
+ return String(region||'').trim().toLowerCase()+'|'+Math.round(Number(x))+'|'+Math.round(Number(y))+'|'+Math.round(Number(z));
+}
+function strayCatchupStops(ctx){
+ if(!ctx)return [];
+ const viewedExtras=new Set(clubExtraStamps.filter(function(x){return x.player_id===ctx.viewed.id}).map(function(x){return x.location_key}));
+ const partnerExtras=clubExtraStamps.filter(function(x){return x.player_id===ctx.partner.id&&!viewedExtras.has(x.location_key)});
+ const partnerProgress=clubProgress.get(ctx.partner.id)||new Set(),adventureCollectedLocations=new Set();
+ clubRuns.forEach(function(r){
+   (Array.isArray(r.stamp_refs)?r.stamp_refs:[]).forEach(function(ref){
+     if(partnerProgress.has(Number(ref.id)))adventureCollectedLocations.add(catchupLocationKey(ref.region,ref.x,ref.y,ref.z));
+   });
+ });
+ return partnerExtras.filter(function(x){return !adventureCollectedLocations.has(String(x.location_key))})
+   .sort(function(a,b){return String(a.region).localeCompare(String(b.region))||String(a.name).localeCompare(String(b.name))});
+}
+function strayCatchupHtml(stops,ctx){
+ if(!stops.length)return '';
+ let h='<details class="trip backlogrow"><summary><div class="summary-main"><strong>Other passport stops</strong> <span class="small">· picked up outside an adventure</span></div><div class="summary-right">'+stops.length+' to catch up</div></summary><div class="tripbody"><table class="mission-table"><thead><tr><th>#</th><th>Passport stop</th><th>'+esc(ctx.viewed.display_name+' status')+'</th><th></th></tr></thead><tbody>';
+ stops.forEach(function(st,i){
+   const url='secondlife://'+encodeURIComponent(st.region).replace(/%20/g,'%20')+'/'+st.x+'/'+st.y+'/'+st.z;
+   h+='<tr><td>'+(i+1)+'</td><td><div class="stopinfo"><div class="adventurethumb placeholder">📍</div><div><div class="place">'+esc(st.name)+'</div><div class="where">'+esc(st.region)+' · '+st.x+', '+st.y+', '+st.z+'</div></div></div></td><td class="who">○ Needed<span class="small"> · stray stamp</span></td><td class="act"><button class="sl" onclick="event.stopPropagation();copy(&quot;'+url+'&quot;,&quot;SLURL copied — paste into Firestorm chat or location bar&quot;)">🔥 Copy SLURL</button></td></tr>';
+ });
+ return h+'</tbody></table></div></details>';
+}
+
 function partnerCatchupContext(){
  if(!clubMode||clubGameMode()!=='babygirl')return null;
  const people=activePlayers().slice(0,2),viewed=viewedPlayer();
@@ -244,15 +270,19 @@ function renderBabygirlBacklog(){
  if(!box||!host||!count)return;
  const ctx=partnerCatchupContext();
  if(!ctx){box.style.display='none';host.innerHTML='';count.textContent='';if(note)note.textContent='';return}
- const list=babygirlBacklogAdventures();
+ const list=babygirlBacklogAdventures(),strays=strayCatchupStops(ctx);
  const viewedSet=clubProgress.get(ctx.viewed.id)||new Set(),partnerSet=clubProgress.get(ctx.partner.id)||new Set();
- const totalNeeded=list.reduce(function(n,a){return n+adventureStamps(a).filter(function(st){return !viewedSet.has(st.id)&&partnerSet.has(st.id)}).length},0);
+ const adventureNeeded=list.reduce(function(n,a){return n+adventureStamps(a).filter(function(st){return !viewedSet.has(st.id)&&partnerSet.has(st.id)}).length},0);
+ const totalNeeded=adventureNeeded+strays.length;
  box.style.display='block';
  count.textContent='('+totalNeeded+' stamp'+(totalNeeded===1?'':'s')+')';
  if(note)note.textContent=totalNeeded
-   ?ctx.viewed.display_name+' needs '+totalNeeded+' stamp'+(totalNeeded===1?'':'s')+' that '+ctx.partner.display_name+' already has.'
+   ?ctx.viewed.display_name+' needs '+totalNeeded+' stamp'+(totalNeeded===1?'':'s')+' that '+ctx.partner.display_name+' already has'+(strays.length?' · '+strays.length+' picked up outside an adventure':'')+'.'
    :ctx.viewed.display_name+' is all caught up with '+ctx.partner.display_name+'.';
- host.innerHTML=list.length?list.map(function(a){return backlogSummaryHtml(a,ctx)}).join(''):'<div class="pinempty">All caught up.</div>';
+ const parts=[];
+ if(list.length)parts.push(list.map(function(a){return backlogSummaryHtml(a,ctx)}).join(''));
+ if(strays.length)parts.push(strayCatchupHtml(strays,ctx));
+ host.innerHTML=parts.length?parts.join(''):'<div class="pinempty">All caught up.</div>';
  const activeIds=new Set(clubRuns.filter(function(r){return r.status==='active'}).map(function(r){return Number(r.adventure_id)})),pinned=activeAdventure();
  const z=document.getElementById('zone')&&document.getElementById('zone').value||'';
  const pending=adventures.filter(function(a){
