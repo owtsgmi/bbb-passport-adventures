@@ -224,10 +224,10 @@ function strayCatchupStops(ctx){
 }
 function strayCatchupHtml(stops,ctx){
  if(!stops.length)return '';
- let h='<details class="trip backlogrow"><summary><div class="summary-main"><strong>Other passport stops</strong> <span class="small">· picked up outside an adventure</span></div><div class="summary-right">'+stops.length+' to catch up</div></summary><div class="tripbody"><table class="mission-table"><thead><tr><th>#</th><th>Passport stop</th><th>'+esc(ctx.viewed.display_name+' status')+'</th><th></th></tr></thead><tbody>';
+ let h='<details class="trip backlogrow"><summary><div class="summary-main"><strong>Other</strong></div><div class="summary-right">'+stops.length+' to catch up</div></summary><div class="tripbody"><table class="mission-table"><thead><tr><th>#</th><th>Passport stop</th><th>'+esc(ctx.viewed.display_name+' status')+'</th><th></th></tr></thead><tbody>';
  stops.forEach(function(st,i){
    const url='secondlife://'+encodeURIComponent(st.region).replace(/%20/g,'%20')+'/'+st.x+'/'+st.y+'/'+st.z;
-   h+='<tr><td>'+(i+1)+'</td><td><div class="stopinfo"><div class="adventurethumb placeholder">📍</div><div><div class="place">'+esc(st.name)+'</div><div class="where">'+esc(st.region)+' · '+st.x+', '+st.y+', '+st.z+'</div></div></div></td><td class="who">○ Needed<span class="small"> · stray stamp</span></td><td class="act"><button class="sl" onclick="event.stopPropagation();copy(&quot;'+url+'&quot;,&quot;SLURL copied — paste into Firestorm chat or location bar&quot;)">🔥 Copy SLURL</button></td></tr>';
+   h+='<tr><td>'+(i+1)+'</td><td><div class="stopinfo"><div class="adventurethumb placeholder">📍</div><div><div class="place">'+esc(st.name)+'</div><div class="where">'+esc(st.region)+' · '+st.x+', '+st.y+', '+st.z+'</div></div></div></td><td class="who">○ Needed</td><td class="act"><button class="sl" onclick="event.stopPropagation();copy(&quot;'+url+'&quot;,&quot;SLURL copied — paste into Firestorm chat or location bar&quot;)">🔥 Copy SLURL</button></td></tr>';
  });
  return h+'</tbody></table></div></details>';
 }
@@ -277,7 +277,7 @@ function renderBabygirlBacklog(){
  box.style.display='block';
  count.textContent='('+totalNeeded+' stamp'+(totalNeeded===1?'':'s')+')';
  if(note)note.textContent=totalNeeded
-   ?ctx.viewed.display_name+' needs '+totalNeeded+' stamp'+(totalNeeded===1?'':'s')+' that '+ctx.partner.display_name+' already has'+(strays.length?' · '+strays.length+' picked up outside an adventure':'')+'.'
+   ?ctx.viewed.display_name+' needs '+totalNeeded+' stamp'+(totalNeeded===1?'':'s')+' that '+ctx.partner.display_name+' already has'+'.'
    :ctx.viewed.display_name+' is all caught up with '+ctx.partner.display_name+'.';
  const parts=[];
  if(list.length)parts.push(list.map(function(a){return backlogSummaryHtml(a,ctx)}).join(''));
