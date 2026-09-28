@@ -574,12 +574,11 @@ function init(){
  [...new Set(adventures.map(a=>a.zone))].sort().forEach(z=>$('#zone').insertAdjacentHTML('beforeend',`<option>${esc(z)}</option>`));
  $('#zone').addEventListener('change',render);
  const m=location.hash.match(/trip-(\d+)(?:-stop-(\d+))?/);if(m){lastAdventure=Number(m[1]);started.add(lastAdventure);localStorage.setItem('bbb-last-adventure',lastAdventure);localStorage.setItem('bbb-started',JSON.stringify([...started]))}
- render();
  if(m)setTimeout(()=>document.getElementById(m[2]?`trip-${m[1]}-stop-${m[2]}`:'pinned-card')?.scrollIntoView({behavior:'smooth',block:'center'}),120);
 }
 init();
 </script>
-<script src="club-mode.js?v=20"></script>
+<script src="club-mode.js?v=21"></script>
 
 <script>
 /* Shared Supabase sync: publishable key is intentionally safe for browser use.
@@ -739,10 +738,10 @@ async function pollCloud(){
     }
   }catch(e){syncStatus('Reconnecting…',false)}
 }
-function clubFingerprint(data){return [data.board&&data.board.updated_at,data.club&&data.club.updated_at,data.club&&data.club.game_mode,(data.stamps||[]).length,(data.players||[]).map(p=>p.id+':'+p.updated_at+':'+p.is_active+':'+p.is_payer+':'+p.is_beneficiary).join(','),(data.rewards||[]).map(r=>r.id+':'+r.paid_amount).join(','),(data.collect_requests||[]).map(r=>r.id+':'+r.status).join(',')].join('|')}
+function clubFingerprint(data){return [data.board&&data.board.updated_at,data.club&&data.club.updated_at,data.club&&data.club.game_mode,(data.stamps||[]).length,(data.extra_stamps||[]).map(x=>x.player_id+':'+x.location_key).sort().join(','),(data.players||[]).map(p=>p.id+':'+p.updated_at+':'+p.is_active+':'+p.is_payer+':'+p.is_beneficiary).join(','),(data.rewards||[]).map(r=>r.id+':'+r.paid_amount).join(','),(data.collect_requests||[]).map(r=>r.id+':'+r.status).join(',')].join('|')}
 function adoptClub(data){
   const previousClub=clubData&&clubData.club&&clubData.club.id;
-  clubMode=true;clubData=data;clubPlayers=Array.isArray(data.players)?data.players:[];clubRuns=Array.isArray(data.runs)?data.runs:[];clubParticipants=Array.isArray(data.participants)?data.participants:[];
+  clubMode=true;clubData=data;clubPlayers=Array.isArray(data.players)?data.players:[];clubRuns=Array.isArray(data.runs)?data.runs:[];clubParticipants=Array.isArray(data.participants)?data.participants:[];clubExtraStamps=Array.isArray(data.extra_stamps)?data.extra_stamps:[];
   clubProgress=new Map(clubPlayers.map(function(p){return [p.id,new Set()]}));clubProgressSources=new Map(clubPlayers.map(function(p){return [p.id,new Map()]}));(data.stamps||[]).forEach(function(st){if(!clubProgress.has(st.player_id))clubProgress.set(st.player_id,new Set());if(!clubProgressSources.has(st.player_id))clubProgressSources.set(st.player_id,new Map());clubProgress.get(st.player_id).add(Number(st.stamp_id));clubProgressSources.get(st.player_id).set(Number(st.stamp_id),String(st.source||''))});
   const board=data.board||{};started=new Set((board.started||[]).map(Number));lastAdventure=Number(board.current_adventure||0);adventureLocked=board.adventure_locked!==false;
   const rewards=Array.isArray(data.rewards)?data.rewards:[],runById=new Map(clubRuns.map(function(r){return [r.id,r]}));
