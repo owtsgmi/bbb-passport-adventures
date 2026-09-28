@@ -306,4 +306,3 @@ render=function(){
  }
  renderParticipantPicker();
 };
-render();
