@@ -325,9 +325,11 @@ function renderBabygirlBacklog(){
 
 const legacyRender=render;
 render=function(){
- legacyRender();const done=viewedDone();
- const player=viewedPlayer(),globalTotal=Number(clubData&&clubData.passport_total||0),shownTotal=globalTotal>0?globalTotal:TOTAL_PASSPORT_STAMPS,shownDone=effectivePassportCount(player,done,shownTotal),toGo=Math.max(0,shownTotal-shownDone);
- const progressEl=$('#passport-progress'),remainingEl=$('#passport-remaining');if(progressEl)progressEl.textContent=shownDone+' / '+shownTotal;if(remainingEl)remainingEl.textContent=toGo?toGo+' to go':'Passport complete!';
+ legacyRender();
+ if(clubMode&&!clubBootstrapPending){
+   const done=viewedDone(),player=viewedPlayer(),globalTotal=Number(clubData&&clubData.passport_total||0),shownTotal=globalTotal>0?globalTotal:TOTAL_PASSPORT_STAMPS,shownDone=effectivePassportCount(player,done,shownTotal),toGo=Math.max(0,shownTotal-shownDone);
+   const progressEl=$('#passport-progress'),remainingEl=$('#passport-remaining');if(progressEl)progressEl.textContent=shownDone+' / '+shownTotal;if(remainingEl)remainingEl.textContent=toGo?toGo+' to go':'Passport complete!';
+ }
  const tabs=document.getElementById('player-tabs');if(clubMode&&tabs)tabs.innerHTML=activePlayers().map(function(p,i){return '<button class="viewtab '+(currentView===p.id?'active':'')+'" onclick="setView(&quot;'+p.id+'&quot;)">'+(i===0?'🗡️':i===1?'👽':'🧭')+' '+esc(p.display_name)+'</button>'}).join('');
  const context=document.getElementById('club-context');if(context){const mode=clubGameMode(),label=mode==='solo'?'🧭 Solo':mode==='babygirl'?'💗 Babygirl':'👥 Group';context.innerHTML=clubMode?'Playing <b>'+label+'</b> with <b>'+esc(clubData.club.name)+'</b> · <a href="settings.html">club settings</a>':'';}
  try{renderBabygirlBacklog()}catch(e){
