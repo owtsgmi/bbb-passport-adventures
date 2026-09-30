@@ -35,7 +35,7 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
   <div class="navwrap" id="main-nav"><button class="navbtn" title="Menu" aria-label="Menu" onclick="document.getElementById('main-nav').classList.toggle('open')">☰</button><div class="navmenu"><a class="here" href="index.html">🎮 Adventures</a><a href="bbb.html">📍 BBB Passport Stops</a><a href="settings.html">⚙ Settings</a><a href="instructions.html">📖 Instructions</a><a href="feedback.html">💬 Comments & Bugs</a></div></div>
   <div class="brand"><h1><img class="brandmark" src="passport-icon.svg" alt="Navy and gold passport">Bellisseria Passport Adventures</h1><div class="sub">Pick an adventure, collect BBB stamps, and explore Second Life.</div></div>
   <div class="goalstack">
-    <div class="passportgoal" aria-label="Passport stamp progress"><strong id="passport-progress">0 / …</strong><span>Passport stamps</span><em id="passport-remaining">Loading…</em></div>
+    <div class="passportgoal" aria-label="Passport stamp progress"><strong id="passport-progress">… / …</strong><span>Passport stamps</span><em id="passport-remaining">Loading…</em></div>
     <div id="treasure-mini"></div>
   </div>
   <div class="headercontrols">
@@ -84,6 +84,7 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 <script src="club-session.js?v=6"></script><script src="data1.js"></script><script src="data2.js"></script><script src="data3.js"></script><script src="data4.js"></script><script src="data5.js"></script><script src="data6.js"></script><script src="data7.js"></script><script src="slmap.js?v=11"></script>
 <script>
 const SITE_URL='https://owtsgmi.github.io/bbb-passport-adventures/';
+let clubBootstrapPending=true;
 const ASSET_API='https://tzxlrglgwzinefutledx.supabase.co/functions/v1/bbb-stamp-assets';
 const stampImages=new Map();
 let liveCatalogStops=[],liveCatalogMapVersion=0;
@@ -560,9 +561,8 @@ function render(){
  const passportDone=Math.min(TOTAL_PASSPORT_STAMPS,campaignDone+knownPreCampaignStamps(currentView));
  const toGo=Math.max(0,TOTAL_PASSPORT_STAMPS-passportDone);
  const progressEl=$('#passport-progress'),remainingEl=$('#passport-remaining');
- const pendingClubLoad=!clubMode&&window.PassportCloud&&PassportCloud.session()&&PassportCloud.activeClub();
- if(progressEl)progressEl.textContent=pendingClubLoad?'… / …':passportDone+' / '+TOTAL_PASSPORT_STAMPS;
- if(remainingEl)remainingEl.textContent=pendingClubLoad?'Loading…':(toGo?toGo+' to go':'Passport complete!');
+ if(progressEl)progressEl.textContent=clubBootstrapPending?'… / …':passportDone+' / '+TOTAL_PASSPORT_STAMPS;
+ if(remainingEl)remainingEl.textContent=clubBootstrapPending?'Loading…':(toGo?toGo+' to go':'Passport complete!');
  const tp=document.getElementById('tab-partner'), tm=document.getElementById('tab-me');
  if(tp){tp.textContent='🗡️ '+tabPartnerName;tp.classList.toggle('active',currentView==='partner')}
  if(tm){tm.textContent='👽 '+tabMeName;tm.classList.toggle('active',currentView==='me')}
@@ -579,7 +579,7 @@ function init(){
 }
 init();
 </script>
-<script src="club-mode.js?v=24"></script>
+<script src="club-mode.js?v=25"></script>
 
 <script>
 /* Shared Supabase sync: publishable key is intentionally safe for browser use.
@@ -775,6 +775,7 @@ async function startCloudMode(){
      return;
    }
    try{
+     clubBootstrapPending=false;
      adoptClub(data);
    }catch(e){
      console.error('Club page render failed',e);
