@@ -560,8 +560,9 @@ function render(){
  const passportDone=Math.min(TOTAL_PASSPORT_STAMPS,campaignDone+knownPreCampaignStamps(currentView));
  const toGo=Math.max(0,TOTAL_PASSPORT_STAMPS-passportDone);
  const progressEl=$('#passport-progress'),remainingEl=$('#passport-remaining');
- if(progressEl)progressEl.textContent=passportDone+' / '+TOTAL_PASSPORT_STAMPS;
- if(remainingEl)remainingEl.textContent=toGo?toGo+' to go':'Passport complete!';
+ const pendingClubLoad=!clubMode&&window.PassportCloud&&PassportCloud.session()&&PassportCloud.activeClub();
+ if(progressEl)progressEl.textContent=pendingClubLoad?'… / …':passportDone+' / '+TOTAL_PASSPORT_STAMPS;
+ if(remainingEl)remainingEl.textContent=pendingClubLoad?'Loading…':(toGo?toGo+' to go':'Passport complete!');
  const tp=document.getElementById('tab-partner'), tm=document.getElementById('tab-me');
  if(tp){tp.textContent='🗡️ '+tabPartnerName;tp.classList.toggle('active',currentView==='partner')}
  if(tm){tm.textContent='👽 '+tabMeName;tm.classList.toggle('active',currentView==='me')}
@@ -578,7 +579,7 @@ function init(){
 }
 init();
 </script>
-<script src="club-mode.js?v=23"></script>
+<script src="club-mode.js?v=24"></script>
 
 <script>
 /* Shared Supabase sync: publishable key is intentionally safe for browser use.
