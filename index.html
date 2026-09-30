@@ -50,7 +50,7 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 <div id="toast"></div>
 <div id="source-warning" class="sourcewarn"></div>
 
-<main>
+<main id="adventure-stack" style="visibility:hidden">
 <details class="compactdetails currentrun" id="current-adventure" open>
   <summary><span>✨ Current Adventure</span><label class="currentlock" id="current-lock-label" onclick="event.stopPropagation()"><input id="current-lock" type="checkbox" onchange="setAdventureLocked(this.checked)" onclick="event.stopPropagation()"> <span id="current-lock-text">Adventure locked</span></label></summary>
   <div class="inside"><div id="pinned"></div></div>
@@ -579,7 +579,7 @@ function init(){
 }
 init();
 </script>
-<script src="club-mode.js?v=27"></script>
+<script src="club-mode.js?v=28"></script>
 
 <script>
 /* Shared Supabase sync: publishable key is intentionally safe for browser use.
@@ -777,6 +777,7 @@ async function startCloudMode(){
    try{
      clubBootstrapPending=false;
      adoptClub(data);
+     const stack=document.getElementById('adventure-stack');if(stack)stack.style.visibility='visible';
    }catch(e){
      console.error('Club page render failed',e);
      syncStatus('Club loaded, but part of the page could not render. Refresh once.',false);
