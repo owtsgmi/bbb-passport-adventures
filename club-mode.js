@@ -62,23 +62,53 @@ const legacySyncCompletedRewardsToPayouts=syncCompletedRewardsToPayouts;
 syncCompletedRewardsToPayouts=function(){return clubMode?false:legacySyncCompletedRewardsToPayouts()};
 function selectedParticipantIds(){return activePlayers().map(function(p){return p.id})}
 function renderParticipantPicker(){}
+const legacyActiveAdventure=activeAdventure;
+activeAdventure=function(){
+ if(!clubMode)return legacyActiveAdventure();
+ const preferred=clubRuns.find(function(r){return r.status==='active'&&Number(r.adventure_id)===Number(lastAdventure)});
+ const run=preferred||clubRuns.find(function(r){return r.status==='active'});
+ return run?(adventures.find(function(a){return Number(a.id)===Number(run.adventure_id)})||null):null;
+};
 const legacyStartAdventure=startAdventure;
-startAdventure=function(id){
+startAdventure=async function(id){
+ if(!clubMode)return legacyStartAdventure(id);
  const adventure=adventures.find(function(a){return a.id===Number(id)}),players=selectedParticipantIds(),mode=clubGameMode(),stamps=adventureStamps(adventure);
- if(clubMode){
-   if(!stamps.length){toast('That adventure has no active passport stops left.');return false}
-   if(mode==='solo'&&players.length!==1){toast('Solo mode needs exactly one active player.');return false}
-   if(mode==='babygirl'&&players.length!==2){toast('💗 Invite your Babygirl first — this mode needs exactly two players.');return false}
-   if(mode==='group'&&players.length<2){toast('👥 Group mode needs at least two players.');return false}
+ if(!adventure)return false;
+ if(!stamps.length){toast('That adventure has no active passport stops left.');return false}
+ if(mode==='solo'&&players.length!==1){toast('Solo mode needs exactly one active player.');return false}
+ if(mode==='babygirl'&&players.length!==2){toast('💗 Invite your Babygirl first — this mode needs exactly two players.');return false}
+ if(mode==='group'&&players.length<2){toast('👥 Group mode needs at least two players.');return false}
+ const current=activeAdventure();
+ if(current&&current.id!==adventure.id){
+   if(adventureLocked){toast('🔒 Current adventure is locked. Unlock it before switching.');return false}
+   if(!confirm('Switch from "'+current.title+'" to "'+adventure.title+'"?\n\nYour existing stamp progress will be kept.'))return false;
  }
- const ok=legacyStartAdventure(id);
- if(ok&&clubMode&&adventure)PassportCloud.call('start_adventure',{club_id:clubData.club.id,adventure_id:Number(id),stamp_ids:stamps.map(function(st){return st.id}),stamps:stamps.map(function(st){return {id:st.id,name:st.name,region:st.region,x:Number(st.x),y:Number(st.y),z:Number(st.z)}}),player_ids:players}).then(function(){return pollClub(true)}).catch(function(e){
+ try{
+   await PassportCloud.call('start_adventure',{club_id:clubData.club.id,adventure_id:Number(id),stamp_ids:stamps.map(function(st){return st.id}),stamps:stamps.map(function(st){return {id:st.id,name:st.name,region:st.region,x:Number(st.x),y:Number(st.y),z:Number(st.z)}}),player_ids:players});
+   started.add(adventure.id);lastAdventure=adventure.id;adventureLocked=true;
+   localStorage.setItem('bbb-last-adventure',adventure.id);
+   localStorage.setItem('bbb-adventure-locked','true');
+   await pollClub(true);
+   const currentDetails=document.getElementById('current-adventure');if(currentDetails)currentDetails.open=true;
+   setTimeout(jumpPinned,40);toast('Pinned: '+adventure.title);return true;
+ }catch(e){
    const msg=e.message==='babygirl_needs_two'?'💗 Babygirl mode needs exactly two players.'
      :e.message==='group_needs_two'?'👥 Group mode needs at least two players.'
      :e.message==='solo_requires_one_player'?'🧭 Solo mode needs exactly one player.'
      :'Could not start that adventure.';
-   toast(msg);
- });return ok
+   toast(msg);await pollClub(true).catch(function(){});return false;
+ }
+};
+const legacySurpriseUs=surpriseUs;
+surpriseUs=async function(){
+ if(!clubMode)return legacySurpriseUs();
+ const current=activeAdventure();
+ if(current&&adventureLocked)return toast('🔒 Current adventure is locked. Unlock it before picking another.');
+ const activeIds=new Set(clubRuns.filter(function(r){return r.status==='active'}).map(function(r){return Number(r.adventure_id)}));
+ const pool=adventures.filter(function(a){return adventureAvailable(a)&&!togetherComplete(a)&&!activeIds.has(Number(a.id))&&!clubRuns.some(function(r){return Number(r.adventure_id)===Number(a.id)&&r.status==='completed'})});
+ if(!pool.length)return toast('No untouched adventures left.');
+ const a=pool[Math.floor(Math.random()*pool.length)];
+ await startAdventure(a.id);
 };
 async function touchClubActivity(force){
  if(!clubMode||document.hidden||(!force&&Date.now()-lastClubActivity<2*60*1000))return false;
