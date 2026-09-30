@@ -118,7 +118,7 @@ async function touchClubActivity(force){
 async function maybeAutoStaFiSync(force){
  if(!clubMode||clubStaFiSyncBusy||(!force&&Date.now()-lastClubStaFiSync<60*1000))return false;
  clubStaFiSyncBusy=true;lastClubStaFiSync=Date.now();
- try{const out=await PassportCloud.call('sync_stafi',{club_id:clubData.club.id});if(out.imported>0)toast('✓ StaFi added '+out.imported+' new stamp'+(out.imported===1?'':'s')+'.');return out.verified===true}catch(e){return false}finally{clubStaFiSyncBusy=false}
+ try{const out=await PassportCloud.call(force?'verify_stafi':'sync_stafi',{club_id:clubData.club.id});if(out.imported>0)toast('✓ StaFi added '+out.imported+' new stamp'+(out.imported===1?'':'s')+'.');return out.verified===true}catch(e){return false}finally{clubStaFiSyncBusy=false}
 }
 function canEditViewedPlayer(){const p=viewedPlayer(),session=window.PassportCloud&&PassportCloud.session(),u=session&&session.user&&session.user.id,role=clubData&&clubData.membership&&clubData.membership.role;return !!(clubMode&&p&&(p.user_id===u||(!p.user_id&&(role==='owner'||role==='admin'))))}
 async function toggleClubStamp(advId,stampId){
