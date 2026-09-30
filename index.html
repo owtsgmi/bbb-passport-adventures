@@ -578,7 +578,7 @@ function init(){
 }
 init();
 </script>
-<script src="club-mode.js?v=22"></script>
+<script src="club-mode.js?v=23"></script>
 
 <script>
 /* Shared Supabase sync: publishable key is intentionally safe for browser use.
@@ -625,7 +625,7 @@ async function writeCloud(){
   cloudBusy=true;
   try{
     if(clubMode){
-      await PassportCloud.call('save_board',{club_id:clubData.club.id,started:[...started],current_adventure:lastAdventure,adventure_locked:adventureLocked});
+      await PassportCloud.call('save_board',{club_id:clubData.club.id,adventure_locked:adventureLocked});
       syncStatus('Club synced');return;
     }
     const body={
