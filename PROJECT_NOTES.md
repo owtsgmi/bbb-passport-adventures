@@ -22,6 +22,7 @@ This file is the persistent source of truth for future edits to this project.
 - Club mode is chosen **once at creation and is immutable**. Settings shows four creation tiles: Solo, Babygirl, Group, and disabled **Shotgun — coming later**.
 - **Shotgun** is the future fourth race mode and is not implemented yet.
 - Starting an adventure snapshots all active players.
+- **Adventure start integrity fix (2026-09-30):** in club mode the backend `start_adventure` call is now authoritative and must succeed before the client pins a new current adventure. Ordinary board saves no longer write `current_adventure`, and the UI only treats a `club_adventure_runs.status = active` run as Current. This prevents a retired/incomplete run from being displayed as active while StaFi silently skips adventure imports/rewards.
 - Babygirl rewards are backend-generated once, persist per completed run, and accumulate toward the 1,000 L$ manual-payment threshold.
 
 ## UI
