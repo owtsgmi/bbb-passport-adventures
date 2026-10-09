@@ -5,11 +5,11 @@
   const apiUrl=url+'/functions/v1/club-api';
   const authUrl=url+'/functions/v1/passport-auth';
   const sessionKey='bbb-passport-session-v2';
-  const LOAD_MIN_INTERVAL=30000;
+  const LOAD_MIN_INTERVAL=2*60*1000;
   const IDLE_AFTER=2*60*1000;
   let session=null,readyPromise=null,lastInteraction=Date.now(),lastLoadAt=0,resumeRefresh=true;
   const loadCache=new Map();
-  function noteInteraction(){lastInteraction=Date.now();resumeRefresh=true}
+  function noteInteraction(){lastInteraction=Date.now()}
   ['pointerdown','keydown','touchstart'].forEach(name=>document.addEventListener(name,noteInteraction,{passive:true}));
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)noteInteraction()});
   function read(){try{return JSON.parse(localStorage.getItem(sessionKey)||'null')}catch{return null}}
