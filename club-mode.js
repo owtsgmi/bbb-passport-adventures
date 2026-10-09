@@ -110,12 +110,12 @@ surpriseUs=async function(){
  await startAdventure(a.id);
 };
 async function touchClubActivity(force){
- if(!clubMode||document.hidden||(!force&&Date.now()-lastClubActivity<2*60*1000))return false;
+ if(!clubMode||document.hidden||(!force&&Date.now()-lastClubActivity<10*60*1000))return false;
  lastClubActivity=Date.now();
  try{await PassportCloud.call('activity',{club_id:clubData.club.id});return true}catch(e){return false}
 }
 async function maybeAutoStaFiSync(force){
- if(!clubMode||clubStaFiSyncBusy||(!force&&Date.now()-lastClubStaFiSync<60*1000))return false;
+ if(!clubMode||clubStaFiSyncBusy||(!force&&Date.now()-lastClubStaFiSync<5*60*1000))return false;
  clubStaFiSyncBusy=true;lastClubStaFiSync=Date.now();
  try{const out=await PassportCloud.call(force?'verify_stafi':'sync_stafi',{club_id:clubData.club.id});if(out.imported>0)toast('✓ StaFi added '+out.imported+' new stamp'+(out.imported===1?'':'s')+'.');return out.verified===true}catch(e){return false}finally{clubStaFiSyncBusy=false}
 }
