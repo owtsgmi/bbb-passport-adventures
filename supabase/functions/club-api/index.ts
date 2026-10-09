@@ -254,8 +254,12 @@ async function syncStaFi(userId:string,clubId:string,force=false){
     if(activeAvailable!==null)playerPatch.stafi_available_count=activeAvailable;
     await db("club_players?user_id=eq."+userId+"&is_active=eq.true",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(playerPatch)});
 
-    let uncollectedPage:any=null;
+    let collectedPage:any=null,uncollectedPage:any=null;
+    try{collectedPage=await fetchStaFiDetail(page.url,"/UTILS/CollectedStamps.php")}catch{}
     try{uncollectedPage=await fetchStaFiDetail(page.url,"/UTILS/NotCollectedStamps.php")}catch{}
+    const collectedText=String(collectedPage?.text||"");
+    const collectedLocations=stafiUncollectedLocations(String(collectedPage?.html||""));
+    const collectedListTrusted=collectedLocations.size>0&&/collected|stamps you have|your stamps/i.test(collectedText);
     const uncollectedText=String(uncollectedPage?.text||"");
     const uncollectedLocations=stafiUncollectedLocations(String(uncollectedPage?.html||""));
     const expectedUncollected=summary.current_uncollected;
@@ -299,7 +303,9 @@ async function syncStaFi(userId:string,clubId:string,force=false){
         checked.push(id);
         let classification="unknown";
         const key=stafiLocationKey(ref.region,ref.x,ref.y,ref.z);
-        if(locationListTrusted&&key){
+        if(collectedListTrusted&&key&&collectedLocations.has(key)){
+          classification="collected";
+        }else if(locationListTrusted&&key){
           classification=uncollectedLocations.has(key)?"missing":"collected";
         }else if(textListTrusted){
           const name=String(ref.name||"").toLowerCase(),region=String(ref.region||"").toLowerCase();
@@ -321,7 +327,7 @@ async function syncStaFi(userId:string,clubId:string,force=false){
     if(status.stafi_last_stamp_count===undefined&&summary.active_collected===null&&summary.current_available===null)status.stafi_last_stamp_count=fallbackCount;
     await db("user_private_settings?user_id=eq."+userId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(status)});
     for(const adventureId of processedRuns)await finalizeRun(clubId,adventureId);
-    return {enabled:true,verified:true,imported:rows.length,checked:[...new Set(checked)].length,total:status.stafi_last_stamp_count,summary,current_adventure:currentAdventure,processed_adventures:processedRuns,location_indexed:uncollectedLocations.size,extra_location_mapped:extraRows.length,location_list_trusted:locationListTrusted||textListTrusted};
+    return {enabled:true,verified:true,imported:rows.length,checked:[...new Set(checked)].length,total:status.stafi_last_stamp_count,summary,current_adventure:currentAdventure,processed_adventures:processedRuns,location_indexed:uncollectedLocations.size,collected_location_indexed:collectedLocations.size,extra_location_mapped:extraRows.length,location_list_trusted:collectedListTrusted||locationListTrusted||textListTrusted};
   }catch(e){
     const raw=String((e as Error)?.message||e),safe=/^(invalid_stafi_url|stafi_redirect_failed|stafi_redirect_blocked|stafi_http_\d{3}|stafi_page_too_large|stafi_too_many_redirects|linked_player_required)$/.test(raw)?raw:"stafi_unavailable";
     await db("user_private_settings?user_id=eq."+userId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({stafi_last_sync_at:now,stafi_last_error:safe})});
