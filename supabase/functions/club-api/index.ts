@@ -69,14 +69,47 @@ function stafiSummary(text:string){
     :null;
   return {raw_collected:rawCollected,uncollected,available,active_collected:activeCollected,current_available:currentAvailable,current_uncollected:currentUncollected};
 }
-async function fetchStaFi(raw:string){
-  let url=stafiUrl(raw);if(!url)throw new Error("invalid_stafi_url");
+function stafiLocationKey(region:unknown,x:unknown,y:unknown,z:unknown){
+  const r=String(region||"").trim().toLowerCase(),nx=Math.round(Number(x)),ny=Math.round(Number(y)),nz=Math.round(Number(z));
+  return r&&[nx,ny,nz].every(Number.isFinite)?[r,nx,ny,nz].join("|"):"";
+}
+function stafiUncollectedLocations(html:string){
+  const out=new Set<string>();
+  for(const m of html.matchAll(/https?:\/\/maps\.secondlife\.com\/secondlife\/[^\\"'<>\s]+/gi)){
+    try{
+      const u=new URL(m[0].replace(/&amp;/gi,"&")),p=u.pathname.split("/").filter(Boolean);
+      const i=p.findIndex(x=>x.toLowerCase()==="secondlife");if(i<0||p.length<i+5)continue;
+      const key=stafiLocationKey(decodeURIComponent(p[i+1]),p[i+2],p[i+3],p[i+4]);if(key)out.add(key);
+    }catch{}
+  }
+  return out;
+}
+async function fetchStaFiUrl(url:string){
   for(let hops=0;hops<4;hops++){
     const r=await fetch(url,{redirect:"manual",headers:{Accept:"text/html,text/plain;q=0.9","User-Agent":"BBB-Passport-Adventures/1.0"},signal:AbortSignal.timeout(12000)});
-    if(r.status>=300&&r.status<400){const next=r.headers.get("location");if(!next)throw new Error("stafi_redirect_failed");url=stafiUrl(new URL(next,url).toString());if(!url)throw new Error("stafi_redirect_blocked");continue}
-    if(!r.ok)throw new Error("stafi_http_"+r.status);const length=Number(r.headers.get("content-length")||0);if(length>2_000_000)throw new Error("stafi_page_too_large");const bytes=new Uint8Array(await r.arrayBuffer());if(bytes.byteLength>2_000_000)throw new Error("stafi_page_too_large");return {url,text:decodeHtml(new TextDecoder().decode(bytes))};
+    if(r.status>=300&&r.status<400){
+      const next=r.headers.get("location");if(!next)throw new Error("stafi_redirect_failed");
+      const candidate=new URL(next,url),host=candidate.hostname.toLowerCase(),path=candidate.pathname.toLowerCase();
+      if(!(host==="thebbbbug.com"||host==="www.thebbbbug.com")||!path.startsWith("/utils/"))throw new Error("stafi_redirect_blocked");
+      url=candidate.toString();continue;
+    }
+    if(!r.ok)throw new Error("stafi_http_"+r.status);
+    const length=Number(r.headers.get("content-length")||0);if(length>2_000_000)throw new Error("stafi_page_too_large");
+    const bytes=new Uint8Array(await r.arrayBuffer());if(bytes.byteLength>2_000_000)throw new Error("stafi_page_too_large");
+    const html=new TextDecoder().decode(bytes);return {url,html,text:decodeHtml(html)};
   }
   throw new Error("stafi_too_many_redirects");
+}
+async function fetchStaFi(raw:string){
+  const url=stafiUrl(raw);if(!url)throw new Error("invalid_stafi_url");
+  return await fetchStaFiUrl(url);
+}
+async function fetchStaFiDetail(summaryUrl:string,path:string){
+  const base=new URL(summaryUrl),host=base.hostname.toLowerCase();
+  if(!(host==="thebbbbug.com"||host==="www.thebbbbug.com"))throw new Error("stafi_redirect_blocked");
+  if(!["/UTILS/NotCollectedStamps.php","/UTILS/CollectedStamps.php","/UTILS/CurrentStamps.php"].includes(path))throw new Error("stafi_redirect_blocked");
+  base.pathname=path;base.hash="";
+  return await fetchStaFiUrl(base.toString());
 }
 
 async function db(path:string,init:RequestInit={}){
@@ -148,6 +181,10 @@ async function finalizeRun(clubId:string,adventureId:number){
   if(!completingPlayerId)return null;
   const now=new Date().toISOString();
   await db("club_adventure_runs?id=eq."+run.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"completed",completed_at:now})});
+  const board=(await db("club_board_state?club_id=eq."+clubId+"&select=current_adventure"))?.[0];
+  if(Number(board?.current_adventure||0)===adventureId){
+    await db("club_board_state?club_id=eq."+clubId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({current_adventure:0,adventure_locked:true})});
+  }
   if(mode!=="babygirl"||!club?.treasure_enabled)return {completed:true,completed_by_player_id:completingPlayerId,reward:null};
   const existing=(await db("club_rewards?run_id=eq."+run.id+"&select=*"))?.[0];
   if(existing)return {completed:true,completed_by_player_id:completingPlayerId,reward:existing};
@@ -162,18 +199,19 @@ async function loadClub(clubId:string,userId:string){
   const m=await requireMember(clubId,userId);
   const runs=await db("club_adventure_runs?club_id=eq."+clubId+"&select=*&order=started_at.asc");
   const runIds=runs.map((x:any)=>x.id);
-  const [clubs,members,players,boards,participants,stamps,rewards,collectRequests,runtimeRows]=await Promise.all([
+  const [clubs,members,players,boards,participants,stamps,extraStamps,rewards,collectRequests,runtimeRows]=await Promise.all([
     db("clubs?id=eq."+clubId+"&select=id,name,slug,owner_id,game_mode,treasure_enabled,payout_threshold,is_legacy,created_at,updated_at"),
     db("club_members?club_id=eq."+clubId+"&select=user_id,role,joined_at&order=joined_at.asc"),
     db("club_players?club_id=eq."+clubId+"&select=id,user_id,display_name,sl_username,sort_order,is_active,is_payer,is_beneficiary,stafi_collected_count,stafi_available_count,stafi_last_success_at,created_at,updated_at&order=sort_order.asc,created_at.asc"),
     db("club_board_state?club_id=eq."+clubId+"&select=*"),
     runIds.length?db("club_run_participants?select=run_id,player_id,joined_at&run_id=in.("+runIds.join(",")+")"):Promise.resolve([]),
     db("club_stamp_progress?club_id=eq."+clubId+"&select=player_id,stamp_id,source,completed_at"),
+    db("club_extra_stamp_progress?club_id=eq."+clubId+"&select=player_id,location_key,name,region,x,y,z,source,completed_at"),
     db("club_rewards?club_id=eq."+clubId+"&select=*&order=awarded_at.desc"),
     db("club_collect_requests?club_id=eq."+clubId+"&select=*&order=created_at.desc&limit=50"),
     db("app_runtime_state?id=eq.1&select=passport_available_count,updated_at")
   ]);
-  return {club:clubs?.[0],membership:m,members,players,board:boards?.[0],runs,participants,stamps,rewards,collect_requests:collectRequests,passport_total:Number(runtimeRows?.[0]?.passport_available_count||0)||null};
+  return {club:clubs?.[0],membership:m,members,players,board:boards?.[0],runs,participants,stamps,extra_stamps:extraStamps,rewards,collect_requests:collectRequests,passport_total:Number(runtimeRows?.[0]?.passport_available_count||0)||null};
 }
 
 async function syncStaFi(userId:string,clubId:string,force=false){
@@ -184,13 +222,19 @@ async function syncStaFi(userId:string,clubId:string,force=false){
   const player=(await db("club_players?club_id=eq."+clubId+"&user_id=eq."+userId+"&is_active=eq.true&select=id"))?.[0];
   if(!player)return {enabled:!!settings.stafi_sync_enabled,verified:false,error:"linked_player_required",imported:0,checked:0};
 
-  const board=(await db("club_board_state?club_id=eq."+clubId+"&select=current_adventure"))?.[0];
-  const adventureId=Number(board?.current_adventure||0);
-  const run=Number.isSafeInteger(adventureId)&&adventureId>0
-    ?(await db("club_adventure_runs?club_id=eq."+clubId+"&adventure_id=eq."+adventureId+"&status=eq.active&select=id,adventure_id,stamp_ids,stamp_refs&limit=1"))?.[0]
-    :null;
-
-  if(!force&&!run)return {enabled:true,verified:!!settings.stafi_verified_at,imported:0,checked:0,skipped:"no_active_adventure"};
+  const [board,club]=await Promise.all([
+    db("club_board_state?club_id=eq."+clubId+"&select=current_adventure"),
+    db("clubs?id=eq."+clubId+"&select=game_mode")
+  ]);
+  const currentAdventure=Number(board?.[0]?.current_adventure||0),mode=String(club?.[0]?.game_mode||"group");
+  let runs:any[]=[];
+  if(mode==="babygirl"){
+    runs=await db("club_adventure_runs?club_id=eq."+clubId+"&status=eq.active&select=id,adventure_id,stamp_ids,stamp_refs&order=started_at.asc");
+  }else if(Number.isSafeInteger(currentAdventure)&&currentAdventure>0){
+    const run=(await db("club_adventure_runs?club_id=eq."+clubId+"&adventure_id=eq."+currentAdventure+"&status=eq.active&select=id,adventure_id,stamp_ids,stamp_refs&limit=1"))?.[0];
+    if(run)runs=[run];
+  }
+  if(!force&&!runs.length)return {enabled:true,verified:!!settings.stafi_verified_at,imported:0,checked:0,skipped:"no_active_adventure"};
 
   const now=new Date().toISOString();
   try{
@@ -210,24 +254,64 @@ async function syncStaFi(userId:string,clubId:string,force=false){
     if(activeAvailable!==null)playerPatch.stafi_available_count=activeAvailable;
     await db("club_players?user_id=eq."+userId+"&is_active=eq.true",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(playerPatch)});
 
-    if(!run){
-      const status={stafi_sync_enabled:true,stafi_verified_at:now,stafi_last_sync_at:now,stafi_last_success_at:now,stafi_last_error:null,...countPatch};
-      await db("user_private_settings?user_id=eq."+userId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(status)});
-      return {enabled:true,verified:true,imported:0,checked:0,summary,skipped:"no_active_adventure"};
-    }
+    let uncollectedPage:any=null;
+    try{uncollectedPage=await fetchStaFiDetail(page.url,"/UTILS/NotCollectedStamps.php")}catch{}
+    const uncollectedText=String(uncollectedPage?.text||"");
+    const uncollectedLocations=stafiUncollectedLocations(String(uncollectedPage?.html||""));
+    const expectedUncollected=summary.current_uncollected;
+    const locationListTrusted=expectedUncollected!==null&&(
+      expectedUncollected===0?true:
+      uncollectedLocations.size>=Math.max(1,Math.floor(expectedUncollected*0.8))
+    );
+    const textListTrusted=expectedUncollected!==null&&!!uncollectedText&&(
+      /not collected|uncollected|stamps you need|currently available/i.test(uncollectedText)
+    );
 
-    const participating=(await db("club_run_participants?run_id=eq."+run.id+"&player_id=eq."+player.id+"&select=player_id"))?.[0];
-    if(!participating)throw new Error("linked_player_required");
+    let extraRows:any[]=[];
+    if(locationListTrusted){
+      const catalogRow=(await db("bbb_catalog_cache?select=data&limit=1"))?.[0]||null;
+      const catalogItems=Array.isArray(catalogRow?.data?.items)?catalogRow.data.items:[];
+      extraRows=catalogItems.map((it:any)=>{
+        const key=stafiLocationKey(it.region,it.x,it.y,it.z);
+        if(!key||uncollectedLocations.has(key))return null;
+        return {club_id:clubId,player_id:player.id,location_key:key,name:String(it.name||it.region||"BBB stop"),region:String(it.region||""),x:Math.round(Number(it.x)),y:Math.round(Number(it.y)),z:Math.round(Number(it.z)),source:"stafi",completed_at:now};
+      }).filter(Boolean);
+      if(activeCollected!==null&&extraRows.length===activeCollected){
+        await db("club_extra_stamp_progress?club_id=eq."+clubId+"&player_id=eq."+player.id,{method:"DELETE",headers:{Prefer:"return=minimal"}});
+        if(extraRows.length)await db("club_extra_stamp_progress?on_conflict=club_id,player_id,location_key",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(extraRows)});
+      }else{
+        // Fail closed: never use an inferred location list that disagrees with StaFi's authoritative collected count.
+        await db("club_extra_stamp_progress?club_id=eq."+clubId+"&player_id=eq."+player.id,{method:"DELETE",headers:{Prefer:"return=minimal"}});
+        extraRows=[];
+      }
+    }
 
     const existing=await db("club_stamp_progress?club_id=eq."+clubId+"&player_id=eq."+player.id+"&select=stamp_id");
     const completed=new Set(existing.map((p:any)=>Number(p.stamp_id))),rows:any[]=[],checked:number[]=[];
-    for(const ref of Array.isArray(run.stamp_refs)?run.stamp_refs:[]){
-      const id=Number(ref.id);
-      if(!Number.isSafeInteger(id)||completed.has(id))continue;
-      checked.push(id);
-      if(stafiClassification(page.text,ref)==="collected"){
-        rows.push({club_id:clubId,player_id:player.id,stamp_id:id,source:"stafi",completed_by:userId});
-        completed.add(id);
+    const processedRuns:number[]=[];
+    for(const run of runs){
+      const participating=(await db("club_run_participants?run_id=eq."+run.id+"&player_id=eq."+player.id+"&select=player_id"))?.[0];
+      if(!participating)continue;
+      processedRuns.push(Number(run.adventure_id));
+      for(const ref of Array.isArray(run.stamp_refs)?run.stamp_refs:[]){
+        const id=Number(ref.id);
+        if(!Number.isSafeInteger(id)||completed.has(id))continue;
+        checked.push(id);
+        let classification="unknown";
+        const key=stafiLocationKey(ref.region,ref.x,ref.y,ref.z);
+        if(locationListTrusted&&key){
+          classification=uncollectedLocations.has(key)?"missing":"collected";
+        }else if(textListTrusted){
+          const name=String(ref.name||"").toLowerCase(),region=String(ref.region||"").toLowerCase();
+          const listed=(name.length>=4&&uncollectedText.includes(name))||(region.length>=4&&uncollectedText.includes(region));
+          classification=listed?"missing":"collected";
+        }else{
+          classification=stafiClassification(page.text,ref);
+        }
+        if(classification==="collected"){
+          rows.push({club_id:clubId,player_id:player.id,stamp_id:id,source:"stafi",completed_by:userId});
+          completed.add(id);
+        }
       }
     }
     if(rows.length)await db("club_stamp_progress?on_conflict=club_id,player_id,stamp_id",{method:"POST",headers:{Prefer:"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify(rows)});
@@ -236,19 +320,19 @@ async function syncStaFi(userId:string,clubId:string,force=false){
     const status={stafi_sync_enabled:true,stafi_verified_at:now,stafi_last_sync_at:now,stafi_last_success_at:now,stafi_last_error:null,...countPatch};
     if(status.stafi_last_stamp_count===undefined&&summary.active_collected===null&&summary.current_available===null)status.stafi_last_stamp_count=fallbackCount;
     await db("user_private_settings?user_id=eq."+userId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(status)});
-    await finalizeRun(clubId,Number(run.adventure_id));
-    return {enabled:true,verified:true,imported:rows.length,checked:[...new Set(checked)].length,total:status.stafi_last_stamp_count,summary,current_adventure:Number(run.adventure_id)};
+    for(const adventureId of processedRuns)await finalizeRun(clubId,adventureId);
+    return {enabled:true,verified:true,imported:rows.length,checked:[...new Set(checked)].length,total:status.stafi_last_stamp_count,summary,current_adventure:currentAdventure,processed_adventures:processedRuns,location_indexed:uncollectedLocations.size,extra_location_mapped:extraRows.length,location_list_trusted:locationListTrusted||textListTrusted};
   }catch(e){
     const raw=String((e as Error)?.message||e),safe=/^(invalid_stafi_url|stafi_redirect_failed|stafi_redirect_blocked|stafi_http_\d{3}|stafi_page_too_large|stafi_too_many_redirects|linked_player_required)$/.test(raw)?raw:"stafi_unavailable";
     await db("user_private_settings?user_id=eq."+userId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({stafi_last_sync_at:now,stafi_last_error:safe})});
-    return {enabled:!!settings.stafi_sync_enabled,verified:false,error:safe,imported:0,checked:0,current_adventure:run?Number(run.adventure_id):null};
+    return {enabled:!!settings.stafi_sync_enabled,verified:false,error:safe,imported:0,checked:0,current_adventure:currentAdventure};
   }
 }
 
 async function scheduledStaFiRefresh(){
   const cutoff=encodeURIComponent(new Date(Date.now()-10*60*1000).toISOString());
   const boards=await db("club_board_state?last_active_at=gte."+cutoff+"&current_adventure=gt.0&select=club_id,current_adventure,last_active_at&limit=100");
-  let users=0,clubsChecked=0,imported=0,errors=0,passportTotal=0;
+  let users=0,clubsChecked=0,imported=0,errors=0,passportTotal=0,locationIndexedMax=0,locationTrustedUsers=0;
   const seenPairs=new Set<string>();
   for(const board of boards||[]){
     const clubId=uuid(board.club_id),adventureId=Number(board.current_adventure||0);
@@ -263,11 +347,12 @@ async function scheduledStaFiRefresh(){
       const out=await syncStaFi(userId,clubId,false);
       if(out.error==="stafi_sync_disabled"||out.error==="stafi_url_required")continue;
       touched=true;users++;imported+=Number(out.imported||0);if(out.error)errors++;
+      locationIndexedMax=Math.max(locationIndexedMax,Number(out.location_indexed||0));if(out.location_list_trusted)locationTrustedUsers++;
       passportTotal=Math.max(passportTotal,Number(out.summary?.current_available??out.summary?.available??0));
     }
     if(touched)clubsChecked++;
   }
-  return {users,clubs_checked:clubsChecked,imported,errors,passport_total:passportTotal,active_window_minutes:10,at:new Date().toISOString()};
+  return {users,clubs_checked:clubsChecked,imported,errors,passport_total:passportTotal,location_indexed_max:locationIndexedMax,location_trusted_users:locationTrustedUsers,active_window_minutes:10,at:new Date().toISOString()};
 }
 async function validJobSecret(req:Request){
   const supplied=req.headers.get("x-bbb-job-secret")||"";
@@ -458,12 +543,16 @@ Deno.serve(async(req:Request)=>{
     if(action==="start_adventure"){
       const adventureId=Number(body.adventure_id);if(!Number.isSafeInteger(adventureId)||adventureId<1||adventureId>127)return reply({ok:false,error:"bad_adventure"},400);
       const stampIds=ints(body.stamp_ids);if(stampIds.length<1||stampIds.length>3)return reply({ok:false,error:"one_to_three_stamps_required"},400);
-      await db("club_adventure_runs?club_id=eq."+clubId+"&status=eq.active&adventure_id=neq."+adventureId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"retired",locked:false})});
+      const club=(await db("clubs?id=eq."+clubId+"&select=game_mode"))?.[0],mode=String(club?.game_mode||"group");
+      if(mode==="babygirl"){
+        await db("club_adventure_runs?club_id=eq."+clubId+"&status=eq.active&adventure_id=neq."+adventureId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({locked:false})});
+      }else{
+        await db("club_adventure_runs?club_id=eq."+clubId+"&status=eq.active&adventure_id=neq."+adventureId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"retired",locked:false})});
+      }
       const refs=stampRefs(body.stamps,stampIds);if(refs.length!==stampIds.length)return reply({ok:false,error:"invalid_stamp_references"},400);
       const run=(await db("club_adventure_runs?on_conflict=club_id,adventure_id",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify({club_id:clubId,adventure_id:adventureId,status:"active",locked:true,started_by:user.id,completed_at:null,stamp_ids:stampIds,stamp_refs:refs})}))?.[0];
       const active=await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&select=id");
       const playerIds:string[]=active.map((p:any)=>p.id);if(!playerIds.length)return reply({ok:false,error:"participant_required"},400);
-      const club=(await db("clubs?id=eq."+clubId+"&select=game_mode"))?.[0],mode=String(club?.game_mode||"group");
       if(mode==="solo"&&playerIds.length!==1)return reply({ok:false,error:"solo_requires_one_player"},409);
       if(mode==="babygirl"&&playerIds.length!==2)return reply({ok:false,error:"babygirl_needs_two"},409);
       if(mode==="group"&&playerIds.length<2)return reply({ok:false,error:"group_needs_two"},409);
@@ -495,8 +584,11 @@ Deno.serve(async(req:Request)=>{
       if(!player)return reply({ok:false,error:"player_not_found"},404);
       if(player.user_id&&player.user_id!==user.id)return reply({ok:false,error:"own_stamps_only"},403);
       if(!player.user_id&&!manager(m))return reply({ok:false,error:"manager_required_for_guest"},403);
-      if(body.completed===false)await db("club_stamp_progress?club_id=eq."+clubId+"&player_id=eq."+playerId+"&stamp_id=eq."+stampId,{method:"DELETE",headers:{Prefer:"return=minimal"}});
-      else await db("club_stamp_progress?on_conflict=club_id,player_id,stamp_id",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({club_id:clubId,player_id:playerId,stamp_id:stampId,source:body.source==="stafi"?"stafi":"manual",completed_by:user.id})});
+      if(body.completed===false){
+        const current=(await db("club_stamp_progress?club_id=eq."+clubId+"&player_id=eq."+playerId+"&stamp_id=eq."+stampId+"&select=source"))?.[0];
+        if(current&&current.source!=="manual")return reply({ok:false,error:"stafi_stamp_locked"},409);
+        await db("club_stamp_progress?club_id=eq."+clubId+"&player_id=eq."+playerId+"&stamp_id=eq."+stampId,{method:"DELETE",headers:{Prefer:"return=minimal"}});
+      }else await db("club_stamp_progress?on_conflict=club_id,player_id,stamp_id",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({club_id:clubId,player_id:playerId,stamp_id:stampId,source:body.source==="stafi"?"stafi":"manual",completed_by:user.id})});
       const adventureId=Number(body.adventure_id),finalized=Number.isSafeInteger(adventureId)&&adventureId>0?await finalizeRun(clubId,adventureId):null;
       return reply({ok:true,finalized});
     }
