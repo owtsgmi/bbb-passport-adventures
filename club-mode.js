@@ -65,8 +65,7 @@ function renderParticipantPicker(){}
 const legacyActiveAdventure=activeAdventure;
 activeAdventure=function(){
  if(!clubMode)return legacyActiveAdventure();
- const preferred=clubRuns.find(function(r){return r.status==='active'&&Number(r.adventure_id)===Number(lastAdventure)});
- const run=preferred||clubRuns.find(function(r){return r.status==='active'});
+ const run=clubRuns.find(function(r){return r.status==='active'&&Number(r.adventure_id)===Number(lastAdventure)});
  return run?(adventures.find(function(a){return Number(a.id)===Number(run.adventure_id)})||null):null;
 };
 const legacyStartAdventure=startAdventure;
