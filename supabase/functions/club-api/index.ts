@@ -16,7 +16,6 @@ function uuid(value:unknown){const s=String(value||"");return /^[0-9a-f]{8}-[0-9
 function ints(value:unknown){return Array.isArray(value)?[...new Set(value.map(Number).filter(Number.isSafeInteger).filter(n=>n>0&&n<100000))]:[]}
 function randomCode(){const a=new Uint8Array(16);crypto.getRandomValues(a);return Array.from(a,b=>b.toString(16).padStart(2,"0")).join("").toUpperCase()}
 function randomSlug(name:string){const base=name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,42)||"passport-club";return base+"-"+randomCode().slice(0,6).toLowerCase()}
-function randomReward(){const a=new Uint32Array(1);crypto.getRandomValues(a);return 20+(a[0]%81)}
 function rewardRemaining(row:any){return Math.max(0,Number(row?.amount||0)-Math.max(0,Number(row?.paid_amount||0)))}
 async function sha256(s:string){const h=new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s.trim().toUpperCase())));return Array.from(h,b=>b.toString(16).padStart(2,"0")).join("")}
 async function sha256Raw(s:string){const h=new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s)));return Array.from(h,b=>b.toString(16).padStart(2,"0")).join("")}
@@ -42,24 +41,41 @@ function stampRefs(value:unknown,ids:number[]){
   return out;
 }
 function decodeHtml(s:string){return s.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi," ").replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi," ").replace(/<[^>]+>/g," ").replace(/&nbsp;|&#160;/gi," ").replace(/&amp;/gi,"&").replace(/&quot;/gi,'"').replace(/&#39;|&apos;/gi,"'").replace(/\s+/g," ").toLowerCase()}
-function lastMarker(text:string,patterns:RegExp[]){let best=-1;for(const pattern of patterns){pattern.lastIndex=0;let m;while((m=pattern.exec(text)))best=Math.max(best,m.index);pattern.lastIndex=0}return best}
-function stafiClassification(text:string,ref:any){
-  const needles=[String(ref.name||"").toLowerCase(),String(ref.region||"").toLowerCase()].filter(x=>x.length>=4),positions:number[]=[];
-  for(const needle of needles){let at=text.indexOf(needle);while(at>=0&&positions.length<20){positions.push(at);at=text.indexOf(needle,at+needle.length)}}
-  const positive=[/stamps? (?:you )?(?:have|collected|obtained|visited)/g,/collected stamps?/g,/already collected/g,/completed stamps?/g];
-  const negative=[/stamps? (?:you )?(?:need|have not|haven't|do not have|don't have)/g,/not (?:yet )?collected/g,/uncollected stamps?/g,/missing stamps?/g,/still needed/g];
-  let positiveHit=false,negativeHit=false;
-  for(const at of positions){const before=text.slice(Math.max(0,at-4000),at),row=text.slice(Math.max(0,at-220),Math.min(text.length,at+220));const p=lastMarker(before,positive),n=lastMarker(before,negative);if(/not (?:yet )?collected|uncollected|missing|still needed|need this/i.test(row))negativeHit=true;else if(/collected|completed|obtained|visited|you have/i.test(row))positiveHit=true;else if(p>n&&p>=0)positiveHit=true;else if(n>p&&n>=0)negativeHit=true}
-  return positiveHit&&!negativeHit?"collected":negativeHit&&!positiveHit?"missing":"unknown";
+// Only explicit named rows on the collected detail page are positive evidence.
+// Summary prose, navigation links and absence from any list are never evidence.
+function stafiCollectedEvidence(page:any,collected=true){
+  if(new URL(page.url).pathname.toLowerCase()!==(collected?"/utils/collectedstamps.php":"/utils/notcollectedstamps.php"))throw new Error("stafi_evidence_unavailable");
+  const html=page.html.replace(/<!--[\s\S]*?-->|<script\b[^>]*>[\s\S]*?<\/script>|<style\b[^>]*>[\s\S]*?<\/style>/gi,"");
+  const sections=[...html.matchAll(/<h[1-6]\b[^>]*>([\s\S]*?)<\/h[1-6]>/gi)];
+  const label=collected?/^(my |your )?collected stamps(?:\s*:.*)?$|^stamps you have$/:/^(currently available )?(not collected|uncollected) stamps(?:\s*:.*)?$|^stamps you need$/;
+  const heading=sections.find(m=>label.test(decodeHtml(m[1]).trim()));
+  // Accept explicit stamp rows when BBB omits the expected heading.
+  const start=heading?Number(heading.index)+heading[0].length:0,next=heading?sections.find(m=>Number(m.index)>=start):null;
+  const collectedHtml=html.slice(start,next?.index);
+  const evidence=new Map<string,Set<string>>();
+  for(const row of collectedHtml.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)){
+    const text=decodeHtml(row[1]);if(collected&&/uncollected|not (?:yet )?collected|still needed/.test(text))continue;
+    const keys=stafiUncollectedLocations(row[1]);if(keys.size!==1)continue;
+    const cells=[...row[1].matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)].map(m=>decodeHtml(m[1]).trim()).filter(Boolean);
+    const key=[...keys][0],names=evidence.get(key)||new Set<string>();
+    for(const cell of cells)names.add(cell);evidence.set(key,names);
+  }
+  return evidence;
+}
+function stafiHasEvidence(evidence:Map<string,Set<string>>,ref:any){
+  return !!evidence.get(stafiLocationKey(ref.region,ref.x,ref.y,ref.z))?.has(decodeHtml(String(ref.name||"")).trim());
 }
 function stafiSummary(text:string){
-  const get=(re:RegExp)=>{const m=text.match(re),n=m?Number(m[1]):NaN;return Number.isSafeInteger(n)&&n>=0?n:null};
+  const get=(re:RegExp)=>{
+    const values=[...text.matchAll(new RegExp(re.source,"gi"))].map(m=>Number(m[1]));
+    return values.length&&values.every(n=>Number.isSafeInteger(n)&&n>=0)&&new Set(values).size===1?values[0]:null;
+  };
   const currentUncollected=get(/currently available uncollected stamps?\s*:\s*(\d+)/i);
   const currentAvailable=get(/all currently available stamps?\s*:\s*(\d+)/i);
   let uncollected=currentUncollected;
   if(uncollected===null)uncollected=get(/uncollected stamps?\s*:\s*(\d+)/i);
   let rawCollected=get(/my collected stamps?\s*:\s*(\d+)/i);
-  if(rawCollected===null)rawCollected=get(/collected stamps?\s*:\s*(\d+)/i);
+  if(rawCollected===null)rawCollected=get(/(?<!un)\bcollected stamps?\s*:\s*(\d+)/i);
   let available=currentAvailable;
   if(available===null)available=get(/available stamps?\s*:\s*(\d+)/i);
   if(available===null&&rawCollected!==null&&uncollected!==null)available=rawCollected+uncollected;
@@ -70,8 +86,10 @@ function stafiSummary(text:string){
   return {raw_collected:rawCollected,uncollected,available,active_collected:activeCollected,current_available:currentAvailable,current_uncollected:currentUncollected};
 }
 function stafiLocationKey(region:unknown,x:unknown,y:unknown,z:unknown){
-  const r=String(region||"").trim().toLowerCase(),nx=Math.round(Number(x)),ny=Math.round(Number(y)),nz=Math.round(Number(z));
-  return r&&[nx,ny,nz].every(Number.isFinite)?[r,nx,ny,nz].join("|"):"";
+  const r=String(region||"").trim().toLowerCase(),values=[x,y,z];
+  if(!r||values.some(v=>v===null||v===undefined||String(v).trim()===""))return "";
+  const [nx,ny,nz]=values.map(Number);
+  return [nx,ny,nz].every(Number.isSafeInteger)&&nx>=0&&nx<=256&&ny>=0&&ny<=256&&nz>=0&&nz<=10000?[r,nx,ny,nz].join("|"):"";
 }
 function stafiUncollectedLocations(html:string){
   const out=new Set<string>();
@@ -116,7 +134,11 @@ async function db(path:string,init:RequestInit={}){
   const h=new Headers(init.headers||{});h.set("apikey",SERVICE);h.set("Authorization","Bearer "+SERVICE);
   if(init.body&&!h.has("Content-Type"))h.set("Content-Type","application/json");
   const r=await fetch(SUPA_URL+"/rest/v1/"+path,{...init,headers:h});
-  const t=await r.text();if(!r.ok)throw new Error("db_"+r.status+"_"+t);
+  const t=await r.text();if(!r.ok){
+    const error=new Error("db_"+r.status) as Error&{dbMessage?:string};
+    try{error.dbMessage=JSON.parse(t)?.message}catch{}
+    throw error;
+  }
   return t?JSON.parse(t):null;
 }
 async function currentUser(req:Request){
@@ -166,34 +188,8 @@ async function clubBalance(clubId:string,beneficiaryId=""){
   return rows.reduce((sum:number,row:any)=>sum+rewardRemaining(row),0);
 }
 async function finalizeRun(clubId:string,adventureId:number){
-  const run=(await db("club_adventure_runs?club_id=eq."+clubId+"&adventure_id=eq."+adventureId+"&select=id,status,stamp_ids"))?.[0];
-  if(!run||run.status!=="active")return null;
-  const stampIds=ints(run.stamp_ids);if(stampIds.length<1||stampIds.length>3)return null;
-  const participants=await db("club_run_participants?run_id=eq."+run.id+"&select=player_id");
-  const playerIds=participants.map((p:any)=>p.player_id);if(!playerIds.length)return null;
-  const progress=await db("club_stamp_progress?club_id=eq."+clubId+"&player_id=in.("+playerIds.join(",")+")&stamp_id=in.("+stampIds.join(",")+")&select=player_id,stamp_id");
-  const club=(await db("clubs?id=eq."+clubId+"&select=game_mode,treasure_enabled"))?.[0];
-  const mode=String(club?.game_mode||"group");
-  const playerComplete=(playerId:string)=>stampIds.every((stampId:number)=>progress.some((p:any)=>p.player_id===playerId&&Number(p.stamp_id)===stampId));
-  const completingPlayerId=mode==="babygirl"
-    ?(playerIds.length===2&&playerIds.every(playerComplete)?playerIds[0]:null)
-    :playerIds.find(playerComplete);
-  if(!completingPlayerId)return null;
-  const now=new Date().toISOString();
-  await db("club_adventure_runs?id=eq."+run.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"completed",completed_at:now})});
-  const board=(await db("club_board_state?club_id=eq."+clubId+"&select=current_adventure"))?.[0];
-  if(Number(board?.current_adventure||0)===adventureId){
-    await db("club_board_state?club_id=eq."+clubId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({current_adventure:0,adventure_locked:true})});
-  }
-  if(mode!=="babygirl"||!club?.treasure_enabled)return {completed:true,completed_by_player_id:completingPlayerId,reward:null};
-  const existing=(await db("club_rewards?run_id=eq."+run.id+"&select=*"))?.[0];
-  if(existing)return {completed:true,completed_by_player_id:completingPlayerId,reward:existing};
-  const beneficiary=(await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&is_beneficiary=eq.true&is_payer=eq.false&select=id&limit=1"))?.[0]
-    ||(await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&is_payer=eq.false&select=id&order=sort_order.asc,created_at.asc&limit=1"))?.[0];
-  if(!beneficiary)return {completed:true,completed_by_player_id:completingPlayerId,reward:null};
-  const created=(await db("club_rewards?on_conflict=run_id",{method:"POST",headers:{Prefer:"resolution=ignore-duplicates,return=representation"},body:JSON.stringify({club_id:clubId,run_id:run.id,beneficiary_player_id:beneficiary.id,amount:randomReward()})}))?.[0];
-  const reward=created||(await db("club_rewards?run_id=eq."+run.id+"&select=*"))?.[0]||null;
-  return {completed:true,completed_by_player_id:completingPlayerId,reward};
+  // Eligibility, completion, reward and Current cleanup share one DB transaction.
+  return await db("rpc/finalize_club_adventure",{method:"POST",body:JSON.stringify({p_club_id:clubId,p_adventure_id:adventureId})});
 }
 async function loadClub(clubId:string,userId:string){
   const m=await requireMember(clubId,userId);
@@ -206,7 +202,7 @@ async function loadClub(clubId:string,userId:string){
     db("club_board_state?club_id=eq."+clubId+"&select=*"),
     runIds.length?db("club_run_participants?select=run_id,player_id,joined_at&run_id=in.("+runIds.join(",")+")"):Promise.resolve([]),
     db("club_stamp_progress?club_id=eq."+clubId+"&select=player_id,stamp_id,source,completed_at"),
-    db("club_extra_stamp_progress?club_id=eq."+clubId+"&select=player_id,location_key,name,region,x,y,z,source,completed_at"),
+    db("club_stafi_location_evidence?club_id=eq."+clubId+"&select=player_id,location_key,name,region,x,y,z,source,collected,completed_at"),
     db("club_rewards?club_id=eq."+clubId+"&select=*&order=awarded_at.desc"),
     db("club_collect_requests?club_id=eq."+clubId+"&select=*&order=created_at.desc&limit=50"),
     db("app_runtime_state?id=eq.1&select=passport_available_count,updated_at")
@@ -239,97 +235,79 @@ async function syncStaFi(userId:string,clubId:string,force=false){
   const now=new Date().toISOString();
   try{
     const page=await fetchStaFi(settings.stafi_url),summary=stafiSummary(page.text);
-    const activeAvailable=summary.current_available??summary.available;
-    const activeCollected=summary.active_collected;
+    const collectedPage=await fetchStaFiDetail(page.url,"/UTILS/CollectedStamps.php");
+    const evidence=stafiCollectedEvidence(collectedPage);
+    let missingEvidence=new Map<string,Set<string>>();
+    try{missingEvidence=stafiCollectedEvidence(await fetchStaFiDetail(page.url,"/UTILS/NotCollectedStamps.php"),false)}catch{}
+    // Global collected includes retired stamps, so it may exceed active available.
+    // Contradictory active counts are not counter data; explicit rows still count.
+    const countsConsistent=summary.current_available!==null&&summary.current_uncollected!==null
+      &&summary.current_uncollected<=summary.current_available
+      &&(summary.raw_collected===null||Number(summary.active_collected)<=summary.raw_collected);
+    const activeAvailable=countsConsistent?summary.current_available:null;
+    const activeCollected=countsConsistent?summary.active_collected:null;
+    const countPatch:any={};
     if(activeAvailable!==null){
       await db("app_runtime_state?id=eq.1",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({passport_available_count:activeAvailable,updated_at:now})});
+      countPatch.stafi_available_count=activeAvailable;
+      countPatch.stafi_uncollected_count=summary.current_uncollected;
     }
-    const countPatch:any={};
     if(activeCollected!==null)countPatch.stafi_last_stamp_count=activeCollected;
-    if(summary.current_uncollected!==null)countPatch.stafi_uncollected_count=summary.current_uncollected;
-    else if(summary.uncollected!==null)countPatch.stafi_uncollected_count=summary.uncollected;
-    if(activeAvailable!==null)countPatch.stafi_available_count=activeAvailable;
     const playerPatch:any={stafi_last_success_at:now};
     if(activeCollected!==null)playerPatch.stafi_collected_count=activeCollected;
     if(activeAvailable!==null)playerPatch.stafi_available_count=activeAvailable;
-    await db("club_players?user_id=eq."+userId+"&is_active=eq.true",{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(playerPatch)});
+    await db("club_players?club_id=eq."+clubId+"&id=eq."+player.id,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(playerPatch)});
 
-    let collectedPage:any=null,uncollectedPage:any=null;
-    try{collectedPage=await fetchStaFiDetail(page.url,"/UTILS/CollectedStamps.php")}catch{}
-    try{uncollectedPage=await fetchStaFiDetail(page.url,"/UTILS/NotCollectedStamps.php")}catch{}
-    const collectedText=String(collectedPage?.text||"");
-    const collectedLocations=stafiUncollectedLocations(String(collectedPage?.html||""));
-    const collectedListTrusted=collectedLocations.size>0&&/collected|stamps you have|your stamps/i.test(collectedText);
-    const uncollectedText=String(uncollectedPage?.text||"");
-    const uncollectedLocations=stafiUncollectedLocations(String(uncollectedPage?.html||""));
-    const expectedUncollected=summary.current_uncollected;
-    const locationListTrusted=expectedUncollected!==null&&(
-      expectedUncollected===0?true:
-      uncollectedLocations.size>=Math.max(1,Math.floor(expectedUncollected*0.8))
-    );
-    const textListTrusted=expectedUncollected!==null&&!!uncollectedText&&(
-      /not collected|uncollected|stamps you need|currently available/i.test(uncollectedText)
-    );
-
-    let extraRows:any[]=[];
-    if(locationListTrusted){
-      const catalogRow=(await db("bbb_catalog_cache?select=data&limit=1"))?.[0]||null;
-      const catalogItems=Array.isArray(catalogRow?.data?.items)?catalogRow.data.items:[];
-      extraRows=catalogItems.map((it:any)=>{
-        const key=stafiLocationKey(it.region,it.x,it.y,it.z);
-        if(!key||uncollectedLocations.has(key))return null;
-        return {club_id:clubId,player_id:player.id,location_key:key,name:String(it.name||it.region||"BBB stop"),region:String(it.region||""),x:Math.round(Number(it.x)),y:Math.round(Number(it.y)),z:Math.round(Number(it.z)),source:"stafi",completed_at:now};
-      }).filter(Boolean);
-      if(activeCollected!==null&&extraRows.length===activeCollected){
-        await db("club_extra_stamp_progress?club_id=eq."+clubId+"&player_id=eq."+player.id,{method:"DELETE",headers:{Prefer:"return=minimal"}});
-        if(extraRows.length)await db("club_extra_stamp_progress?on_conflict=club_id,player_id,location_key",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(extraRows)});
-      }else{
-        // Fail closed: never use an inferred location list that disagrees with StaFi's authoritative collected count.
-        await db("club_extra_stamp_progress?club_id=eq."+clubId+"&player_id=eq."+player.id,{method:"DELETE",headers:{Prefer:"return=minimal"}});
-        extraRows=[];
-      }
+    // Only explicit evidence enters the new index. Never backfill the legacy
+    // inferred table or replace/delete progress when a response is incomplete.
+    const catalogRow=(await db("bbb_catalog_cache?select=data&limit=1"))?.[0];
+    const catalogItems=Array.isArray(catalogRow?.data?.items)?catalogRow.data.items:[];
+    const locations=new Map<string,any[]>();
+    for(const item of catalogItems){
+      const key=stafiLocationKey(item.region,item.x,item.y,item.z);
+      if(key){const items=locations.get(key)||[];items.push(item);locations.set(key,items)}
     }
+    const extraRows:any[]=[];
+    for(const [key,items] of locations){
+      // A location is not a stamp identity if multiple catalog stops share it.
+      if(items.length!==1)continue;
+      const it=items[0],collected=stafiHasEvidence(evidence,it);
+      if(!collected&&!stafiHasEvidence(missingEvidence,it))continue;
+      extraRows.push({club_id:clubId,player_id:player.id,location_key:key,name:String(it.name),region:String(it.region),x:Math.round(Number(it.x)),y:Math.round(Number(it.y)),z:Math.round(Number(it.z)),source:"stafi_explicit",collected,completed_at:now});
+    }
+    if(extraRows.length)await db("club_stafi_location_evidence?on_conflict=club_id,player_id,location_key",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(extraRows)});
 
-    const existing=await db("club_stamp_progress?club_id=eq."+clubId+"&player_id=eq."+player.id+"&select=stamp_id");
-    const completed=new Set(existing.map((p:any)=>Number(p.stamp_id))),rows:any[]=[],checked:number[]=[];
+    const existing=await db("club_stamp_progress?club_id=eq."+clubId+"&player_id=eq."+player.id+"&select=stamp_id,source");
+    const completed=new Map<number,string>(existing.map((p:any)=>[Number(p.stamp_id),String(p.source)])),rows:any[]=[],checked:number[]=[];
     const processedRuns:number[]=[];
+    const identities=new Map<string,Set<number>>();
+    const identity=(ref:any)=>stafiLocationKey(ref.region,ref.x,ref.y,ref.z)+"|"+decodeHtml(String(ref.name||"")).trim();
+    for(const run of runs)for(const ref of Array.isArray(run.stamp_refs)?run.stamp_refs:[]){
+      const key=identity(ref),ids=identities.get(key)||new Set<number>();ids.add(Number(ref.id));identities.set(key,ids);
+    }
     for(const run of runs){
       const participating=(await db("club_run_participants?run_id=eq."+run.id+"&player_id=eq."+player.id+"&select=player_id"))?.[0];
       if(!participating)continue;
       processedRuns.push(Number(run.adventure_id));
       for(const ref of Array.isArray(run.stamp_refs)?run.stamp_refs:[]){
         const id=Number(ref.id);
-        if(!Number.isSafeInteger(id)||completed.has(id))continue;
+        if(!Number.isSafeInteger(id)||completed.get(id)==="stafi")continue;
         checked.push(id);
-        let classification="unknown";
-        const key=stafiLocationKey(ref.region,ref.x,ref.y,ref.z);
-        if(collectedListTrusted&&key&&collectedLocations.has(key)){
-          classification="collected";
-        }else if(locationListTrusted&&key){
-          classification=uncollectedLocations.has(key)?"missing":"collected";
-        }else if(textListTrusted){
-          const name=String(ref.name||"").toLowerCase(),region=String(ref.region||"").toLowerCase();
-          const listed=(name.length>=4&&uncollectedText.includes(name))||(region.length>=4&&uncollectedText.includes(region));
-          classification=listed?"missing":"collected";
-        }else{
-          classification=stafiClassification(page.text,ref);
-        }
-        if(classification==="collected"){
+        const sameName=(locations.get(stafiLocationKey(ref.region,ref.x,ref.y,ref.z))||[]).filter(it=>identity(it)===identity(ref));
+        if((identities.get(identity(ref))?.size||0)<=1&&sameName.length<=1&&stafiHasEvidence(evidence,ref)){
           rows.push({club_id:clubId,player_id:player.id,stamp_id:id,source:"stafi",completed_by:userId});
-          completed.add(id);
+          completed.set(id,"stafi");
         }
       }
     }
-    if(rows.length)await db("club_stamp_progress?on_conflict=club_id,player_id,stamp_id",{method:"POST",headers:{Prefer:"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify(rows)});
+    if(rows.length)await db("club_stamp_progress?on_conflict=club_id,player_id,stamp_id",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(rows)});
 
-    const fallbackCount=completed.size;
     const status={stafi_sync_enabled:true,stafi_verified_at:now,stafi_last_sync_at:now,stafi_last_success_at:now,stafi_last_error:null,...countPatch};
-    if(status.stafi_last_stamp_count===undefined&&summary.active_collected===null&&summary.current_available===null)status.stafi_last_stamp_count=fallbackCount;
     await db("user_private_settings?user_id=eq."+userId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(status)});
     for(const adventureId of processedRuns)await finalizeRun(clubId,adventureId);
-    return {enabled:true,verified:true,imported:rows.length,checked:[...new Set(checked)].length,total:status.stafi_last_stamp_count,summary,current_adventure:currentAdventure,processed_adventures:processedRuns,location_indexed:uncollectedLocations.size,collected_location_indexed:collectedLocations.size,extra_location_mapped:extraRows.length,location_list_trusted:collectedListTrusted||locationListTrusted||textListTrusted};
+    return {enabled:true,verified:true,imported:rows.length,checked:[...new Set(checked)].length,total:status.stafi_last_stamp_count,summary,current_adventure:currentAdventure,processed_adventures:processedRuns,location_indexed:0,collected_location_indexed:evidence.size,extra_location_mapped:extraRows.length,location_list_trusted:true};
   }catch(e){
-    const raw=String((e as Error)?.message||e),safe=/^(invalid_stafi_url|stafi_redirect_failed|stafi_redirect_blocked|stafi_http_\d{3}|stafi_page_too_large|stafi_too_many_redirects|linked_player_required)$/.test(raw)?raw:"stafi_unavailable";
+    const raw=String((e as Error)?.message||e),safe=/^(invalid_stafi_url|stafi_redirect_failed|stafi_redirect_blocked|stafi_http_\d{3}|stafi_page_too_large|stafi_too_many_redirects|stafi_evidence_unavailable|linked_player_required)$/.test(raw)?raw:"stafi_unavailable";
     await db("user_private_settings?user_id=eq."+userId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({stafi_last_sync_at:now,stafi_last_error:safe})});
     return {enabled:!!settings.stafi_sync_enabled,verified:false,error:safe,imported:0,checked:0,current_adventure:currentAdventure};
   }
@@ -521,9 +499,8 @@ Deno.serve(async(req:Request)=>{
       return reply({ok:true});
     }
     if(action==="save_board"){
+      if(body.started!==undefined||body.current_adventure!==undefined)return reply({ok:false,error:"adventure_state_managed_by_backend"},409);
       const patch:any={updated_by:user.id,last_active_at:new Date().toISOString()};
-      if(body.started!==undefined)patch.started=ints(body.started);
-      if(body.current_adventure!==undefined)patch.current_adventure=Math.max(0,Number(body.current_adventure)||0);
       if(body.adventure_locked!==undefined)patch.adventure_locked=body.adventure_locked===true;
       await db("club_board_state?club_id=eq."+clubId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify(patch)});return reply({ok:true});
     }
@@ -544,29 +521,17 @@ Deno.serve(async(req:Request)=>{
       try{
         const remaining=await db("rpc/allocate_club_payment",{method:"POST",body:JSON.stringify({p_club_id:clubId,p_handler:user.id})});
         return reply({ok:true,paid:1000,remaining_balance:Number(remaining||0)});
-      }catch(e){const message=String((e as Error)?.message||e);if(message.includes("threshold_not_met"))return reply({ok:false,error:"threshold_not_met"},409);if(message.includes("beneficiary_not_found"))return reply({ok:false,error:"beneficiary_not_found"},409);throw e}
+      }catch(e){const message=String((e as Error&{dbMessage?:string})?.dbMessage||(e as Error)?.message||e);if(message==="threshold_not_met")return reply({ok:false,error:"threshold_not_met"},409);if(message==="beneficiary_not_found")return reply({ok:false,error:"beneficiary_not_found"},409);throw e}
     }
     if(action==="start_adventure"){
       const adventureId=Number(body.adventure_id);if(!Number.isSafeInteger(adventureId)||adventureId<1||adventureId>127)return reply({ok:false,error:"bad_adventure"},400);
-      const stampIds=ints(body.stamp_ids);if(stampIds.length<1||stampIds.length>3)return reply({ok:false,error:"one_to_three_stamps_required"},400);
-      const club=(await db("clubs?id=eq."+clubId+"&select=game_mode"))?.[0],mode=String(club?.game_mode||"group");
-      if(mode==="babygirl"){
-        await db("club_adventure_runs?club_id=eq."+clubId+"&status=eq.active&adventure_id=neq."+adventureId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({locked:false})});
-      }else{
-        await db("club_adventure_runs?club_id=eq."+clubId+"&status=eq.active&adventure_id=neq."+adventureId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({status:"retired",locked:false})});
-      }
+      const stampIds=body.stamp_ids;
+      if(!Array.isArray(stampIds)||stampIds.length<1||stampIds.length>3||new Set(stampIds).size!==stampIds.length||stampIds.some((id:unknown)=>!Number.isSafeInteger(id)||Number(id)<1||Number(id)>=100000))return reply({ok:false,error:"one_to_three_stamps_required"},400);
       const refs=stampRefs(body.stamps,stampIds);if(refs.length!==stampIds.length)return reply({ok:false,error:"invalid_stamp_references"},400);
-      const run=(await db("club_adventure_runs?on_conflict=club_id,adventure_id",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify({club_id:clubId,adventure_id:adventureId,status:"active",locked:true,started_by:user.id,completed_at:null,stamp_ids:stampIds,stamp_refs:refs})}))?.[0];
-      const active=await db("club_players?club_id=eq."+clubId+"&is_active=eq.true&select=id");
-      const playerIds:string[]=active.map((p:any)=>p.id);if(!playerIds.length)return reply({ok:false,error:"participant_required"},400);
-      if(mode==="solo"&&playerIds.length!==1)return reply({ok:false,error:"solo_requires_one_player"},409);
-      if(mode==="babygirl"&&playerIds.length!==2)return reply({ok:false,error:"babygirl_needs_two"},409);
-      if(mode==="group"&&playerIds.length<2)return reply({ok:false,error:"group_needs_two"},409);
-      await db("club_run_participants?run_id=eq."+run.id,{method:"DELETE",headers:{Prefer:"return=minimal"}});
-      if(playerIds.length)await db("club_run_participants",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify(playerIds.map((player_id:string)=>({run_id:run.id,player_id})))});
-      const board=(await db("club_board_state?club_id=eq."+clubId+"&select=started"))?.[0]||{};
-      await db("club_board_state?club_id=eq."+clubId,{method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({started:[...new Set([...(board.started||[]),adventureId])],current_adventure:adventureId,adventure_locked:true,updated_by:user.id,last_active_at:new Date().toISOString()})});
-      return reply({ok:true,run_id:run.id,participants:playerIds.length,finalized:await finalizeRun(clubId,adventureId)});
+      // The RPC validates membership, mode/roster and existing run/board state
+      // before changing anything, then snapshots the start in one transaction.
+      const started=await db("rpc/start_club_adventure",{method:"POST",body:JSON.stringify({p_club_id:clubId,p_user_id:user.id,p_adventure_id:adventureId,p_stamp_ids:stampIds,p_stamp_refs:refs})});
+      return reply({ok:true,...started});
     }
     if(action==="trim_adventure_stamps"){
       const adventureId=Number(body.adventure_id);if(!Number.isSafeInteger(adventureId)||adventureId<1||adventureId>127)return reply({ok:false,error:"bad_adventure"},400);
@@ -593,11 +558,16 @@ Deno.serve(async(req:Request)=>{
       if(body.completed===false){
         const current=(await db("club_stamp_progress?club_id=eq."+clubId+"&player_id=eq."+playerId+"&stamp_id=eq."+stampId+"&select=source"))?.[0];
         if(current&&current.source!=="manual")return reply({ok:false,error:"stafi_stamp_locked"},409);
-        await db("club_stamp_progress?club_id=eq."+clubId+"&player_id=eq."+playerId+"&stamp_id=eq."+stampId,{method:"DELETE",headers:{Prefer:"return=minimal"}});
-      }else await db("club_stamp_progress?on_conflict=club_id,player_id,stamp_id",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({club_id:clubId,player_id:playerId,stamp_id:stampId,source:body.source==="stafi"?"stafi":"manual",completed_by:user.id})});
+        await db("club_stamp_progress?club_id=eq."+clubId+"&player_id=eq."+playerId+"&stamp_id=eq."+stampId+"&source=eq.manual",{method:"DELETE",headers:{Prefer:"return=minimal"}});
+      }else await db("club_stamp_progress?on_conflict=club_id,player_id,stamp_id",{method:"POST",headers:{Prefer:"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify({club_id:clubId,player_id:playerId,stamp_id:stampId,source:"manual",completed_by:user.id})});
       const adventureId=Number(body.adventure_id),finalized=Number.isSafeInteger(adventureId)&&adventureId>0?await finalizeRun(clubId,adventureId):null;
       return reply({ok:true,finalized});
     }
     return reply({ok:false,error:"unknown_action"},400);
-  }catch(e){const message=String((e as Error)?.message||e);console.error(message);const known=["not_a_club_member"];return reply({ok:false,error:known.includes(message)?message:"server_error"},known.includes(message)?403:500)}
+  }catch(e){
+    const message=String((e as Error&{dbMessage?:string})?.dbMessage||(e as Error)?.message||e);
+    const status:Record<string,number>={not_a_club_member:403,club_not_found:404,bad_adventure:400,one_to_three_stamps_required:400,invalid_stamp_references:400,participant_required:400,completed_adventure_immutable:409,active_adventure_snapshot_locked:409,game_mode_not_available:409,adventure_locked:409,solo_requires_one_player:409,babygirl_needs_two:409,group_needs_two:409,board_not_found:409,beneficiary_not_found:409};
+    if(Object.hasOwn(status,message))return reply({ok:false,error:message},status[message]);
+    console.error("club_api_error");return reply({ok:false,error:"server_error"},500);
+  }
 });
