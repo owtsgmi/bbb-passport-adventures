@@ -33,7 +33,7 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
   function qs(s){return document.querySelector(s)}
   function esc(v){return String(v==null?'':v).replace(/[&<>"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]})}
   function fsUrl(s){return 'secondlife://'+encodeURIComponent(s.region)+'/'+s.x+'/'+s.y+'/'+s.z}
-  var ASSET_API='https://tzxlrglgwzinefutledx.supabase.co/functions/v1/bbb-stamp-assets';
+  var ASSET_API='https://api.passport-adventures.com/functions/v1/bbb-stamp-assets';
   var stampImages=new Map();
   function normName(s){return String(s||'').toLowerCase().replace(/\b(be|na|ca|st|sl|he|sa|ga|zi)\b/g,' ').replace(/[^a-z0-9]+/g,' ').trim()}
   function proxyImage(u){
