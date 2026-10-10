@@ -1,7 +1,7 @@
 (function(){
   'use strict';
-  const url='https://tzxlrglgwzinefutledx.supabase.co';
-  const key='sb_publishable_s54v4rmFk_BjHoweE7mliA_w64vK6WR';
+  const url='https://api.passport-adventures.com';
+  const key='sb_publishable_GiHmNkxpDRXIwf2LDgh1bq_I7lO6QAc';
   const apiUrl=url+'/functions/v1/club-api';
   const authUrl=url+'/functions/v1/passport-auth';
   const sessionKey='bbb-passport-session-v2';
