@@ -81,11 +81,11 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 
 </main>
 
-<script src="club-session.js?v=8"></script><script src="data1.js"></script><script src="data2.js"></script><script src="data3.js"></script><script src="data4.js"></script><script src="data5.js"></script><script src="data6.js"></script><script src="data7.js"></script><script src="slmap.js?v=11"></script>
+<script src="club-session.js?v=9"></script><script src="data1.js"></script><script src="data2.js"></script><script src="data3.js"></script><script src="data4.js"></script><script src="data5.js"></script><script src="data6.js"></script><script src="data7.js"></script><script src="slmap.js?v=11"></script>
 <script>
 const SITE_URL='https://owtsgmi.github.io/bbb-passport-adventures/';
 let clubBootstrapPending=true;
-const ASSET_API='https://tzxlrglgwzinefutledx.supabase.co/functions/v1/bbb-stamp-assets';
+const ASSET_API='https://api.passport-adventures.com/functions/v1/bbb-stamp-assets';
 const stampImages=new Map();
 let liveCatalogStops=[],liveCatalogMapVersion=0;
 function normStopName(s){return String(s||'').toLowerCase().replace(/\b(be|na|ca|st|sl|he|sa|ga|zi)\b/g,' ').replace(/[^a-z0-9]+/g,' ').trim()}
@@ -584,8 +584,8 @@ init();
 <script>
 /* Shared Supabase sync: publishable key is intentionally safe for browser use.
    RLS restricts this tiny project to the single shared expedition-state row. */
-const SUPA_URL='https://tzxlrglgwzinefutledx.supabase.co';
-const SUPA_KEY='sb_publishable_s54v4rmFk_BjHoweE7mliA_w64vK6WR';
+const SUPA_URL='https://api.passport-adventures.com';
+const SUPA_KEY='sb_publishable_GiHmNkxpDRXIwf2LDgh1bq_I7lO6QAc';
 const STATE_URL=SUPA_URL+'/rest/v1/bbb_board_state?id=eq.1&select=*';
 const PUSH_API=SUPA_URL+'/functions/v1/payout-push';
 let cloudBusy=false,lastCloudUpdate='';
