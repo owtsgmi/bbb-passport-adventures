@@ -268,12 +268,15 @@ async function syncStaFi(userId:string,clubId:string,force=false){
       if(key){const items=locations.get(key)||[];items.push(item);locations.set(key,items)}
     }
     const extraRows:any[]=[];
-    for(const [key,items] of locations){
-      // A location is not a stamp identity if multiple catalog stops share it.
-      if(items.length!==1)continue;
-      const it=items[0],collected=stafiHasEvidence(evidence,it);
-      if(!collected&&!stafiHasEvidence(missingEvidence,it))continue;
-      extraRows.push({club_id:clubId,player_id:player.id,location_key:key,name:String(it.name),region:String(it.region),x:Math.round(Number(it.x)),y:Math.round(Number(it.y)),z:Math.round(Number(it.z)),source:"stafi_explicit",collected,completed_at:now});
+    // BBB's collected-detail rows are authoritative for the location index.
+    // A stamp absent from our catalog still needs a Catch-up SLURL.
+    for(const [key,names] of evidence){
+      if(missingEvidence.has(key))continue; // Contradictory pages are not reliable.
+      const parts=key.split("|");if(parts.length!==4)continue;
+      const [region,xs,ys,zs]=parts,items=locations.get(key)||[];
+      const named=items.find(it=>names.has(decodeHtml(String(it.name||"")).trim()));
+      const name=named?String(named.name):([...names].filter(v=>v&&!/^(collected|yes|visit|map|slurl|teleport|location|stamp|date)$/i.test(v)).sort((a,b)=>b.length-a.length)[0]||"BBB passport stamp");
+      extraRows.push({club_id:clubId,player_id:player.id,location_key:key,name:name.slice(0,180),region,x:Number(xs),y:Number(ys),z:Number(zs),source:"stafi_explicit",collected:true,completed_at:now});
     }
     if(extraRows.length)await db("club_stafi_location_evidence?on_conflict=club_id,player_id,location_key",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(extraRows)});
 
