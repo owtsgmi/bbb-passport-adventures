@@ -302,15 +302,20 @@ function renderBabygirlBacklog(){
  const list=babygirlBacklogAdventures(),strays=strayCatchupStops(ctx);
  const viewedSet=clubProgress.get(ctx.viewed.id)||new Set(),partnerSet=clubProgress.get(ctx.partner.id)||new Set();
  const adventureNeeded=list.reduce(function(n,a){return n+adventureStamps(a).filter(function(st){return !viewedSet.has(st.id)&&partnerSet.has(st.id)}).length},0);
- const totalNeeded=adventureNeeded+strays.length;
+ // A total reported by StaFi may exceed the individually identified locations.
+ // Account for that gap rather than incorrectly displaying "All caught up."
+ const viewedTotal=effectivePassportCount(ctx.viewed,viewedSet,999999),partnerTotal=effectivePassportCount(ctx.partner,partnerSet,999999);
+ const unidentified=Math.max(0,partnerTotal-viewedTotal-adventureNeeded-strays.length);
+ const totalNeeded=adventureNeeded+strays.length+unidentified;
  box.style.display='block';
  count.textContent='('+totalNeeded+' stamp'+(totalNeeded===1?'':'s')+')';
  if(note)note.textContent=totalNeeded
-   ?ctx.viewed.display_name+' needs '+totalNeeded+' stamp'+(totalNeeded===1?'':'s')+' that '+ctx.partner.display_name+' already has'+'.'
+   ?ctx.viewed.display_name+' needs '+totalNeeded+' stamp'+(totalNeeded===1?'':'s')+' that '+ctx.partner.display_name+' already has'+(unidentified?' ('+unidentified+' location'+(unidentified===1?'':'s')+' not identified)':'')+'.'
    :ctx.viewed.display_name+' is all caught up with '+ctx.partner.display_name+'.';
  const parts=[];
  if(list.length)parts.push(list.map(function(a){return backlogSummaryHtml(a,ctx)}).join(''));
  if(strays.length)parts.push(strayCatchupHtml(strays,ctx));
+ if(unidentified)parts.push('<div class="pinempty"><strong>'+unidentified+' stamp'+(unidentified===1?'':'s')+' to catch up</strong> · Location not yet identified by StaFi.</div>');
  host.innerHTML=parts.length?parts.join(''):'<div class="pinempty">All caught up.</div>';
  const activeIds=new Set(clubRuns.filter(function(r){return r.status==='active'}).map(function(r){return Number(r.adventure_id)})),pinned=activeAdventure();
  const z=document.getElementById('zone')&&document.getElementById('zone').value||'';
