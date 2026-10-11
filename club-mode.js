@@ -240,8 +240,8 @@ function catchupLocationKey(region,x,y,z){
 }
 function strayCatchupStops(ctx){
  if(!ctx)return [];
- const viewedExtras=new Set(clubExtraStamps.filter(function(x){return x.player_id===ctx.viewed.id}).map(function(x){return x.location_key}));
- const partnerExtras=clubExtraStamps.filter(function(x){return x.player_id===ctx.partner.id&&!viewedExtras.has(x.location_key)});
+ const viewedExtras=new Set(clubExtraStamps.filter(function(x){return x.player_id===ctx.viewed.id&&x.collected===true}).map(function(x){return x.location_key}));
+ const partnerExtras=clubExtraStamps.filter(function(x){return x.player_id===ctx.partner.id&&x.collected===true&&!viewedExtras.has(x.location_key)});
  const partnerProgress=clubProgress.get(ctx.partner.id)||new Set(),adventureCollectedLocations=new Set();
  clubRuns.forEach(function(r){
    (Array.isArray(r.stamp_refs)?r.stamp_refs:[]).forEach(function(ref){
