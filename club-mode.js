@@ -322,8 +322,8 @@ function renderBabygirlBacklog(){
    ?ctx.viewed.display_name+' needs '+totalNeeded+' stamp'+(totalNeeded===1?'':'s')+' that '+ctx.partner.display_name+' already has'+(unidentified?' ('+unidentified+' location'+(unidentified===1?'':'s')+' not identified)':'')+'.'
    :ctx.viewed.display_name+' is all caught up with '+ctx.partner.display_name+'.';
  const stalePlayers=[ctx.viewed,ctx.partner].filter(stafiSyncStale);
- if(note&&stalePlayers.length)note.textContent+=' ⚠ StaFi data may be outdated: '+stalePlayers.map(function(p){return p.display_name+' ('+stafiSyncLabel(p)+')'}).join('; ')+'. Counts and Catch-up may change after they sign in and sync.';
  const parts=[];
+ if(stalePlayers.length)parts.push('<div class="pinempty" role="status"><strong>⚠ Catch-up may be outdated</strong><div class="small">'+stalePlayers.map(function(p){return esc(p.display_name)+' — '+esc(stafiSyncLabel(p))}).join('; ')+'. Counts and missing stamps may change after the player signs in and refreshes StaFi.</div></div>');
  if(list.length)parts.push(list.map(function(a){return backlogSummaryHtml(a,ctx)}).join(''));
  if(strays.length)parts.push(strayCatchupHtml(strays,ctx));
  if(unidentified)parts.push('<div class="pinempty"><strong>'+unidentified+' stamp'+(unidentified===1?'':'s')+' to catch up</strong> · Location not yet identified by StaFi.</div>');
