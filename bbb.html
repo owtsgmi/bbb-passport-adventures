@@ -234,6 +234,8 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
         if(nk)match=stops.find(function(s){return normName(s.name)===nk});
       }
       if(match){
+        // A renamed or relocated stop matched by name must use the live coordinates.
+        match.region=it.region;match.x=Number(it.x);match.y=Number(it.y);match.z=Number(it.z);
         match.live=true;
         match.url=it.url||match.url;
         if(it.img)stampImages.set(match.id,it.img);
