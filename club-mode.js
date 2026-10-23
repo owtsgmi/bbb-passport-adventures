@@ -12,6 +12,15 @@ function effectivePassportCount(player,done,total){
  return Math.min(total,stafiDone+remaining);
 }
 
+function stafiSyncStale(player){
+ const at=Date.parse(player&&player.stafi_last_success_at||'');
+ return !Number.isFinite(at)||Date.now()-at>24*60*60*1000;
+}
+function stafiSyncLabel(player){
+ const at=Date.parse(player&&player.stafi_last_success_at||'');
+ if(!Number.isFinite(at))return 'StaFi not yet synced';
+ return 'StaFi last synced '+new Date(at).toLocaleString();
+}
 function activePlayers(){return clubMode?clubPlayers.filter(function(p){return p.is_active}):[]}
 function clubGameMode(){return clubMode&&clubData&&clubData.club?String(clubData.club.game_mode||'group'):'group'}
 function adventureRun(a){return clubMode&&a?clubRuns.find(function(r){return Number(r.adventure_id)===Number(a.id)}):null}
@@ -312,6 +321,8 @@ function renderBabygirlBacklog(){
  if(note)note.textContent=totalNeeded
    ?ctx.viewed.display_name+' needs '+totalNeeded+' stamp'+(totalNeeded===1?'':'s')+' that '+ctx.partner.display_name+' already has'+(unidentified?' ('+unidentified+' location'+(unidentified===1?'':'s')+' not identified)':'')+'.'
    :ctx.viewed.display_name+' is all caught up with '+ctx.partner.display_name+'.';
+ const stalePlayers=[ctx.viewed,ctx.partner].filter(stafiSyncStale);
+ if(note&&stalePlayers.length)note.textContent+=' ⚠ StaFi data may be outdated: '+stalePlayers.map(function(p){return p.display_name+' ('+stafiSyncLabel(p)+')'}).join('; ')+'. Counts and Catch-up may change after they sign in and sync.';
  const parts=[];
  if(list.length)parts.push(list.map(function(a){return backlogSummaryHtml(a,ctx)}).join(''));
  if(strays.length)parts.push(strayCatchupHtml(strays,ctx));
@@ -334,7 +345,7 @@ render=function(){
    const done=viewedDone(),player=viewedPlayer(),globalTotal=Number(clubData&&clubData.passport_total||0),shownTotal=globalTotal>0?globalTotal:TOTAL_PASSPORT_STAMPS,shownDone=effectivePassportCount(player,done,shownTotal),toGo=Math.max(0,shownTotal-shownDone);
    const progressEl=$('#passport-progress'),remainingEl=$('#passport-remaining');if(progressEl)progressEl.textContent=shownDone+' / '+shownTotal;if(remainingEl)remainingEl.textContent=toGo?toGo+' to go':'Passport complete!';
  }
- const tabs=document.getElementById('player-tabs');if(clubMode&&tabs)tabs.innerHTML=activePlayers().map(function(p,i){return '<button class="viewtab '+(currentView===p.id?'active':'')+'" onclick="setView(&quot;'+p.id+'&quot;)">'+(i===0?'🗡️':i===1?'👽':'🧭')+' '+esc(p.display_name)+'</button>'}).join('');
+ const tabs=document.getElementById('player-tabs');if(clubMode&&tabs)tabs.innerHTML=activePlayers().map(function(p,i){return '<button class="viewtab '+(currentView===p.id?'active':'')+'" onclick="setView(&quot;'+p.id+'&quot;)">'+(i===0?'🗡️':i===1?'👽':'🧭')+' '+esc(p.display_name)+(stafiSyncStale(p)?' ⚠':'')+'</button>'}).join('');
  const context=document.getElementById('club-context');if(context){const mode=clubGameMode(),label=mode==='solo'?'🧭 Solo':mode==='babygirl'?'💗 Babygirl':'👥 Group';context.innerHTML=clubMode?'Playing <b>'+label+'</b> with <b>'+esc(clubData.club.name)+'</b> · <a href="settings.html">club settings</a>':'';}
  try{renderBabygirlBacklog()}catch(e){
    console.error('Babygirl catch-up render failed',e);
