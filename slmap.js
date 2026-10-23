@@ -28,19 +28,22 @@
     document.head.appendChild(s);
   }
 
-  function lookupRegion(region){
-    return new Promise(resolve=>{
-      const varName='slg_'+Math.random().toString(36).slice(2);
-      window[varName]=null;
-      const script=document.createElement('script');
-      script.src='https://cap.secondlife.com/cap/0/d661249b-2b5a-4436-966a-3d3b8d7a574f?var='+encodeURIComponent(varName)+'&sim_name='+encodeURIComponent(region);
-      let done=false;
-      const finish=(v)=>{if(done)return;done=true;try{delete window[varName]}catch(e){};script.remove();resolve(v&& !v.error?{x:Number(v.x),y:Number(v.y)}:null)};
-      script.onload=()=>finish(window[varName]);
-      script.onerror=()=>finish(null);
-      document.head.appendChild(script);
-      setTimeout(()=>finish(null),7000);
-    });
+  const regionCache=new Map();
+  async function lookupRegion(region){
+    const name=String(region||'').trim(),key=name.toLowerCase();
+    if(!name)return null;
+    if(regionCache.has(key))return regionCache.get(key);
+    try{
+      // The old Linden Lab cap UUID returns "Invalid Capability ID".
+      const response=await fetch('https://inworldmap.com/api/regions/'+encodeURIComponent(name),{
+        signal:AbortSignal.timeout(7000),headers:{Accept:'application/json'}
+      });
+      if(!response.ok)return null;
+      const data=await response.json();
+      const x=Number(data.x),y=Number(data.y);
+      if(String(data.name||'').trim().toLowerCase()!==key||!Number.isInteger(x)||!Number.isInteger(y)||x<0||y<0)return null;
+      const pos={x,y};regionCache.set(key,pos);return pos;
+    }catch(e){return null}
   }
 
   class SLGridMap{
@@ -290,7 +293,7 @@
         const ty=cy+(half-row)*span;
         for(let col=0;col<GRID;col++){
           const tx=baseX+col*span;
-          const tileUrl='https://map.secondlife.com/map-'+z+'-'+tx+'-'+ty+'-objects.jpg';
+          const tileUrl='https://secondlife-maps-cdn.akamaized.net/map-'+z+'-'+tx+'-'+ty+'-objects.jpg';
           h+='<div class="slg-tilecell" style="left:'+(col*TILE)+'px;top:'+(row*TILE)+'px"><img class="slg-tile" draggable="false" decoding="async" data-src="'+tileUrl+'" alt=""></div>';
         }
       }
