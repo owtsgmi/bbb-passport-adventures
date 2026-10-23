@@ -35,7 +35,7 @@
     if(regionCache.has(key))return regionCache.get(key);
     try{
       // The old Linden Lab cap UUID returns "Invalid Capability ID".
-      const response=await fetch('https://inworldmap.com/api/regions/'+encodeURIComponent(name),{
+      const response=await fetch('https://api.passport-adventures.com/map-region/'+encodeURIComponent(name),{
         signal:AbortSignal.timeout(7000),headers:{Accept:'application/json'}
       });
       if(!response.ok)return null;
