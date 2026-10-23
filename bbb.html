@@ -67,6 +67,7 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
     });
   });
   var stops=Array.from(byId.values());
+  var catalogReady=false;
   var meDone=new Set(JSON.parse(localStorage.getItem('bbb-done-me')||'[]').map(Number));
   var partnerDone=new Set(JSON.parse(localStorage.getItem('bbb-done-partner')||'[]').map(Number));
   var view=localStorage.getItem('bbb-view')||localStorage.getItem('bbb-default-view')||'partner';
@@ -151,7 +152,7 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
   function renderList(){
     var arr=nearbyResults?nearbyResults.slice():filtered().sort(function(a,b){return a.name.localeCompare(b.name)});
     qs('#result-count').textContent=nearbyResults?arr.length+' nearby':arr.length+' shown';
-    qs('#catalog-count').textContent=stops.length;
+    qs('#catalog-count').textContent=catalogReady?stops.length:'';
     qs('#results').innerHTML=arr.length?arr.map(function(s){
       return '<div class="stoprow" data-row="'+s.id+'">'+stopImageHtml(s)+'<div><div class="stopname">'+esc(s.name)+' <span class="zone">'+esc(s.zone)+'</span></div><div class="meta">'+esc(s.region)+' · '+s.x+', '+s.y+', '+s.z+'</div></div><div class="rowactions"><div class="status '+(done.has(s.id)?'yes':'no')+'">'+(done.has(s.id)?'✅ Got it':'○ Needed')+'</div><button class="copymini" data-copy="'+s.id+'">Copy SLURL</button></div></div>';
     }).join(''):'<div class="empty">No stops match those filters.</div>';
@@ -223,9 +224,10 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
   }
   function mergeLiveBBB(data){
     if(!data||!data.ok||!Array.isArray(data.items))return 0;
-    var added=0,liveId=900000;
+    var added=0,liveId=900000,liveKeys=new Set();
     data.items.forEach(function(it){
       if(!it||!it.region||!Number.isFinite(Number(it.x))||!Number.isFinite(Number(it.y))||!Number.isFinite(Number(it.z)))return;
+      liveKeys.add(catalogKey(it));
       var match=stops.find(function(s){return sameLocation(s,it)});
       if(!match){
         var nk=normName(it.name);
@@ -242,8 +244,12 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
         byId.set(fresh.id,fresh);stops.push(fresh);if(it.img)stampImages.set(fresh.id,it.img);added++;
       }
     });
+    stops=stops.filter(function(s){return liveKeys.has(catalogKey(s))});
+    byId=new Map(stops.map(function(s){return [s.id,s]}));
+    catalogReady=true;
     return added;
   }
+  function catalogKey(s){return String(s.region||'').trim().toLowerCase()+'|'+Number(s.x)+'|'+Number(s.y)+'|'+Number(s.z)}
   function useCachedBBB(){
     try{
       var cached=JSON.parse(localStorage.getItem('bbb-live-catalog-cache')||'null');
@@ -276,7 +282,7 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
           qs('#live-status').className='livestatus ok';
         }
       })
-      .catch(function(){if(!useCachedBBB()){qs('#live-status').textContent='⚠ BBB live update unavailable · using built-in catalog';qs('#live-status').className='livestatus warn'}});
+      .catch(function(){if(!useCachedBBB()){catalogReady=true;renderList();qs('#live-status').textContent='⚠ BBB live update unavailable · using built-in catalog';qs('#live-status').className='livestatus warn'}});
   }
   function stopImageHtml(s){
     var u=stampImages.get(s.id);
@@ -299,7 +305,8 @@ main{max-width:1180px;margin:auto;padding:22px 4vw 60px}.hero{display:flex;gap:1
   qs('#zone').addEventListener('change',leaveNearbyMode);
   qs('#status').addEventListener('change',leaveNearbyMode);
   document.addEventListener('click',function(e){var n=document.getElementById('nav');if(n&&!n.contains(e.target))n.classList.remove('open')});
-  renderList();syncLiveBBB();
+  qs('#results').innerHTML='<div class="empty">Loading current BBB passport stops…</div>';
+  syncLiveBBB();
   var m=location.hash.match(/stop-(\d+)/);
   if(m)showStop(Number(m[1]));
   else{
