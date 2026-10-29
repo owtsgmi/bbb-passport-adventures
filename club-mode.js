@@ -126,8 +126,36 @@ async function touchClubActivity(force){
 async function maybeAutoStaFiSync(force){
  if(!clubMode||clubStaFiSyncBusy||(!force&&Date.now()-lastClubStaFiSync<5*60*1000))return false;
  clubStaFiSyncBusy=true;lastClubStaFiSync=Date.now();
- try{const out=await PassportCloud.call(force?'verify_stafi':'sync_stafi',{club_id:clubData.club.id});if(out.imported>0)toast('✓ StaFi added '+out.imported+' new stamp'+(out.imported===1?'':'s')+'.');return out.verified===true}catch(e){return false}finally{clubStaFiSyncBusy=false}
+ try{
+   const out=await PassportCloud.call(force?'verify_stafi':'sync_stafi',{club_id:clubData.club.id});
+   if(out.error)return false;
+   if(out.imported>0)toast('✓ StaFi added '+out.imported+' new stamp'+(out.imported===1?'':'s')+'.');
+   return out.verified===true;
+ }catch(e){return false}finally{clubStaFiSyncBusy=false}
 }
+async function refreshAdventureStamps(){
+ if(!clubMode||clubStaFiSyncBusy)return;
+ const button=document.getElementById('refresh-adventure-stamps');
+ if(button){button.disabled=true;button.textContent='Refreshing…'}
+ try{
+   const viewed=viewedPlayer(),session=PassportCloud.session(),self=session&&session.user&&session.user.id;
+   const current=activeAdventure(),before=new Set(clubProgress.get(viewed&&viewed.id)||[]);
+   const out=await PassportCloud.call('verify_stafi',{club_id:clubData.club.id});
+   lastClubStaFiSync=Date.now();
+   if(out.error){toast('StaFi refresh: '+out.error.replace(/_/g,' '));return}
+   const data=await PassportCloud.call('load',{club_id:PassportCloud.activeClub()});
+   adoptClub(data);
+   const after=clubProgress.get(viewed&&viewed.id)||new Set();
+   const added=[...after].filter(id=>!before.has(id)).length;
+   if(added)toast('✓ '+added+' new stamp'+(added===1?'':'s')+' confirmed.');
+   else if(current&&viewed&&viewed.user_id===self){
+     const needed=adventureStamps(current).filter(st=>!after.has(st.id)).length;
+     toast(needed?'StaFi checked; '+needed+' adventure stamp'+(needed===1?'':'s')+' still unmatched. You can mark a confirmed stamp manually.':'✓ StaFi checked; your adventure stamps are current.');
+   }else toast('✓ StaFi checked. Each player refreshes their own stamps.');
+ }catch(e){toast('StaFi refresh failed. Please try again.')}
+ finally{if(button){button.disabled=false;button.textContent='↻ Refresh Stamps'}}
+}
+
 function canEditViewedPlayer(){const p=viewedPlayer(),session=window.PassportCloud&&PassportCloud.session(),u=session&&session.user&&session.user.id,role=clubData&&clubData.membership&&clubData.membership.role;return !!(clubMode&&p&&(p.user_id===u||(!p.user_id&&(role==='owner'||role==='admin'))))}
 async function toggleClubStamp(advId,stampId){
  const p=viewedPlayer(),set=viewedDone();if(!clubMode||!p)return;
