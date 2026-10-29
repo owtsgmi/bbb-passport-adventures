@@ -53,7 +53,7 @@ details.trip{background:var(--panel);border:1px solid var(--line);border-radius:
 <main id="adventure-stack" style="visibility:hidden">
 <details class="compactdetails currentrun" id="current-adventure" open>
   <summary><span>✨ Current Adventure</span><label class="currentlock" id="current-lock-label" onclick="event.stopPropagation()"><input id="current-lock" type="checkbox" onchange="setAdventureLocked(this.checked)" onclick="event.stopPropagation()"> <span id="current-lock-text">Adventure locked</span></label></summary>
-  <div class="inside"><div id="pinned"></div></div>
+  <div class="inside"><div id="pinned"></div><div id="stamp-refresh-bar" style="margin:8px 0"><button id="refresh-adventure-stamps" type="button" onclick="refreshAdventureStamps()" style="padding:6px 12px;font-size:12px">↻ Refresh Stamps</button></div></div>
 </details>
 
 <details class="compactdetails" id="potential-adventures">
@@ -579,7 +579,7 @@ function init(){
 }
 init();
 </script>
-<script src="club-mode.js?v=30"></script>
+<script src="club-mode.js?v=31"></script>
 
 <script>
 /* Shared Supabase sync: publishable key is intentionally safe for browser use.
@@ -796,7 +796,7 @@ async function startCloudMode(){
 document.addEventListener('visibilitychange',()=>{
  if(!document.hidden&&clubMode){
    touchClubActivity(true).catch(()=>{});
-   maybeAutoStaFiSync(true).then(changed=>changed&&pollClub(true)).catch(()=>{});
+   if(Date.now()-lastClubStaFiSync>=60*1000)maybeAutoStaFiSync(true).then(changed=>changed&&pollClub(true)).catch(()=>{});
  }
 });
 startCloudMode();
