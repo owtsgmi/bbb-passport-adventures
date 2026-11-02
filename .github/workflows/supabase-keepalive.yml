@@ -1,13 +1,8 @@
 name: Supabase Keepalive
 
+# Legacy Supabase Cloud project is paused; no scheduled requests.
 on:
-  schedule:
-    # Four small external database reads per day, deliberately off the top of the hour.
-    - cron: "17 3,9,15,21 * * *"
   workflow_dispatch:
-  push:
-    paths:
-      - ".github/workflows/supabase-keepalive.yml"
 
 permissions:
   contents: read
