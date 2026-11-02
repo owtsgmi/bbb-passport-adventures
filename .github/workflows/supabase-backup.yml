@@ -1,13 +1,8 @@
 name: Supabase Encrypted Backup
 
+# Legacy Supabase Cloud database is paused; retain manual invocation only.
 on:
   workflow_dispatch:
-  schedule:
-    # Weekly encrypted off-site snapshot, Sunday morning UTC.
-    - cron: "43 4 * * 0"
-  push:
-    paths:
-      - ".github/workflows/supabase-backup.yml"
 
 permissions:
   contents: write
